@@ -1,3 +1,5 @@
+import Loader from '../../components/Common/Loader';
+import './JobDetails.styles.css';
 // src/components/JobDetails.jsx
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -16,7 +18,6 @@ import {
   Space,
   Button,
   Modal,
-  Spin,
   Divider,
   Typography,
   List,
@@ -145,7 +146,7 @@ const JobDetails = () => {
   if (isLoading) {
     return (
       <div className="text-center py-10">
-        <Spin size="large" />
+        <Loader size="large" />
       </div>
     );
   }
@@ -275,7 +276,7 @@ const JobDetails = () => {
             {/* Right Column - Actions & Results */}
             <Col xs={24} lg={8}>
               <Card title="Actions" size="small">
-                <Space direction="vertical" style={{ width: '100%' }}>
+                <Space className="fv2-jobdetails-048aebd728" direction="vertical">
                   {['pending', 'processing'].includes(job.status) && (
                     <Button
                       danger

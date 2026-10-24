@@ -1,3 +1,6 @@
+import Loader from '../Common/Loader';
+import ModalShell from '../Common/ModalShell';
+import './AddCustomerModal.styles.css';
 // src/components/AddCustomerModal.jsx
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
@@ -7,8 +10,8 @@ import {
   useGetCustomersQuery,
 } from '../../api/customerApi';
 import { useGetVendorsQuery } from '../../api/vendorApi';
-import { message } from 'antd';
-import { Form, Input, Select, Button, Tabs, Row, Col, Spin, Alert, Modal } from 'antd';
+import { toast } from 'sonner';
+import { Form, Input, Select, Tabs, Row, Col, Alert } from 'antd';
 import { INDIAN_STATES } from '../../constants/statesConstants';
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -64,7 +67,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
       });
 
       if (isDuplicate) {
-        message.error('Another customer already exists with this email or mobile number.');
+        toast.error('Another customer already exists with this email or mobile number.');
       }
     }
   }, [form, existingCustomer, allCustomersData]);
@@ -145,7 +148,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
           });
 
           if (isDuplicate) {
-            message.error('Customer with same email or mobile number already exists.');
+            toast.error('Customer with same email or mobile number already exists.');
             return;
           }
         }
@@ -170,15 +173,15 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
           id: existingCustomer.customerId,
           ...payload,
         }).unwrap();
-        message.success('Customer updated successfully');
+        toast.success('Customer updated successfully');
       } else {
         await createCustomer(payload).unwrap();
-        message.success('Customer created successfully');
+        toast.success('Customer created successfully');
       }
 
       onClose();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save customer');
+      toast.error(err?.data?.message || 'Failed to save customer');
     }
   };
 
@@ -188,16 +191,19 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
   };
 
   return (
-    <Modal
+    <ModalShell
       title={existingCustomer ? 'Edit Customer' : 'Add New Customer'}
       open={visible}
       onCancel={handleCancel}
-      footer={null}
+      onOk={() => form.submit()}
+      confirmLoading={isCreating || isEditing}
+      okText={existingCustomer ? 'Update Customer' : 'Create Customer'}
+      okButtonProps={{ disabled: isCustomersLoading || isVendorsLoading }}
       width={820}
       destroyOnClose
     >
-      <div style={{ padding: '0 8px' }}>
-        {(isCustomersLoading || isVendorsLoading) && <Spin tip="Loading..." />}
+      <div className="fv2-addcustomermodal-43efa3af80">
+        {(isCustomersLoading || isVendorsLoading) && <Loader tip="Loading..." />}
 
         <Form
           form={form}
@@ -367,26 +373,9 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
             </TabPane>
           </Tabs>
 
-          <div style={{ textAlign: 'right', marginTop: 32 }}>
-            <Button onClick={handleCancel} style={{ marginRight: 12 }}>
-              Cancel
-            </Button>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isCreating || isEditing}
-              disabled={isCreating || isEditing || isCustomersLoading || isVendorsLoading}
-            >
-              {isCreating || isEditing
-                ? 'Saving...'
-                : existingCustomer
-                  ? 'Update Customer'
-                  : 'Create Customer'}
-            </Button>
-          </div>
-
           {(createError || editError) && (
             <Alert
+              className="fv2-addcustomermodal-3574f85940"
               message="Error"
               description={
                 createError?.data?.message ||
@@ -395,12 +384,11 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
               }
               type="error"
               showIcon
-              style={{ marginTop: 16 }}
             />
           )}
         </Form>
       </div>
-    </Modal>
+    </ModalShell>
   );
 };
 

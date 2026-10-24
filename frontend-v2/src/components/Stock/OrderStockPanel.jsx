@@ -1,16 +1,7 @@
+import './OrderStockPanel.styles.css';
 import { useState } from 'react';
-import {
-  Alert,
-  Button,
-  Card,
-  Progress,
-  Space,
-  Table,
-  Tag,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Card, Progress, Space, Table, Tag, Tooltip, Typography } from 'antd';
+import { toast } from 'sonner';
 import { InboxOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useGetOrderStockQuery, useResyncOrderStockMutation } from '../../api/stockApi';
 import ProductStockDrawer from './ProductStockDrawer';
@@ -36,16 +27,16 @@ export default function OrderStockPanel({ orderId, status }) {
     try {
       await resync(orderId).unwrap();
       await refetch();
-      message.success('Reservations re-checked');
+      toast.success('Reservations re-checked');
     } catch (e) {
-      message.error(e?.data?.message || 'Could not re-check stock');
+      toast.error(e?.data?.message || 'Could not re-check stock');
     }
   };
 
   return (
     <Card
-      className="section-card"
-      style={{ marginTop: 16 }}
+      className="section-card fv2-orderstockpanel-1c02185d56"
+
       title={
         <span>
           <InboxOutlined /> Stock for this order
@@ -77,9 +68,10 @@ export default function OrderStockPanel({ orderId, status }) {
         <>
           {isDraft && (
             <Alert
+              className="fv2-orderstockpanel-e1e61ddd8f"
               type="info"
               showIcon
-              style={{ marginBottom: 12 }}
+
               message="Draft orders don't hold stock. Stock is reserved when the order moves to Preparing."
             />
           )}
@@ -136,7 +128,7 @@ export default function OrderStockPanel({ orderId, status }) {
               },
             ]}
           />
-          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+          <Text className="fv2-orderstockpanel-b12f42e5a4" type="secondary">
             Green = dispatched · blue = reserved in the godown · gap = waiting for stock (fills
             automatically when goods arrive).
           </Text>

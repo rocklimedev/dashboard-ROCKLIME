@@ -1,5 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './RecordPaymentModal.styles.css';
 import { useEffect } from 'react';
-import { DatePicker, Form, Input, InputNumber, Modal, Select, Typography, message } from 'antd';
+import { DatePicker, Form, Input, InputNumber, Select, Typography } from 'antd';
+import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import { useRecordPaymentMutation } from '../../api/paymentsApi';
 import { inr } from '../../utils/quotationMath';
@@ -37,17 +40,17 @@ export default function RecordPaymentModal({ open, onClose, orders = [], default
     try {
       const v = await form.validateFields();
       const r = await record({ ...v, receivedAt: v.receivedAt?.toISOString() }).unwrap();
-      message.success(r.message || 'Payment recorded');
+      toast.success(r.message || 'Payment recorded');
       onDone?.(r);
       onClose();
     } catch (e) {
       if (e?.errorFields) return;
-      message.error(e?.data?.message || 'Could not record the payment');
+      toast.error(e?.data?.message || 'Could not record the payment');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       open={open}
       onCancel={onClose}
       onOk={submit}
@@ -77,7 +80,7 @@ export default function RecordPaymentModal({ open, onClose, orders = [], default
           />
         </Form.Item>
         {selected && (
-          <Text type="secondary" style={{ display: 'block', marginTop: -12, marginBottom: 12 }}>
+          <Text className="fv2-recordpaymentmodal-818e25e50c" type="secondary">
             Billed {inr(selected.billed ?? 0)} · paid {inr(selected.paid ?? 0)} · due{' '}
             {inr(selected.due)}
           </Text>
@@ -95,7 +98,7 @@ export default function RecordPaymentModal({ open, onClose, orders = [], default
             },
           ]}
         >
-          <InputNumber min={1} precision={2} style={{ width: '100%' }} />
+          <InputNumber className="fv2-recordpaymentmodal-0f673fa6b8" min={1} precision={2} />
         </Form.Item>
         <Form.Item name="mode" label="Mode" rules={[{ required: true }]}>
           <Select options={MODES} />
@@ -114,7 +117,8 @@ export default function RecordPaymentModal({ open, onClose, orders = [], default
         </Form.Item>
         <Form.Item name="receivedAt" label="Received on" rules={[{ required: true }]}>
           <DatePicker
-            style={{ width: '100%' }}
+            className="fv2-recordpaymentmodal-0f673fa6b8"
+
             format="DD MMM YYYY"
             disabledDate={(d) => d && d.isAfter(dayjs().endOf('day'))}
           />
@@ -123,6 +127,6 @@ export default function RecordPaymentModal({ open, onClose, orders = [], default
           <Input.TextArea rows={2} />
         </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }

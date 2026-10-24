@@ -1,0 +1,65 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-inventorywrapper-5e5c836375) {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--fv2-color-f0f0f0);
+}
+
+:is(#fv2-style-priority, .fv2-inventorywrapper-0ca073ffa6) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  background: var(--fv2-color-f9fafb);
+}
+
+:is(#fv2-style-priority, .fv2-inventorywrapper-43bba553d6) {
+  margin-top: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-inventorywrapper-b6c6d4eaba) {
+  margin-top: 24px;
+  text-align: center;
+}
+
+:is(#fv2-style-priority, .fv2-inventorywrapper-69c3276ce1) {
+  margin-top: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  background: white;
+}
+
+:is(#fv2-style-priority, .fv2-inventorywrapper-7ec5812436) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-inventorywrapper-41921fbf22) {
+  flex: 1;
+}
+
+:is(#fv2-style-priority, .fv2-inventorywrapper-2ef09cfeb3) {
+  margin: 24px 0;
+}
+
+:is(#fv2-style-priority, .fv2-inventorywrapper-afd14b33c2) {
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 20px;
+}
+
+:is(#fv2-style-priority, .fv2-inventorywrapper-1c9e4f9607) {
+  margin-top: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  background: white;
+  overflow: hidden;
+}
+
+:is(#fv2-style-priority, .fv2-inventorywrapper-5accf9a78d) {
+  margin-top: 24px;
+  padding: 16px 0;
+  text-align: center;
+}

@@ -1,5 +1,7 @@
+import './CrmFollowUps.styles.css';
 import { useState } from 'react';
-import { message, Button, Empty, List, Segmented, Space, Tag, Typography } from 'antd';
+import { Button, Empty, List, Segmented, Space, Tag, Typography } from 'antd';
+import { toast } from 'sonner';
 import {
   CheckOutlined,
   PhoneOutlined,
@@ -33,18 +35,18 @@ export default function CrmFollowUps() {
   const done = (t) =>
     updateTask({ taskId: t.id, done: true })
       .unwrap()
-      .then(() => message.success('Done'))
-      .catch(() => message.error('Could not update'));
+      .then(() => toast.success('Done'))
+      .catch(() => toast.error('Could not update'));
   const later = (t, days) =>
     updateTask({ taskId: t.id, dueDate: dayjs().add(days, 'day').format('YYYY-MM-DD') })
       .unwrap()
-      .then(() => message.success(`Moved to ${dayjs().add(days, 'day').format('D MMM')}`));
+      .then(() => toast.success(`Moved to ${dayjs().add(days, 'day').format('D MMM')}`));
 
   return (
     <div className="page-wrapper crm-page">
       <div className="crm-head">
         <div>
-          <Title level={3} style={{ margin: 0 }}>
+          <Title className="fv2-crmfollowups-9bebac40df" level={3}>
             Follow-ups
           </Title>
           <Text type="secondary">
@@ -88,9 +90,10 @@ export default function CrmFollowUps() {
                 t.phone && <Button key="c" icon={<PhoneOutlined />} href={`tel:${t.phone}`} />,
                 t.phone && (
                   <Button
+                    className="fv2-crmfollowups-408ff8302a"
                     key="w"
                     icon={<WhatsAppOutlined />}
-                    style={{ color: '#25d366' }}
+
                     href={waLink(t.phone, `Namaste ${t.contactName || ''}, `)}
                     target="_blank"
                     rel="noreferrer"

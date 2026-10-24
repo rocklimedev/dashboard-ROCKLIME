@@ -1,0 +1,6 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-router-1c102d3d00) {
+  display: flex;
+  justify-content: center;
+  padding-top: 80px;
+}

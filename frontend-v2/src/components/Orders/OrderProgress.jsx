@@ -1,3 +1,4 @@
+import './OrderProgress.styles.css';
 import { Alert, Steps, Typography } from 'antd';
 
 const { Text } = Typography;
@@ -51,7 +52,8 @@ export default function OrderProgress({ order, dispatches = [], due = 0 }) {
   if (['CANCELED', 'RETURNED', 'ONHOLD'].includes(s)) {
     return (
       <Alert
-        style={{ margin: '12px 0' }}
+        className="fv2-orderprogress-ce29adacf1"
+
         type={s === 'ONHOLD' ? 'warning' : 'error'}
         showIcon
         message={
@@ -75,7 +77,7 @@ export default function OrderProgress({ order, dispatches = [], due = 0 }) {
   const partial = ['PARTIALLY_DISPATCHED', 'PARTIALLY_DELIVERED'].includes(s);
 
   return (
-    <div style={{ margin: '12px 0 16px' }}>
+    <div className="fv2-orderprogress-3019255e0e">
       <Steps
         size="small"
         current={Math.max(current, 0)}
@@ -94,7 +96,7 @@ export default function OrderProgress({ order, dispatches = [], due = 0 }) {
         responsive
       />
       {needs.length > 0 && (
-        <div style={{ marginTop: 10 }}>
+        <div className="fv2-orderprogress-65d00de9d7">
           <Text type="secondary">Before the next step: </Text>
           <Text>{needs.join(' ')}</Text>
         </div>

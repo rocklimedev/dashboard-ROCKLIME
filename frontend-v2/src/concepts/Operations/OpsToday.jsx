@@ -1,3 +1,4 @@
+import './OpsToday.styles.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, Col, Empty, List, Row, Skeleton, Space, Tag, Typography } from 'antd';
 import {
@@ -48,7 +49,7 @@ function Panel({ title, icon, to, count, children }) {
         <Space size={6}>
           {icon}
           <span>{title}</span>
-          {count != null && <Tag style={{ marginLeft: 2 }}>{count}</Tag>}
+          {count != null && <Tag className="fv2-opstoday-cd9e230692">{count}</Tag>}
         </Space>
       }
       extra={to && <Link to={to}>See all</Link>}
@@ -70,7 +71,7 @@ export default function OpsToday() {
       <div className="content">
         <div className="ops-head">
           <div>
-            <Title level={4} style={{ margin: 0 }}>
+            <Title className="fv2-opstoday-c4a645aa62" level={4}>
               Today in the godown
             </Title>
             <Text type="secondary">{dayjs().format('dddd, D MMMM')}</Text>
@@ -155,7 +156,10 @@ export default function OpsToday() {
                           <div>
                             <Text strong>#{o.orderNo}</Text> <Text>{o.customer || '—'}</Text>
                             <div>
-                              <Text type={o.late ? 'danger' : 'secondary'} style={{ fontSize: 12 }}>
+                              <Text
+                                className="fv2-opstoday-f223443d19"
+                                type={o.late ? 'danger' : 'secondary'}
+                              >
                                 {due(o.dueDate)}
                                 {o.priority === 'high' ? ' · high priority' : ''}
                                 {o.status === 'PARTIALLY_DISPATCHED' ? ' · part sent' : ''}
@@ -175,7 +179,7 @@ export default function OpsToday() {
               </Col>
 
               <Col xs={24} lg={12}>
-                <Space direction="vertical" size={14} style={{ width: '100%' }}>
+                <Space className="fv2-opstoday-845591578f" direction="vertical" size={14}>
                   <Panel
                     title="On the road"
                     icon={<FieldTimeOutlined />}
@@ -195,7 +199,7 @@ export default function OpsToday() {
                             <div>
                               <Text strong>#{d.orderNo}</Text> <Text>{d.customer || '—'}</Text>
                               <div>
-                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                <Text className="fv2-opstoday-f223443d19" type="secondary">
                                   {[
                                     d.vehicleNo,
                                     d.driverName,
@@ -241,8 +245,8 @@ export default function OpsToday() {
                               <Text strong>{p.poNumber}</Text> <Text>{p.vendor || '—'}</Text>
                               <div>
                                 <Text
+                                  className="fv2-opstoday-f223443d19"
                                   type={p.late ? 'danger' : 'secondary'}
-                                  style={{ fontSize: 12 }}
                                 >
                                   {p.expectDeliveryDate
                                     ? `expected ${dayjs(p.expectDeliveryDate).format('D MMM')}${p.late ? ' (late)' : ''}`
@@ -285,10 +289,10 @@ export default function OpsToday() {
                               </Text>
                             }
                           >
-                            <div style={{ minWidth: 0 }}>
+                            <div className="fv2-opstoday-e5babd18d1">
                               <Text>{x.product}</Text>
                               <div>
-                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                <Text className="fv2-opstoday-f223443d19" type="secondary">
                                   {[
                                     MOVEMENT_LABELS[x.movement] || x.movement,
                                     x.refNo,
@@ -312,7 +316,7 @@ export default function OpsToday() {
               </Col>
             </Row>
             {c.late > 0 && (
-              <Text type="danger" style={{ display: 'block', marginTop: 12 }}>
+              <Text className="fv2-opstoday-38c121de85" type="danger">
                 <WarningOutlined /> {c.late} order{c.late > 1 ? 's are' : ' is'} past the due date.
               </Text>
             )}

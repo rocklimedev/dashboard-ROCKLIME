@@ -1,9 +1,10 @@
+import ModalShell from '../Common/ModalShell';
 import React from 'react';
-import { Modal, Form, Input } from 'antd';
+import { Form, Input } from 'antd';
 
 export default function AddFloorModal({ visible, onCancel, onFinish, form }) {
   return (
-    <Modal
+    <ModalShell
       title="Add New Floor"
       open={visible}
       onOk={() => form.submit()}
@@ -19,6 +20,6 @@ export default function AddFloorModal({ visible, onCancel, onFinish, form }) {
           <Input placeholder="e.g. First Floor, Terrace, Basement" />
         </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }

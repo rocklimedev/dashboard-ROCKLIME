@@ -1,3 +1,4 @@
+import './MyDay.styles.css';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Badge,
@@ -42,6 +43,7 @@ const when = (d) => {
 function Panel({ title, icon, count, to, children, danger }) {
   return (
     <Card
+      className="fv2-myday-52421d1325"
       size="small"
       title={
         <span>
@@ -57,7 +59,7 @@ function Panel({ title, icon, count, to, children, danger }) {
         </span>
       }
       extra={to && <Link to={to}>See all</Link>}
-      style={{ height: '100%' }}
+
       styles={{ body: { padding: '4px 12px 8px' } }}
     >
       {children}
@@ -80,10 +82,10 @@ export default function MyDay() {
   const c = data.counts || {};
 
   return (
-    <div style={{ marginBottom: 24 }}>
+    <div className="fv2-myday-8a2053a76f">
       <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
         <div>
-          <Text strong style={{ fontSize: 16 }}>
+          <Text className="fv2-myday-57e3ac78da" strong>
             My day
           </Text>
           <Text type="secondary"> · {dayjs().format('dddd, D MMM')}</Text>
@@ -120,7 +122,8 @@ export default function MyDay() {
                 }}
                 renderItem={(q) => (
                   <List.Item
-                    style={{ cursor: 'pointer', padding: '6px 0' }}
+                    className="fv2-myday-33a404878a"
+
                     onClick={() => navigate(`/quotation/${q.quotationId}`)}
                     actions={
                       q.customerPhone
@@ -153,7 +156,7 @@ export default function MyDay() {
                 )}
               />
               {data.noFollowUp > 0 && (
-                <Text type="secondary" style={{ fontSize: 12 }}>
+                <Text className="fv2-myday-b2e2d3f9b6" type="secondary">
                   {data.noFollowUp} open quotation(s) have no follow-up date.
                 </Text>
               )}
@@ -170,10 +173,11 @@ export default function MyDay() {
             >
               {c.late > 0 && (
                 <Button
+                  className="fv2-myday-8016b41dc1"
                   type="link"
                   danger
                   size="small"
-                  style={{ padding: 0 }}
+
                   onClick={() => navigate('/orders/list?tab=LATE')}
                 >
                   <WarningOutlined /> {c.late} late order(s)
@@ -194,7 +198,8 @@ export default function MyDay() {
                   const late = o.dueDate && dayjs(o.dueDate).isBefore(dayjs(), 'day');
                   return (
                     <List.Item
-                      style={{ cursor: 'pointer', padding: '6px 0' }}
+                      className="fv2-myday-33a404878a"
+
                       onClick={() => navigate(`/order/${o.id}`)}
                     >
                       <List.Item.Meta
@@ -218,7 +223,7 @@ export default function MyDay() {
                 }}
               />
               {c.awaitingDelivery > 0 && (
-                <Text type="secondary" style={{ fontSize: 12 }}>
+                <Text className="fv2-myday-b2e2d3f9b6" type="secondary">
                   {c.awaitingDelivery} dispatched order(s) waiting for delivery confirmation.
                 </Text>
               )}
@@ -241,7 +246,8 @@ export default function MyDay() {
                     locale={{ emptyText: 'None in the next 3 days' }}
                     renderItem={(q) => (
                       <List.Item
-                        style={{ cursor: 'pointer', padding: '6px 0' }}
+                        className="fv2-myday-33a404878a"
+
                         onClick={() => navigate(`/quotation/${q.quotationId}`)}
                       >
                         <Text>
@@ -257,8 +263,8 @@ export default function MyDay() {
             {data.money && (
               <Col span={24}>
                 <Panel title="Money due" icon={<WalletOutlined />} to="/accounts">
-                  <div style={{ padding: '6px 0' }}>
-                    <Text strong style={{ fontSize: 18 }}>
+                  <div className="fv2-myday-231f7c5187">
+                    <Text className="fv2-myday-190ff2a207" strong>
                       {inr(data.money.due)}
                     </Text>
                     {data.money.over30 > 0 && (
@@ -278,8 +284,9 @@ export default function MyDay() {
                 <Panel title="CRM follow-ups" icon={<PhoneOutlined />} to="/crm/follow-ups">
                   {data.crmFollowUps.map((t) => (
                     <div
+                      className="fv2-myday-aa97a183c9"
                       key={t.id}
-                      style={{ padding: '4px 0', cursor: 'pointer' }}
+
                       onClick={() => navigate('/crm/follow-ups')}
                     >
                       {t.title} · {t.contactName || t.dealTitle}{' '}
@@ -297,8 +304,9 @@ export default function MyDay() {
                 <Panel title="Stock" icon={<InboxOutlined />} to="/inventory/list">
                   {(data.arriving || []).slice(0, 3).map((p) => (
                     <div
+                      className="fv2-myday-aa97a183c9"
                       key={p.id}
-                      style={{ padding: '4px 0', cursor: 'pointer' }}
+
                       onClick={() => navigate(`/po/${p.id}`)}
                     >
                       PO {p.poNumber} · {p.vendorName}{' '}
@@ -307,9 +315,10 @@ export default function MyDay() {
                   ))}
                   {data.lowStockNoIncoming > 0 && (
                     <Button
+                      className="fv2-myday-8016b41dc1"
                       type="link"
                       size="small"
-                      style={{ padding: 0 }}
+
                       onClick={() => navigate('/inventory/list')}
                     >
                       {data.lowStockNoIncoming} low-stock product(s) with nothing on order → view

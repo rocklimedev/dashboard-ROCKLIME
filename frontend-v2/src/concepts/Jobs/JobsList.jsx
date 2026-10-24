@@ -1,14 +1,15 @@
+import ListToolbar from '../../components/Common/ListToolbar';
+import ListPagination from '../../components/Common/ListPagination';
+import './JobsList.styles.css';
 import React, { useState } from 'react';
 import { EyeOutlined, DeleteOutlined, StopOutlined, MoreOutlined } from '@ant-design/icons';
 import { useGetAllJobsQuery, useCancelJobMutation, useDeleteJobMutation } from '../../api/jobsApi';
 
-import { Dropdown, Menu, Button, Pagination, Tooltip, message, Input, Select } from 'antd';
+import { Dropdown, Menu, Button, Tooltip } from 'antd';
+import { toast } from 'sonner';
 
 import PageHeader from '../../components/Common/PageHeader';
 import DeleteModal from '../../components/Common/DeleteModal';
-
-const { Search } = Input;
-const { Option } = Select;
 
 const JobList = () => {
   const [page, setPage] = useState(1);
@@ -30,25 +31,33 @@ const JobList = () => {
   const [deleteJob, { isLoading: isDeleting }] = useDeleteJobMutation();
 
   const jobs = data?.data || [];
+  // The jobs endpoint has no search parameter: search the visible page explicitly.
+  const filteredJobs = jobs.filter((job) =>
+    [job.id, job.type, job.status].some((value) =>
+      String(value ?? '')
+        .toLowerCase()
+        .includes(searchTerm.trim().toLowerCase()),
+    ),
+  );
   const pagination = data?.pagination || {};
 
   const handleCancel = async (id) => {
     try {
       await cancelJob(id).unwrap();
-      message.success('Job cancelled');
+      toast.success('Job cancelled');
       refetch();
     } catch {
-      message.error('Failed to cancel job');
+      toast.error('Failed to cancel job');
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteJob(deleteId).unwrap();
-      message.success('Job deleted');
+      toast.success('Job deleted');
       refetch();
     } catch {
-      message.error('Delete failed');
+      toast.error('Delete failed');
     } finally {
       setDeleteModal(false);
       setDeleteId(null);
@@ -73,8 +82,8 @@ const JobList = () => {
     const percent = totalRows > 0 ? Math.round((processedRows / totalRows) * 100) : 0;
 
     return (
-      <div style={{ minWidth: 120 }}>
-        <div className="progress" style={{ height: 6 }}>
+      <div className="fv2-jobslist-46ab9814a9">
+        <div className="progress fv2-jobslist-4c25c77547">
           <div className="progress-bar" style={{ width: `${percent}%` }} />
         </div>
         <small className="text-muted">
@@ -96,42 +105,68 @@ const JobList = () => {
 
           <div className="card-body">
             {/* Filters */}
-            <div className="row mb-4 align-items-center">
-              <div className="col-lg-6 d-flex gap-2 flex-wrap">
-                <Select
-                  placeholder="Status"
-                  allowClear
-                  style={{ width: 150 }}
-                  onChange={setStatusFilter}
-                >
-                  <Option value="pending">Pending</Option>
-                  <Option value="processing">Processing</Option>
-                  <Option value="completed">Completed</Option>
-                  <Option value="failed">Failed</Option>
-                  <Option value="cancelled">Cancelled</Option>
-                </Select>
-
-                <Select
-                  placeholder="Type"
-                  allowClear
-                  style={{ width: 180 }}
-                  onChange={setTypeFilter}
-                >
-                  <Option value="bulk-import">Bulk Import</Option>
-                  <Option value="report-generation">Report Generation</Option>
-                </Select>
-              </div>
-
-              <div className="col-lg-6 text-end">
-                <div style={{ maxWidth: 280, marginLeft: 'auto' }}>
-                  <Search
-                    placeholder="Search jobs..."
-                    allowClear
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
+            <ListToolbar
+              onClear={() => {
+                setSearchTerm('');
+                setStatusFilter(undefined);
+                setTypeFilter(undefined);
+                setPage(1);
+              }}
+              exportTitle={'Jobs'}
+              exportData={filteredJobs.map((j) => ({
+                ID: j.id,
+                Type: j.type,
+                Status: j.status,
+                Processed: j.progress?.processedRows,
+                Total: j.progress?.totalRows,
+                Created: j.createdAt,
+              }))}
+              search={{
+                placeholder: 'Search jobs on this page...',
+                value: searchTerm,
+                allowClear: true,
+                onChange: (e) => setSearchTerm(e.target.value),
+              }}
+              filters={[
+                {
+                  key: 'status',
+                  type: 'select',
+                  props: {
+                    placeholder: 'Status',
+                    allowClear: true,
+                    value: statusFilter,
+                    onChange: (value) => {
+                      setStatusFilter(value);
+                      setPage(1);
+                    },
+                    options: [
+                      { value: 'pending', label: 'Pending' },
+                      { value: 'processing', label: 'Processing' },
+                      { value: 'completed', label: 'Completed' },
+                      { value: 'failed', label: 'Failed' },
+                      { value: 'cancelled', label: 'Cancelled' },
+                    ],
+                  },
+                },
+                {
+                  key: 'type',
+                  type: 'select',
+                  props: {
+                    placeholder: 'Type',
+                    allowClear: true,
+                    value: typeFilter,
+                    onChange: (value) => {
+                      setTypeFilter(value);
+                      setPage(1);
+                    },
+                    options: [
+                      { value: 'bulk-import', label: 'Bulk Import' },
+                      { value: 'report-generation', label: 'Report Generation' },
+                    ],
+                  },
+                },
+              ]}
+            />
 
             {/* Table */}
             <div className="table-responsive">
@@ -143,12 +178,19 @@ const JobList = () => {
                     <th>Progress</th>
                     <th>Results</th>
                     <th>Created</th>
-                    <th style={{ width: 120 }}>Actions</th>
+                    <th className="fv2-jobslist-14b0d753c5">Actions</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {jobs.map((job) => {
+                  {!filteredJobs.length && !isFetching && (
+                    <tr>
+                      <td colSpan={6} className="text-center text-muted py-4">
+                        No jobs match this page.
+                      </td>
+                    </tr>
+                  )}
+                  {filteredJobs.map((job) => {
                     const menu = (
                       <Menu>
                         <Menu.Item onClick={() => window.open(`/job/${job.id}`, '_blank')}>
@@ -210,14 +252,15 @@ const JobList = () => {
             </div>
 
             {/* Pagination */}
-            <div className="d-flex justify-content-end mt-4">
-              <Pagination
-                current={pagination.page}
-                total={pagination.total}
-                pageSize={pagination.limit}
-                onChange={setPage}
-              />
-            </div>
+            <ListPagination
+              itemLabel="jobs"
+              showSummary={!searchTerm.trim()}
+              current={pagination.page ?? page}
+              total={pagination.total}
+              pageSize={pagination.limit ?? 10}
+              disabled={isFetching}
+              onChange={setPage}
+            />
           </div>
         </div>
 

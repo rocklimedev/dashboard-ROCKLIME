@@ -1,19 +1,11 @@
+import Loader from '../../components/Common/Loader';
+import ModalShell from '../../components/Common/ModalShell';
+import './AddFgs.styles.css';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeftOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
-import {
-  Form,
-  Input,
-  Select,
-  Button,
-  Modal,
-  Alert,
-  Table,
-  Spin,
-  Typography,
-  InputNumber,
-  message,
-} from 'antd';
+import { Form, Input, Select, Button, Alert, Table, Typography, InputNumber } from 'antd';
+import { toast } from 'sonner';
 import { debounce } from 'lodash';
 import moment from 'moment';
 import DatePicker from 'react-datepicker';
@@ -139,7 +131,7 @@ const AddFieldgeneratedSheet = () => {
     });
 
     if (!newValues.vendorId) {
-      message.warning('The vendor for this FGS no longer exists.');
+      toast.warning('The vendor for this FGS no longer exists.');
     }
   }, [fgsData, isEditMode, products, vendors, form]);
 
@@ -161,20 +153,14 @@ const AddFieldgeneratedSheet = () => {
       return {
         value: p.id || p.productId,
         label: (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              width: '100%',
-            }}
-          >
+          <div className="fv2-addfgs-ab735581eb">
             <div>
-              <div style={{ fontWeight: 500 }}>{p.name || p.product_code || 'Unnamed'}</div>
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <div className="fv2-addfgs-8778874c55">{p.name || p.product_code || 'Unnamed'}</div>
+              <Text className="fv2-addfgs-7bb1853a42" type="secondary">
                 {p.product_code || '—'}
               </Text>
             </div>
-            <Text strong style={{ color: '#52c41a' }}>
+            <Text className="fv2-addfgs-1ad04e293e" strong>
               ₹{price.toLocaleString('en-IN')}
             </Text>
           </div>
@@ -192,18 +178,18 @@ const AddFieldgeneratedSheet = () => {
       products.find((p) => (p.id || p.productId) === productId);
 
     if (!product) {
-      message.error('Product not found');
+      toast.error('Product not found');
       return;
     }
 
     if (formValues.items.some((i) => i.productId === productId)) {
-      message.warning('This product is already added');
+      toast.warning('This product is already added');
       return;
     }
 
     const unitPrice = getUnitPrice(product);
     if (unitPrice <= 0) {
-      message.error(`Product ${product.name} has no valid price`);
+      toast.error(`Product ${product.name} has no valid price`);
       return;
     }
 
@@ -256,19 +242,19 @@ const AddFieldgeneratedSheet = () => {
       await form.validateFields();
 
       if (formValues.items.length === 0) {
-        message.error('Add at least one product');
+        toast.error('Add at least one product');
         return;
       }
 
       if (formValues.items.some((i) => i.unitPrice <= 0)) {
-        message.error('All products must have a price > 0');
+        toast.error('All products must have a price > 0');
         return;
       }
 
       const currentUserId = profile?.user?.userId || 'nill';
 
       if (!currentUserId || currentUserId === 'nill') {
-        message.error('Cannot save: user profile not loaded. Please try again.');
+        toast.error('Cannot save: user profile not loaded. Please try again.');
         return;
       }
 
@@ -286,10 +272,10 @@ const AddFieldgeneratedSheet = () => {
 
       if (isEditMode) {
         await updateFGS({ id, ...payload }).unwrap();
-        message.success('Field Guided Sheet updated');
+        toast.success('Field Guided Sheet updated');
       } else {
         await createFGS(payload).unwrap();
-        message.success('Field Guided Sheet created');
+        toast.success('Field Guided Sheet created');
 
         setFormValues({
           vendorId: '',
@@ -303,11 +289,11 @@ const AddFieldgeneratedSheet = () => {
 
       navigate('/purchase-manager?fgs=1');
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save Field Guided Sheet');
+      toast.error(err?.data?.message || 'Failed to save Field Guided Sheet');
     }
   };
 
-  if (isLoadingFGS) return <Spin tip="Loading Field generated Sheet..." />;
+  if (isLoadingFGS) return <Loader tip="Loading Field generated Sheet..." />;
   if (fgsError) {
     return (
       <Alert
@@ -373,7 +359,7 @@ const AddFieldgeneratedSheet = () => {
           />
 
           <div className="card-body">
-            <div style={{ marginBottom: 24, display: 'flex', gap: 12 }}>
+            <div className="fv2-addfgs-deb2dc16ca">
               <Link to="/purchase-manager?fgs=1">
                 <Button icon={<ArrowLeftOutlined />}>Back</Button>
               </Link>
@@ -381,9 +367,10 @@ const AddFieldgeneratedSheet = () => {
             </div>
 
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div className="fv2-addfgs-6c46932c3a">
                 {/* Vendor */}
                 <Form.Item
+                  className="fv2-addfgs-13b82856ed"
                   label={
                     <>
                       Vendor <span className="required-star">*</span>
@@ -391,11 +378,11 @@ const AddFieldgeneratedSheet = () => {
                   }
                   name="vendorId"
                   rules={[{ required: true, message: 'Vendor is required' }]}
-                  style={{ flex: 1, minWidth: 300 }}
                 >
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="fv2-addfgs-5ec8c5f780">
                     <Select
-                      style={{ flex: 1 }}
+                      className="fv2-addfgs-d67026ff64"
+
                       placeholder="Select vendor"
                       value={formValues.vendorId}
                       onChange={(v) => {
@@ -419,6 +406,7 @@ const AddFieldgeneratedSheet = () => {
 
                 {/* Order Date - restricted to today and future */}
                 <Form.Item
+                  className="fv2-addfgs-3fc50f09ad"
                   label={
                     <>
                       Order Date <span className="required-star">*</span>
@@ -426,7 +414,6 @@ const AddFieldgeneratedSheet = () => {
                   }
                   name="orderDate"
                   rules={[{ required: true, message: 'Order date is required' }]}
-                  style={{ flex: 1, minWidth: 220 }}
                 >
                   <DatePicker
                     selected={formValues.orderDate?.toDate()}
@@ -447,9 +434,9 @@ const AddFieldgeneratedSheet = () => {
                 </Form.Item>
               </div>
 
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div className="fv2-addfgs-6c46932c3a">
                 {/* Expected Delivery */}
-                <Form.Item label="Expected Delivery" style={{ flex: 1, minWidth: 220 }}>
+                <Form.Item className="fv2-addfgs-3fc50f09ad" label="Expected Delivery">
                   <DatePicker
                     selected={formValues.expectDeliveryDate?.toDate()}
                     onChange={(date) =>
@@ -466,7 +453,7 @@ const AddFieldgeneratedSheet = () => {
                 </Form.Item>
 
                 {/* Status */}
-                <Form.Item label="Status" name="status" style={{ flex: 1, minWidth: 180 }}>
+                <Form.Item className="fv2-addfgs-27f4be6f63" label="Status" name="status">
                   <Select
                     disabled={!isEditMode}
                     value={formValues.status}
@@ -482,11 +469,12 @@ const AddFieldgeneratedSheet = () => {
               </div>
 
               {/* Product Search + Add */}
-              <div style={{ margin: '32px 0 16px' }}>
+              <div className="fv2-addfgs-a8256f582a">
                 <Select
+                  className="fv2-addfgs-83d4904e33"
                   showSearch
                   size="large"
-                  style={{ width: '100%' }}
+
                   placeholder="Search product by name or code..."
                   prefix={<SearchOutlined />}
                   value={null}
@@ -495,7 +483,13 @@ const AddFieldgeneratedSheet = () => {
                   filterOption={false}
                   options={searchOptions}
                   notFoundContent={
-                    isSearching ? <Spin /> : searchTerm ? 'No products found' : 'Type to search...'
+                    isSearching ? (
+                      <Loader />
+                    ) : searchTerm ? (
+                      'No products found'
+                    ) : (
+                      'Type to search...'
+                    )
                   }
                   dropdownStyle={{ maxHeight: 420 }}
                 />
@@ -511,17 +505,18 @@ const AddFieldgeneratedSheet = () => {
               />
 
               {/* Total */}
-              <div style={{ marginTop: 16, textAlign: 'right' }}>
+              <div className="fv2-addfgs-44465858f0">
                 <Text strong>Total Amount: </Text>
-                <Text strong style={{ fontSize: 18 }}>
+                <Text className="fv2-addfgs-397e7815b4" strong>
                   ₹{totalAmount}
                 </Text>
               </div>
 
               {/* Actions */}
-              <div style={{ marginTop: 32, textAlign: 'right' }}>
+              <div className="fv2-addfgs-71cca6d998">
                 <Button
-                  style={{ marginRight: 12 }}
+                  className="fv2-addfgs-e79de06603"
+
                   onClick={() => navigate('/purchase-manager?fgs=1')}
                   disabled={creating || updating}
                 >
@@ -544,7 +539,7 @@ const AddFieldgeneratedSheet = () => {
         isCreatingVendor={creatingVendor}
       />
 
-      <Modal
+      <ModalShell
         title="Clear Form?"
         open={showClearConfirm}
         onOk={() => {
@@ -563,7 +558,7 @@ const AddFieldgeneratedSheet = () => {
         cancelText="Cancel"
       >
         <p>All entered data will be lost. Are you sure?</p>
-      </Modal>
+      </ModalShell>
     </div>
   );
 };

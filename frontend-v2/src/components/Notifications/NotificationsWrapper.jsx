@@ -1,8 +1,9 @@
+import './NotificationsWrapper.styles.css';
 // src/components/notifications/NotificationsOverlay.jsx  (or wherever you keep it)
 
 import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import { io } from 'socket.io-client';
 import { formatDistanceToNow, parseISO, differenceInSeconds } from 'date-fns';
 import { API_URL } from '../../store/config';
@@ -77,25 +78,25 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
     try {
       await markNotificationAsRead(id).unwrap();
     } catch {
-      message.error('Failed to mark as read');
+      toast.error('Failed to mark as read');
     }
   };
 
   const handleDelete = async (id) => {
     try {
       await deleteNotification(id).unwrap();
-      message.success('Deleted');
+      toast.success('Deleted');
     } catch {
-      message.error('Failed to delete');
+      toast.error('Failed to delete');
     }
   };
 
   const handleClearAll = async () => {
     try {
       await clearAllNotifications().unwrap();
-      message.success('All cleared');
+      toast.success('All cleared');
     } catch {
-      message.error('Failed to clear');
+      toast.error('Failed to clear');
     }
   };
 
@@ -126,47 +127,21 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
     <>
       {/* Backdrop */}
       <div
-        className="position-fixed top-0 start-0 w-100 h-100"
-        style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 1040,
-        }}
+        className="position-fixed top-0 start-0 w-100 h-100 fv2-notificationswrapper-3c90fe8978"
+
         onClick={onClose}
       />
 
       {/* Notification Panel */}
       <div
         ref={overlayRef}
-        className="position-fixed bg-white shadow-lg d-flex flex-column"
+        className="position-fixed bg-white shadow-lg d-flex flex-column fv2-notificationswrapper-36cddb7f4f"
         style={{
-          top: 0,
-          bottom: 0,
-          right: 0,
-          width: '420px',
-          maxWidth: '100%',
-          zIndex: 1050,
-          borderTopLeftRadius: '12px',
-          borderBottomLeftRadius: '12px',
           transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
+          '--notification-mobile-transform': isOpen ? 'translateY(0)' : 'translateY(100%)',
         }}
       >
         {/* Mobile bottom sheet style override */}
-        <style jsx>{`
-          @media (max-width: 767.98px) {
-            div[ref='overlayRef'] {
-              top: auto;
-              bottom: 0;
-              left: 0;
-              right: 0;
-              width: 100%;
-              height: 90vh;
-              border-radius: 16px 16px 0 0;
-              transform: ${isOpen ? 'translateY(0)' : 'translateY(100%)'} !important;
-              transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-            }
-          }
-        `}</style>
 
         {/* Header */}
         <div className="border-bottom px-4 py-3 d-flex justify-content-between align-items-center">

@@ -1,5 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './AddVendorModal.styles.css';
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Button, Alert, message } from 'antd';
+import { Form, Input, Select, Alert } from 'antd';
+import { toast } from 'sonner';
 import { useCheckVendorIdQuery, useCreateVendorMutation } from '../../api/vendorApi'; // Your vendor API hooks
 import { useSendNotificationMutation } from '../../api/notificationApi';
 import { useGetAllBrandsQuery } from '../../api/brandsApi';
@@ -76,7 +79,7 @@ const AddVendorModal = ({ show, onClose }) => {
       await form.validateFields();
 
       if (vendorIdError || isVendorIdUnique === false) {
-        message.error('Please fix the Vendor ID error before submitting.');
+        toast.error('Please fix the Vendor ID error before submitting.');
         return;
       }
 
@@ -105,18 +108,32 @@ const AddVendorModal = ({ show, onClose }) => {
       });
       form.resetFields();
       onClose();
-      message.success('Vendor created successfully!');
+      toast.success('Vendor created successfully!');
     } catch (err) {
       const errorMessage =
         err.status === 400 && err.data?.message.includes('vendorId')
           ? 'Vendor ID already exists. Please use a unique ID.'
           : err.data?.message || 'Failed to create vendor';
-      message.error(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
   return (
-    <Modal title="Add New Vendor" open={show} onCancel={onClose} footer={null} centered>
+    <ModalShell
+      title="Add New Vendor"
+      open={show}
+      onCancel={onClose}
+      onOk={() => form.submit()}
+      okText={<>Save Vendor</>}
+      onCancelButton={onClose}
+      confirmLoading={isCreating}
+      okButtonProps={{ disabled: isCreating || isBrandsLoading || vendorIdError }}
+      cancelButtonProps={{
+        className: 'fv2-addvendormodal-18183f3181',
+        disabled: isCreating || isBrandsLoading,
+      }}
+      centered
+    >
       <Form form={form} onFinish={handleSubmit} layout="vertical">
         {brandsError && (
           <Alert
@@ -142,7 +159,7 @@ const AddVendorModal = ({ show, onClose }) => {
             placeholder="e.g., VEND123 (optional)"
           />
         </Form.Item>
-        <div style={{ color: '#8c8c8c', fontSize: '12px', marginBottom: '16px' }}>
+        <div className="fv2-addvendormodal-fa37dcc86a">
           Must be unique if provided (e.g., VEND123).
         </div>
 
@@ -161,7 +178,8 @@ const AddVendorModal = ({ show, onClose }) => {
 
         <Form.Item label="Brand" name="brandId">
           <Select
-            style={{ width: '100%' }}
+            className="fv2-addvendormodal-57a6721a26"
+
             value={vendorData.brandId || undefined}
             onChange={handleBrandChange}
             placeholder={isBrandsLoading ? 'Loading brands...' : 'Select a brand'}
@@ -174,26 +192,8 @@ const AddVendorModal = ({ show, onClose }) => {
             }))}
           />
         </Form.Item>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            onClick={onClose}
-            disabled={isCreating || isBrandsLoading}
-            style={{ marginRight: '10px' }}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="primary"
-            htmlType="submit"
-            disabled={isCreating || isBrandsLoading || vendorIdError}
-            loading={isCreating}
-          >
-            Save Vendor
-          </Button>
-        </div>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

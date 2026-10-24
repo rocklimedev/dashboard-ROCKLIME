@@ -1,3 +1,5 @@
+import Loader from '../Common/Loader';
+import './QuotationProductSheet.styles.css';
 import { lineAmounts } from '../../utils/quotationMath';
 // src/components/Quotation/QuotationProductSheet.jsx
 //
@@ -17,20 +19,8 @@ import { lineAmounts } from '../../utils/quotationMath';
 //     parent via onDeleteFloor / onDeleteRoom).
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import {
-  Tabs,
-  Input,
-  InputNumber,
-  Select,
-  Button,
-  Spin,
-  Typography,
-  Space,
-  Tooltip,
-  Alert,
-  message,
-  Image,
-} from 'antd';
+import { Tabs, Input, InputNumber, Select, Button, Typography, Space, Tooltip, Alert, Image } from 'antd';
+import { toast } from 'sonner';
 import {
   DeleteOutlined,
   EditOutlined,
@@ -92,14 +82,15 @@ function TabLabel({ text, onEdit, onDelete }) {
   };
 
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+    <span className="fv2-quotationproductsheet-0efdaa01bf">
       {text}
       <Tooltip title="Rename">
-        <EditOutlined style={{ fontSize: 12, cursor: 'pointer' }} onClick={handle(onEdit)} />
+        <EditOutlined className="fv2-quotationproductsheet-2e0996d2d9" onClick={handle(onEdit)} />
       </Tooltip>
       <Tooltip title="Delete">
         <DeleteOutlined
-          style={{ fontSize: 12, color: '#ff4d4f', cursor: 'pointer' }}
+          className="fv2-quotationproductsheet-cc5cfcaf91"
+
           onClick={handle(onDelete)}
         />
       </Tooltip>
@@ -115,7 +106,7 @@ function CatalogItem({ product, price, onAdd, alreadyAdded }) {
       <span className="qs-catalog-name">
         {product.name}
         {code && (
-          <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
+          <Text className="fv2-quotationproductsheet-2cb7ca63f8" type="secondary">
             {code}
           </Text>
         )}
@@ -230,7 +221,7 @@ function ProductRow({
       className={`qs-row${product.isOptionFor ? ' qs-option-row' : ''}`}
     >
       {dragEnabled && (
-        <td className="qs-cell qs-sno-cell" style={{ width: 40 }}>
+        <td className="qs-cell qs-sno-cell fv2-quotationproductsheet-df00efa5d6">
           <div {...attributes} {...listeners} style={SNO_HANDLE_STYLE} title="Drag to reorder">
             {serialNumber ?? '–'}
           </div>
@@ -240,11 +231,11 @@ function ProductRow({
       <td className="qs-cell">
         {productImage(product) ? (
           <Image
+            className="fv2-quotationproductsheet-614b82d889"
             src={productImage(product)}
             alt={product.name}
             width={48}
             height={48}
-            style={{ objectFit: 'contain' }}
           />
         ) : (
           <Text type="secondary">—</Text>
@@ -254,7 +245,7 @@ function ProductRow({
         {product.isOptionFor && <span className="qs-option-arrow">↳ </span>}
         {product.name}
         {hasMultipleLocations && (
-          <Text type="secondary" style={{ fontSize: 11, marginLeft: 6 }}>
+          <Text className="fv2-quotationproductsheet-8e51cc71e3" type="secondary">
             (split)
           </Text>
         )}
@@ -275,6 +266,7 @@ function ProductRow({
       <td className="qs-cell">
         <Space.Compact>
           <InputNumber
+            className="fv2-quotationproductsheet-a66291620a"
             size="small"
             min={0}
             value={product.discount}
@@ -283,9 +275,9 @@ function ProductRow({
                 discount: v,
               })
             }
-            style={{ width: 70 }}
           />
           <Select
+            className="fv2-quotationproductsheet-2ed18c2afc"
             size="small"
             value={product.discountType}
             onChange={(v) =>
@@ -293,7 +285,6 @@ function ProductRow({
                 discountType: v,
               })
             }
-            style={{ width: 56 }}
           >
             <Option value="fixed">₹</Option>
             <Option value="percent">%</Option>
@@ -303,15 +294,16 @@ function ProductRow({
           ['additionalDiscount', 'Additional discount / unit ₹'],
           ['flatPrice', 'Flat price / unit ₹'],
         ].map(([field, label]) => (
-          <div key={field} style={{ marginTop: 6 }}>
-            <label style={{ fontSize: 11 }}>{label}</label>
+          <div className="fv2-quotationproductsheet-66320b3253" key={field}>
+            <label className="fv2-quotationproductsheet-9eff771cb8">{label}</label>
             <InputNumber
+              className="fv2-quotationproductsheet-77fad1958e"
               size="small"
               min={0}
               precision={2}
               value={product[field]}
               placeholder={field === 'flatPrice' ? 'Optional' : '0'}
-              style={{ width: '100%' }}
+
               aria-label={label}
               onChange={(value) =>
                 onChangeSectionQty(product.productId, null, null, { [field]: value })
@@ -324,10 +316,11 @@ function ProductRow({
       <td className="qs-cell qs-location-cell">
         <Space.Compact className="qs-location-selects">
           <Select
+            className="fv2-quotationproductsheet-fa9259d0b4"
             size="small"
             placeholder="Floor"
             value={pendingFloorId}
-            style={{ width: 110 }}
+
             allowClear
             onChange={handleFloorChange}
           >
@@ -338,10 +331,11 @@ function ProductRow({
             ))}
           </Select>
           <Select
+            className="fv2-quotationproductsheet-fa9259d0b4"
             size="small"
             placeholder="Room"
             value={product.roomId || undefined}
-            style={{ width: 110 }}
+
             allowClear
             disabled={!pendingFloorId}
             onChange={handleRoomChange}
@@ -355,7 +349,7 @@ function ProductRow({
         </Space.Compact>
 
         {!isFullyAssigned && (
-          <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 2 }}>
+          <Text className="fv2-quotationproductsheet-a1ff7e3d33" type="secondary">
             Pick both a floor and a room to assign
           </Text>
         )}
@@ -467,16 +461,16 @@ function SheetSection({
             <table className="qs-table">
               <thead>
                 <tr>
-                  <th style={{ width: 40 }}>S.No.</th>
-                  <th style={{ width: 72 }}>Image</th>
+                  <th className="fv2-quotationproductsheet-df00efa5d6">S.No.</th>
+                  <th className="fv2-quotationproductsheet-e63f5dbcff">Image</th>
                   <th>Product</th>
-                  <th style={{ width: 130 }}>Code</th>
-                  <th style={{ width: 90 }}>Qty</th>
-                  <th style={{ width: 100 }}>Price</th>
-                  <th style={{ width: 160 }}>Discount</th>
-                  <th style={{ width: 240 }}>Location</th>
-                  <th style={{ width: 110 }}>Total</th>
-                  <th style={{ width: 100 }} />
+                  <th className="fv2-quotationproductsheet-3b450b0d5e">Code</th>
+                  <th className="fv2-quotationproductsheet-66fa7bcae1">Qty</th>
+                  <th className="fv2-quotationproductsheet-17b19330ea">Price</th>
+                  <th className="fv2-quotationproductsheet-92f3162422">Discount</th>
+                  <th className="fv2-quotationproductsheet-290858a7fd">Location</th>
+                  <th className="fv2-quotationproductsheet-fa9259d0b4">Total</th>
+                  <th className="fv2-quotationproductsheet-17b19330ea" />
                 </tr>
               </thead>
               <tbody>
@@ -781,7 +775,7 @@ export default function QuotationProductSheet({
 
       const currentQty = Number(locs[idx].assignedQuantity) || 0;
       if (currentQty < 2) {
-        message.warning('Need at least 2 quantity to split');
+        toast.warning('Need at least 2 quantity to split');
         return prev;
       }
 
@@ -814,7 +808,7 @@ export default function QuotationProductSheet({
         qty: total,
       });
 
-      message.success('Split 1 qty → Unassigned. Assign it to a floor + room.');
+      toast.success('Split 1 qty → Unassigned. Assign it to a floor + room.');
       return { ...prev, products: updated };
     });
   }, []);
@@ -1007,7 +1001,7 @@ export default function QuotationProductSheet({
             />
           ),
           children: (
-            <div style={{ padding: 12 }}>
+            <div className="fv2-quotationproductsheet-7578ce9763">
               <Alert
                 message="Add a room to this floor before assigning items"
                 type="info"
@@ -1106,7 +1100,7 @@ export default function QuotationProductSheet({
         )}
         <div className="qs-catalog-list-horizontal">
           {isSearching ? (
-            <Spin size="small" style={{ margin: '0 16px' }} />
+            <Loader className="fv2-quotationproductsheet-fdc34dabd4" size="small" />
           ) : searchResult.length === 0 ? (
             <Text type="secondary" className="qs-catalog-empty-hint">
               {searchTerm ? 'No products found' : 'Type to search the catalog'}

@@ -1,0 +1,80 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-customerdetails-46bb660607) {
+  margin-bottom: 10px;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-f6cc28e577) {
+  text-align: right;
+  margin-bottom: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-0f8bff5dc7) {
+  font-size: var(--fv2-font-28px);
+  color: var(--fv2-color-1890ff);
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-908b2e3f7b) {
+  margin: 48px;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-f4d05c6fe6) {
+  padding: 24px;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-e60d7cbdad) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-e922cba75f) {
+  background-color: var(--fv2-color-1890ff);
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-25d885354f) {
+  margin: 0;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-f2c0faf6ba) {
+  margin-bottom: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-85c545b001) {
+  margin-bottom: 24px;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-dbe96dbb5b) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-2ab77978c3) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-fb9afa7ac9) {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-2527a7bc9e) {
+  white-space: pre-wrap;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-2c66b23ebc) {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-9dd6610412) {
+  border-top: 1px solid var(--fv2-color-f0f0f0);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-customerdetails-3d9f63e629) {
+  margin-right: 8px;
+  color: var(--fv2-color-1890ff);
+}

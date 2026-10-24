@@ -13,10 +13,10 @@
   flex-direction: column;
   gap: 8px;
   width: 100%;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--fv2-color-e5e5e5);
   border-radius: 8px;
   padding: 10px 12px;
-  background: #fafafa;
+  background: var(--fv2-color-fafafa);
 }
 
 .qs-catalog-search {
@@ -24,10 +24,10 @@
 }
 
 .qs-catalog-list-label {
-  font-size: 11px;
+  font-size: var(--fv2-font-11px);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #999;
+  color: var(--fv2-color-999);
 }
 
 .qs-catalog-list-horizontal {
@@ -43,12 +43,12 @@
   height: 6px;
 }
 .qs-catalog-list-horizontal::-webkit-scrollbar-thumb {
-  background: #ddd;
+  background: var(--fv2-color-ddd);
   border-radius: 3px;
 }
 
 .qs-catalog-empty-hint {
-  font-size: 13px;
+  font-size: var(--fv2-font-13px);
   white-space: nowrap;
   padding: 0 8px;
 }
@@ -58,10 +58,10 @@
   align-items: center;
   gap: 6px;
   padding: 5px 6px 5px 10px;
-  background: #fff;
-  border: 1px solid #e8e8e8;
+  background: var(--fv2-color-fff);
+  border: 1px solid var(--fv2-color-e8e8e8);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--fv2-font-13px);
   flex-shrink: 0;
   max-width: 260px;
 }
@@ -71,8 +71,8 @@
   white-space: nowrap;
 }
 .qs-catalog-price {
-  color: #888;
-  font-size: 12px;
+  color: var(--fv2-color-888);
+  font-size: var(--fv2-font-12px);
   flex-shrink: 0;
 }
 
@@ -85,11 +85,11 @@
    Selectors are unqualified by tab "type" so this covers both. */
 .qs-workbook-body .ant-tabs-nav .ant-tabs-tab {
   border-radius: 6px 6px 0 0;
-  background: #f0f0f0;
+  background: var(--fv2-color-f0f0f0);
 }
 .qs-workbook-body .ant-tabs-nav .ant-tabs-tab-active {
-  background: #fff;
-  border-bottom-color: #fff;
+  background: var(--fv2-color-fff);
+  border-bottom-color: var(--fv2-color-fff);
   font-weight: 600;
 }
 
@@ -97,14 +97,14 @@
 .qs-workbook-body .ant-tabs-nav-add,
 .qs-room-tabs .ant-tabs-nav-add {
   border-radius: 6px !important;
-  color: #1677ff !important;
+  color: var(--fv2-color-1677ff) !important;
   font-weight: 600;
 }
 .qs-workbook-body .ant-tabs-nav-add:hover,
 .qs-room-tabs .ant-tabs-nav-add:hover {
-  color: #fff !important;
-  background: #1677ff !important;
-  border-color: #1677ff !important;
+  color: var(--fv2-color-fff) !important;
+  background: var(--fv2-color-1677ff) !important;
+  border-color: var(--fv2-color-1677ff) !important;
 }
 
 .qs-floor-sheet {
@@ -119,23 +119,23 @@
 }
 .qs-room-tabs .ant-tabs-nav .ant-tabs-tab {
   border-radius: 5px 5px 0 0;
-  background: #f5f7fa;
-  font-size: 12.5px;
+  background: var(--fv2-color-f5f7fa);
+  font-size: var(--fv2-font-12_5px);
   padding: 5px 12px;
 }
 .qs-room-tabs .ant-tabs-nav .ant-tabs-tab-active {
-  background: #fff;
-  border-bottom-color: #fff;
+  background: var(--fv2-color-fff);
+  border-bottom-color: var(--fv2-color-fff);
   font-weight: 600;
-  border-color: #d9d9d9;
+  border-color: var(--fv2-color-d9d9d9);
 }
 .qs-room-tabs .ant-tabs-nav::before {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--fv2-color-eee);
 }
 
 /* ── Room / floor section (a "block" within the sheet) ─────────── */
 .qs-section {
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--fv2-color-e5e5e5);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -145,23 +145,23 @@
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: #fafafa;
-  border-bottom: 1px solid #f0f0f0;
+  background: var(--fv2-color-fafafa);
+  border-bottom: 1px solid var(--fv2-color-f0f0f0);
 }
 .qs-section-subtitle {
-  font-size: 12px;
+  font-size: var(--fv2-font-12px);
 }
 .qs-section-summary {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--fv2-font-12px);
 }
 
 .qs-section-empty {
   padding: 18px;
   text-align: center;
-  color: #bbb;
-  font-size: 13px;
-  border: 1px dashed #e0e0e0;
+  color: var(--fv2-color-bbb);
+  font-size: var(--fv2-font-13px);
+  border: 1px dashed var(--fv2-color-e0e0e0);
   margin: 8px;
   border-radius: 6px;
 }
@@ -170,44 +170,44 @@
 .qs-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--fv2-font-13px);
 }
 .qs-table thead th {
   text-align: left;
   padding: 6px 8px;
-  background: #f5f5f5;
-  border-bottom: 1px solid #e5e5e5;
-  border-right: 1px solid #eee;
+  background: var(--fv2-color-f5f5f5);
+  border-bottom: 1px solid var(--fv2-color-e5e5e5);
+  border-right: 1px solid var(--fv2-color-eee);
   font-weight: 600;
-  color: #555;
+  color: var(--fv2-color-555);
 }
 .qs-table thead th:last-child {
   border-right: none;
 }
 
 .qs-row {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--fv2-color-f0f0f0);
 }
 .qs-row:hover {
-  background: #f6faff;
+  background: var(--fv2-color-f6faff);
 }
 .qs-option-row {
-  background: #fbfbfb;
+  background: var(--fv2-color-fbfbfb);
 }
 .qs-option-arrow {
-  color: #1677ff;
+  color: var(--fv2-color-1677ff);
 }
 
 .qs-cell {
   padding: 4px 8px;
-  border-right: 1px solid #f0f0f0;
+  border-right: 1px solid var(--fv2-color-f0f0f0);
   vertical-align: middle;
 }
 .qs-cell:last-child {
   border-right: none;
 }
 .qs-readonly {
-  color: #555;
+  color: var(--fv2-color-555);
 }
 .qs-total-cell {
   font-weight: 600;

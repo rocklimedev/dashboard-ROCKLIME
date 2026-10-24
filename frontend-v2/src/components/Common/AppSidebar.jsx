@@ -1,3 +1,4 @@
+import './AppSidebar.styles.css';
 import { useEffect, useMemo } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { ChevronsLeft } from 'react-feather';
@@ -91,7 +92,7 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
         </a>
       </div>
 
-      <div className="sidebar-inner slimscroll flex-grow-1" style={{ overflowY: 'auto' }}>
+      <div className="sidebar-inner slimscroll flex-grow-1 fv2-appsidebar-933b13b3fc">
         <Link to="/" className="cm-app-sidebar__back" title="All apps">
           <ArrowLeftOutlined /> <span>All apps</span>
         </Link>
@@ -122,7 +123,9 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
               apps.map((app) => (
                 <li key={app.key}>
                   <Link to={app.home}>
-                    <span style={{ color: app.color, display: 'inline-flex' }}>{app.icon}</span>
+                    <span className="fv2-appsidebar-227a45c3db" style={{ color: app.color }}>
+                      {app.icon}
+                    </span>
                     <span>{app.name}</span>
                   </Link>
                 </li>

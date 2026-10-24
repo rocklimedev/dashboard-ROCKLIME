@@ -1,0 +1,10 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-addparentcategorymodal-e21b1b2b9c) {
+  margin-bottom: 0;
+}
+
+:is(#fv2-style-priority, .fv2-addparentcategorymodal-7ca385d3a2) {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

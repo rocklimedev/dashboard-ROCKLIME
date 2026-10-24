@@ -1,10 +1,11 @@
+import Loader from '../../components/Common/Loader';
+import './page.styles.css';
 import React, { useState, useMemo } from 'react';
 import {
   Button,
   Tag,
   Empty,
   Pagination,
-  Spin,
   Select,
   Input,
   DatePicker,
@@ -178,16 +179,13 @@ const ActivityLogsPage = () => {
       width: 180,
       render: (_, row) => (
         <div>
-          <Text style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+          <Text className="fv2-page-dcf06b452c">
             {row.dateLabel}
             <br />
-            <span style={{ color: '#999' }}>{row.time}</span>
+            <span className="fv2-page-e724ccdf75">{row.time}</span>
           </Text>
           <br />
-          <Text
-            copyable={!!row.ipAddress}
-            style={{ fontSize: 11, fontFamily: 'monospace', color: '#666' }}
-          >
+          <Text className="fv2-page-1035bf5593" copyable={!!row.ipAddress}>
             {row.ipAddress || '—'}
           </Text>
         </div>
@@ -199,10 +197,10 @@ const ActivityLogsPage = () => {
       width: 150,
       render: (_, row) => (
         <div>
-          <Text strong style={{ fontSize: 13, display: 'block' }}>
+          <Text className="fv2-page-2d55ff248d" strong>
             {row.userName}
           </Text>
-          <Text type="secondary" style={{ fontSize: 11 }}>
+          <Text className="fv2-page-8372fb8da4" type="secondary">
             {row.userEmail || ''}
           </Text>
         </div>
@@ -243,13 +241,13 @@ const ActivityLogsPage = () => {
           }
         >
           <div>
-            <Text strong style={{ fontSize: 13 }}>
+            <Text className="fv2-page-1b531b5b63" strong>
               {record.entityName || '—'}
             </Text>
             {record.description && (
               <>
                 <br />
-                <Text type="secondary" style={{ fontSize: 12 }}>
+                <Text className="fv2-page-29131215bd" type="secondary">
                   {record.description}
                 </Text>
               </>
@@ -279,7 +277,7 @@ const ActivityLogsPage = () => {
             <Row gutter={[10, 10]} align="middle">
               <Col xs={24} sm={24} md={6}>
                 <Input
-                  prefix={<SearchOutlined style={{ color: '#bbb' }} />}
+                  prefix={<SearchOutlined className="fv2-page-6b54ec7bda" />}
                   placeholder="Search description, entity, IP…"
                   value={filters.search}
                   onChange={(e) => setFilter('search', e.target.value)}
@@ -288,7 +286,8 @@ const ActivityLogsPage = () => {
               </Col>
               <Col xs={12} sm={8} md={3}>
                 <Select
-                  style={{ width: '100%' }}
+                  className="fv2-page-80aad87194"
+
                   placeholder="Context"
                   value={filters.contextTag}
                   onChange={(v) => setFilter('contextTag', v)}
@@ -298,7 +297,8 @@ const ActivityLogsPage = () => {
               </Col>
               <Col xs={12} sm={8} md={3}>
                 <Select
-                  style={{ width: '100%' }}
+                  className="fv2-page-80aad87194"
+
                   placeholder="Sub-context"
                   value={filters.subContext}
                   onChange={(v) => setFilter('subContext', v)}
@@ -308,7 +308,8 @@ const ActivityLogsPage = () => {
               </Col>
               <Col xs={12} sm={8} md={4}>
                 <Select
-                  style={{ width: '100%' }}
+                  className="fv2-page-80aad87194"
+
                   placeholder="Action"
                   value={filters.action}
                   onChange={(v) => setFilter('action', v)}
@@ -319,7 +320,8 @@ const ActivityLogsPage = () => {
               </Col>
               <Col xs={12} sm={8} md={3}>
                 <Select
-                  style={{ width: '100%' }}
+                  className="fv2-page-80aad87194"
+
                   placeholder="User"
                   value={filters.user}
                   onChange={(v) => setFilter('user', v)}
@@ -329,7 +331,8 @@ const ActivityLogsPage = () => {
               </Col>
               <Col xs={12} sm={8} md={2}>
                 <Select
-                  style={{ width: '100%' }}
+                  className="fv2-page-80aad87194"
+
                   placeholder="Severity"
                   value={filters.severity}
                   onChange={(v) => setFilter('severity', v)}
@@ -344,30 +347,27 @@ const ActivityLogsPage = () => {
               </Col>
               <Col xs={24} sm={16} md={5}>
                 <RangePicker
-                  style={{ width: '100%' }}
+                  className="fv2-page-80aad87194"
+
                   value={filters.dateRange}
                   onChange={(v) => setFilter('dateRange', v)}
                   format="DD/MM/YYYY"
                 />
               </Col>
               <Col xs={24} sm={8} md={2}>
-                <Button icon={<ReloadOutlined />} onClick={resetFilters} style={{ width: '100%' }}>
+                <Button
+                  className="fv2-page-80aad87194"
+                  icon={<ReloadOutlined />}
+                  onClick={resetFilters}
+                >
                   Reset
                 </Button>
               </Col>
             </Row>
 
             {/* ── Active filter chips ────────── */}
-            <div
-              style={{
-                marginTop: 10,
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 6,
-                alignItems: 'center',
-              }}
-            >
-              <Text type="secondary" style={{ fontSize: 12 }}>
+            <div className="fv2-page-db28016bed">
+              <Text className="fv2-page-29131215bd" type="secondary">
                 <FilterOutlined /> Showing <strong>{filteredLogs.length}</strong> of{' '}
                 <strong>{normalizedActivities.length}</strong> on this page
               </Text>
@@ -428,12 +428,12 @@ const ActivityLogsPage = () => {
           <div className="card-body">
             {isLoading ? (
               <div className="text-center p-5">
-                <Spin size="large" />
+                <Loader size="large" />
               </div>
             ) : filteredLogs.length === 0 ? (
               <Empty
+                className="fv2-page-1052677dfc"
                 description="No activity logs match the current filters"
-                style={{ padding: '40px 0' }}
               >
                 <Button onClick={resetFilters}>Clear filters</Button>
               </Empty>

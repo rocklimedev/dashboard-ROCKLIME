@@ -1,20 +1,7 @@
+import './BulkProductImport.styles.css';
 import React, { useState, useMemo, useEffect } from 'react';
-import {
-  Steps,
-  Upload,
-  Button,
-  message,
-  Card,
-  Table,
-  Tag,
-  Space,
-  Typography,
-  Alert,
-  Result,
-  Divider,
-  Select,
-  Tabs,
-} from 'antd';
+import { Steps, Upload, Button, Card, Table, Tag, Space, Typography, Alert, Result, Divider, Select, Tabs } from 'antd';
+import { toast } from 'sonner';
 import {
   UploadOutlined,
   DownloadOutlined,
@@ -175,9 +162,9 @@ const BulkProductImport = () => {
         const cleanHeaders = parsedHeaders.map((h) => (h || '').toString().trim()).filter(Boolean);
 
         setHeaders(cleanHeaders);
-        message.success('File loaded successfully. Now map columns.');
+        toast.success('File loaded successfully. Now map columns.');
       } catch (err) {
-        message.error('Failed to parse file');
+        toast.error('Failed to parse file');
       }
     };
 
@@ -250,7 +237,7 @@ const BulkProductImport = () => {
 
   const handleStartImport = async () => {
     if (!isMappingValid) {
-      message.warning('Please map all required fields');
+      toast.warning('Please map all required fields');
       return;
     }
 
@@ -278,7 +265,7 @@ const BulkProductImport = () => {
 
         console.log('✅ Product import response:', result);
 
-        message.success('Product import job started!');
+        toast.success('Product import job started!');
 
         setJobId(result.jobId);
         setCurrentStep(2);
@@ -302,7 +289,7 @@ const BulkProductImport = () => {
 
         console.log('✅ Inventory update response:', result);
 
-        message.success(`Success! ${result.successCount || 0} products updated.`);
+        toast.success(`Success! ${result.successCount || 0} products updated.`);
 
         setCurrentStep(2);
       }
@@ -311,7 +298,7 @@ const BulkProductImport = () => {
       console.error('❌ Error response:', err?.data);
       console.error('❌ Error message:', err?.message);
 
-      message.error(err?.data?.message || err?.message || 'Failed to process import');
+      toast.error(err?.data?.message || err?.message || 'Failed to process import');
     } finally {
       console.log('🏁 Import process finished');
       setImporting(false);
@@ -343,7 +330,7 @@ const BulkProductImport = () => {
   const handleBrandCreated = () => {
     refetchBrands();
     setShowAddBrandModal(false);
-    message.success('Brand added successfully!');
+    toast.success('Brand added successfully!');
   };
 
   const tabItems = [
@@ -369,26 +356,26 @@ const BulkProductImport = () => {
     <div className="page-wrapper">
       <div className="content container-fluid">
         <Card>
-          <Space align="center" style={{ marginBottom: 24 }}>
+          <Space className="fv2-bulkproductimport-2a1d9101d5" align="center">
             <Title level={3}>Bulk Import Center</Title>
           </Space>
 
           <Alert
+            className="fv2-bulkproductimport-2a1d9101d5"
             message="Brand is optional for Product Import"
             description="Products will be validated using Product Code / Company Code from Excel (including meta fields)"
             type="info"
             showIcon
-            style={{ marginBottom: 24 }}
           />
 
           <Tabs
+            className="fv2-bulkproductimport-eae8856108"
             activeKey={activeTab}
             onChange={setActiveTab}
             items={tabItems}
-            style={{ marginBottom: 32 }}
           />
 
-          <Steps current={currentStep} style={{ margin: '32px 0' }}>
+          <Steps className="fv2-bulkproductimport-45a11b66d3" current={currentStep}>
             <Step title="Upload File" />
             <Step title="Map Columns" />
             <Step title="Result" />
@@ -398,21 +385,16 @@ const BulkProductImport = () => {
           {currentStep === 0 && (
             <Card>
               {activeTab === 'products' && (
-                <div style={{ marginBottom: 32 }}>
-                  <label
-                    style={{
-                      fontWeight: 500,
-                      display: 'block',
-                      marginBottom: 12,
-                    }}
-                  >
+                <div className="fv2-bulkproductimport-eae8856108">
+                  <label className="fv2-bulkproductimport-51fd5c0d43">
                     Select Brand{' '}
-                    <span style={{ color: '#999', fontWeight: 'normal' }}>(Optional)</span>
+                    <span className="fv2-bulkproductimport-c4a2eea2cc">(Optional)</span>
                   </label>
                   <Space>
                     <Select
+                      className="fv2-bulkproductimport-aaed04134c"
                       placeholder="Choose brand (optional)"
-                      style={{ width: 400 }}
+
                       showSearch
                       allowClear
                       value={selectedBrandId}
@@ -448,7 +430,7 @@ const BulkProductImport = () => {
                 <p>Click or drag {activeTab === 'products' ? 'Product' : 'Inventory'} file here</p>
               </Upload.Dragger>
 
-              <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <div className="fv2-bulkproductimport-b2c78e16e2">
                 <Button icon={<DownloadOutlined />} onClick={downloadTemplate}>
                   Download Template
                 </Button>
@@ -476,7 +458,8 @@ const BulkProductImport = () => {
                     title: 'Map to Field',
                     render: (_, __, index) => (
                       <Select
-                        style={{ width: 340 }}
+                        className="fv2-bulkproductimport-ab4edaa155"
+
                         placeholder="Select field"
                         allowClear
                         value={mapping[index] || undefined}
@@ -499,7 +482,7 @@ const BulkProductImport = () => {
               />
 
               <Divider />
-              <div style={{ textAlign: 'right' }}>
+              <div className="fv2-bulkproductimport-56b1749412">
                 <Button
                   type="primary"
                   size="large"

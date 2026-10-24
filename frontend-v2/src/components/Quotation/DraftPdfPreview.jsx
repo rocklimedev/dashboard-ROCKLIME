@@ -1,5 +1,8 @@
+import Loader from '../Common/Loader';
+import ModalShell from '../Common/ModalShell';
+import './DraftPdfPreview.styles.css';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Checkbox, Modal, Segmented, Space, Spin } from 'antd';
+import { Alert, Button, Checkbox, Segmented, Space } from 'antd';
 import { fetchDraftPdf } from './quotationPdf';
 
 /**
@@ -38,14 +41,14 @@ export default function DraftPdfPreview({ open, onClose, getDraft }) {
   }, [open, style, cover]);
 
   return (
-    <Modal
+    <ModalShell
       open={open}
       onCancel={onClose}
       title="Quotation preview"
       width="min(1000px, 96vw)"
       zIndex={2000}
       footer={
-        <Space style={{ width: '100%', justifyContent: 'space-between' }} wrap>
+        <Space className="fv2-draftpdfpreview-882f02a0e3" wrap>
           <Space>
             <Segmented
               value={style}
@@ -66,23 +69,16 @@ export default function DraftPdfPreview({ open, onClose, getDraft }) {
       {state.error ? (
         <Alert type="warning" showIcon message={state.error} />
       ) : state.loading || !state.url ? (
-        <div
-          style={{
-            height: '70vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Spin tip="Making the preview…" />
+        <div className="fv2-draftpdfpreview-3658569080">
+          <Loader tip="Making the preview…" />
         </div>
       ) : (
         <iframe
+          className="fv2-draftpdfpreview-2c15960968"
           title="Quotation preview"
           src={state.url}
-          style={{ width: '100%', height: '75vh', border: 0 }}
         />
       )}
-    </Modal>
+    </ModalShell>
   );
 }

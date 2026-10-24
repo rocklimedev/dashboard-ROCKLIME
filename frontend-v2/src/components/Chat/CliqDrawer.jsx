@@ -1,19 +1,9 @@
+import Loader from '../Common/Loader';
+import './CliqDrawer.styles.css';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Alert,
-  Avatar,
-  Badge,
-  Button,
-  Drawer,
-  Empty,
-  Input,
-  Segmented,
-  Space,
-  Spin,
-  Tooltip,
-  message,
-} from 'antd';
+import { Alert, Avatar, Badge, Button, Drawer, Empty, Input, Segmented, Space, Tooltip } from 'antd';
+import { toast } from 'sonner';
 import {
   ArrowLeftOutlined,
   CloseOutlined,
@@ -68,7 +58,7 @@ function Conversation({ conversation, onBack }) {
       await send({ id, text: text.trim() }).unwrap();
       setText('');
     } catch (error) {
-      message.error(error?.data?.message || 'Message could not be sent');
+      toast.error(error?.data?.message || 'Message could not be sent');
     }
   };
   return (
@@ -94,7 +84,7 @@ function Conversation({ conversation, onBack }) {
           <Alert type="error" message={error?.data?.message || 'Could not load messages'} />
         ) : !messages.length ? (
           isFetching ? (
-            <Spin />
+            <Loader />
           ) : (
             <Empty description="No messages yet" />
           )
@@ -228,7 +218,7 @@ export default function CliqDrawer({ open, onClose, userId }) {
                   : 'Disconnected'}
           </small>
         </div>
-        <Space size={0} style={{ marginLeft: 'auto' }}>
+        <Space className="fv2-cliqdrawer-2211ee230e" size={0}>
           <Button
             type="text"
             aria-label="Open full Cliq"
@@ -249,7 +239,7 @@ export default function CliqDrawer({ open, onClose, userId }) {
       </header>
       {!status?.connected || statusError ? (
         <div className="cliq-disconnected">
-          <CommentOutlined style={{ fontSize: 40, color: '#527d70' }} />
+          <CommentOutlined className="fv2-cliqdrawer-0f8d83e552" />
           <h3>Connect Zoho Cliq</h3>
           <p>Connect your account to see your chats, channels and people here.</p>
           {statusError && <Alert type="error" message="Cliq connection could not be checked" />}
@@ -321,7 +311,7 @@ export default function CliqDrawer({ open, onClose, userId }) {
             {current.error ? (
               <Alert type="error" message={current.error?.data?.message || 'Could not load Cliq'} />
             ) : current.isLoading ? (
-              <Spin style={{ display: 'block', margin: 30 }} />
+              <Loader className="fv2-cliqdrawer-be92f20e06" />
             ) : !list.length ? (
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}

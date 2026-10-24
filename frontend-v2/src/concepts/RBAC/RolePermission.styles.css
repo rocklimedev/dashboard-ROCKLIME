@@ -1,0 +1,23 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-rolepermission-06a64bb49b) {
+  color: var(--fv2-color-e31e24);
+  font-weight: 500;
+}
+
+:is(#fv2-style-priority, .fv2-rolepermission-2876f358f5) {
+  color: var(--fv2-color-595959);
+}
+
+:is(#fv2-style-priority, .fv2-rolepermission-82bcdce7e3) {
+  color: var(--fv2-color-595959);
+  border-color: var(--fv2-color-595959);
+}
+
+:is(#fv2-style-priority, .fv2-rolepermission-074c50eb69) {
+  color: var(--fv2-color-595959);
+  max-width: 100px;
+}
+
+:is(#fv2-style-priority, .fv2-rolepermission-b72bc3f81d) {
+  color: var(--fv2-color-e31e24);
+}

@@ -359,6 +359,7 @@ exports.createQuotation = async (req, res) => {
       flatPrice = null,
       shippingAmount = 0,
       gst = 0,
+      gstInclusive = false,
       customerId,
       quotation_date,
       due_date,
@@ -479,7 +480,7 @@ exports.createQuotation = async (req, res) => {
       Number(extraDiscount),
       extraDiscountType,
       Number(shippingAmount),
-      Number(gst),
+      gstInclusive ? 0 : Number(gst),
       { miscellaneousChargeItems, miscellaneousCharges, additionalDiscount, flatPrice },
     );
     // ─── Generate unique reference number ───
@@ -511,7 +512,8 @@ exports.createQuotation = async (req, res) => {
         additionalDiscount: Number(additionalDiscount) || 0,
         flatPrice: flatPrice == null || flatPrice === '' ? null : Number(flatPrice),
         shippingAmount: Number(shippingAmount) || 0,
-        gst: Number(gst) || 0,
+        gstInclusive: gstInclusive === true,
+        gst: gstInclusive ? 0 : Number(gst) || 0,
         gstAmount: totals.gstAmount,
         roundOff: totals.roundOff,
         finalAmount: totals.finalAmount,
@@ -550,7 +552,8 @@ exports.createQuotation = async (req, res) => {
 
         financials: {
           totalAmount: totals.finalAmount,
-          gst: Number(gst) || 0,
+          gstInclusive: gstInclusive === true,
+        gst: gstInclusive ? 0 : Number(gst) || 0,
           gstAmount: totals.gstAmount,
           discount: Number(extraDiscount) || 0,
           discountType: extraDiscountType,
@@ -604,6 +607,7 @@ exports.updateQuotation = async (req, res) => {
       flatPrice = null,
       shippingAmount = 0,
       gst = 0,
+      gstInclusive = false,
       ...quotationData
     } = req.body;
 
@@ -653,6 +657,7 @@ exports.updateQuotation = async (req, res) => {
           'flatPrice',
           'shippingAmount',
           'gst',
+          'gstInclusive',
           'gstAmount',
           'roundOff',
           'finalAmount',
@@ -777,7 +782,7 @@ exports.updateQuotation = async (req, res) => {
       Number(extraDiscount),
       extraDiscountType,
       Number(shippingAmount),
-      Number(gst),
+      gstInclusive ? 0 : Number(gst),
       { miscellaneousChargeItems, miscellaneousCharges, additionalDiscount, flatPrice },
     );
 
@@ -799,7 +804,8 @@ exports.updateQuotation = async (req, res) => {
         additionalDiscount: Number(additionalDiscount) || 0,
         flatPrice: flatPrice == null || flatPrice === '' ? null : Number(flatPrice),
         shippingAmount: Number(shippingAmount) || 0,
-        gst: Number(gst) || 0,
+        gstInclusive: gstInclusive === true,
+        gst: gstInclusive ? 0 : Number(gst) || 0,
         gstAmount: totals.gstAmount,
         roundOff: totals.roundOff,
         finalAmount: totals.finalAmount,
@@ -1274,6 +1280,7 @@ exports.cloneQuotation = async (req, res) => {
         additionalDiscount: original.additionalDiscount,
         flatPrice: original.flatPrice,
         shippingAmount: Number(original.shippingAmount) || 0,
+        gstInclusive: original.gstInclusive === true,
         gst: Number(original.gst) || 0,
         gstAmount: totals.gstAmount,
         roundOff: totals.roundOff,

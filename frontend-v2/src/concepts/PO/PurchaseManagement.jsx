@@ -1,10 +1,14 @@
+import ListToolbar from '../../components/Common/ListToolbar';
+import ListPagination from '../../components/Common/ListPagination';
+import Loader from '../../components/Common/Loader';
+import './PurchaseManagement.styles.css';
 // src/pages/PurchaseManagement.jsx  (or wherever you keep it)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { message, Tabs, Select, Pagination, Button, Modal, Spin, DatePicker } from 'antd';
+import { Tabs, Button, Modal } from 'antd';
+import { toast } from 'sonner';
 import dayjs from 'dayjs';
-import { SearchOutlined } from '@ant-design/icons';
 
 import DeleteModal from '../../components/Common/DeleteModal';
 import PageHeader from '../../components/Common/PageHeader';
@@ -29,8 +33,6 @@ import {
 import FGSRow from '../../components/Orders/FgsRow';
 import PORow from '../../components/Orders/PoRow';
 const { TabPane } = Tabs;
-const { Option } = Select;
-
 // Shared Colors (you can move these to a constants file later)
 const PRIMARY_RED = '#e31e24';
 const DARK_GRAY = '#333333';
@@ -213,9 +215,9 @@ const PurchaseManagement = () => {
   const handleDeletePO = async (poId) => {
     try {
       await deletePurchaseOrder(poId).unwrap();
-      message.success('Purchase order deleted successfully');
+      toast.success('Purchase order deleted successfully');
     } catch (err) {
-      message.error(err.data?.message || 'Failed to delete PO');
+      toast.error(err.data?.message || 'Failed to delete PO');
     } finally {
       setShowDeleteModal(false);
       setPOToDelete(null);
@@ -225,9 +227,9 @@ const PurchaseManagement = () => {
   const handlePOStatusChange = async (poId, newStatus) => {
     try {
       await updatePurchaseOrderStatus({ id: poId, status: newStatus }).unwrap();
-      message.success('Status updated');
+      toast.success('Status updated');
     } catch (err) {
-      message.error(err.data?.message || 'Failed to update status');
+      toast.error(err.data?.message || 'Failed to update status');
     } finally {
       setEditingPOStatusId(null);
     }
@@ -248,9 +250,9 @@ const PurchaseManagement = () => {
   const handleDeleteFGSConfirm = async (fgsId) => {
     try {
       await deleteFGS(fgsId).unwrap();
-      message.success('Field Generated Sheet deleted successfully');
+      toast.success('Field Generated Sheet deleted successfully');
     } catch (err) {
-      message.error(err.data?.message || 'Failed to delete FGS');
+      toast.error(err.data?.message || 'Failed to delete FGS');
     } finally {
       setShowDeleteModal(false);
       setFGSToDelete(null);
@@ -260,9 +262,9 @@ const PurchaseManagement = () => {
   const handleFGSStatusChange = async (fgsId, newStatus) => {
     try {
       await updateFGSStatus({ id: fgsId, status: newStatus }).unwrap();
-      message.success('Status updated');
+      toast.success('Status updated');
     } catch (err) {
-      message.error(err.data?.message || 'Failed to update status');
+      toast.error(err.data?.message || 'Failed to update status');
     } finally {
       setEditingFGSStatusId(null);
     }
@@ -280,9 +282,9 @@ const PurchaseManagement = () => {
       onOk: async () => {
         try {
           const result = await convertFgsToPo(fgsId).unwrap();
-          message.success(`Converted! New PO: ${result.purchaseOrder?.poNumber || 'Generated'}`);
+          toast.success(`Converted! New PO: ${result.purchaseOrder?.poNumber || 'Generated'}`);
         } catch (err) {
-          message.error(err.data?.message || 'Conversion failed');
+          toast.error(err.data?.message || 'Conversion failed');
         }
       },
     });
@@ -326,7 +328,7 @@ const PurchaseManagement = () => {
     if (loading) {
       return (
         <div className="text-center">
-          <Spin /> Loading...
+          <Loader /> Loading...
         </div>
       );
     }
@@ -395,17 +397,15 @@ const PurchaseManagement = () => {
         </div>
 
         {total > filters.limit && (
-          <div className="d-flex justify-content-end mt-4">
-            <Pagination
-              current={filters.page}
-              pageSize={filters.limit}
-              total={total}
-              onChange={handlePageChange}
-              showSizeChanger
-              pageSizeOptions={['10', '20', '50', '100']}
-              showQuickJumper
-            />
-          </div>
+          <ListPagination
+            itemLabel="records"
+            current={filters.page}
+            pageSize={filters.limit}
+            total={total}
+            onChange={handlePageChange}
+            showSizeChanger
+            showQuickJumper
+          />
         )}
       </>
     );
@@ -427,89 +427,88 @@ const PurchaseManagement = () => {
           </Tabs>
 
           {/* Filters */}
-          <div className="row mb-4 align-items-center">
-            <div className="col-lg-7">
-              <div className="d-flex flex-wrap gap-3">
-                <Select
-                  placeholder="All Statuses"
-                  allowClear
-                  style={{ width: 160 }}
-                  value={filters.status || undefined}
-                  onChange={(val) => setFilters((p) => ({ ...p, status: val || '', page: 1 }))}
-                >
-                  {(activeTab === 'po' ? poStatuses : fgsStatuses).map((s) => (
-                    <Option key={s} value={s}>
-                      {(s.charAt(0).toUpperCase() + s.slice(1)).replace(/_/g, ' ')}
-                    </Option>
-                  ))}
-                </Select>
-
-                {activeTab === 'po' && (
-                  <>
-                    <Select
-                      placeholder="All vendors"
-                      allowClear
-                      showSearch
-                      optionFilterProp="label"
-                      style={{ width: 200 }}
-                      value={filters.vendorId || undefined}
-                      onChange={(v) => setFilters((p) => ({ ...p, vendorId: v || '', page: 1 }))}
-                      options={(vendorsData || []).map((v) => ({
-                        value: v.id,
-                        label: v.vendorName,
-                      }))}
-                    />
-                    <DatePicker.RangePicker
-                      format="D MMM YY"
-                      value={filters.range}
-                      onChange={(v) => setFilters((p) => ({ ...p, range: v, page: 1 }))}
-                      presets={[
-                        { label: 'This month', value: [dayjs().startOf('month'), dayjs()] },
-                        { label: 'Last 30 days', value: [dayjs().subtract(30, 'day'), dayjs()] },
-                        { label: 'This year', value: [dayjs().startOf('year'), dayjs()] },
-                      ]}
-                    />
-                  </>
-                )}
-                <Select
-                  value={sortBy}
-                  onChange={(v) => {
+          <ListToolbar
+            exportTitle={activeTab === 'po' ? 'Purchase orders' : 'Field generated sheets'}
+            exportData={(activeTab === 'po' ? sortedPOs : sortedFGS).map((p) => ({
+              Reference: p.poNumber ?? p.fgsNumber,
+              Vendor: vendorMap[p.vendorId] ?? '',
+              Status: p.status,
+              Amount: p.totalAmount,
+              'Order date': p.orderDate,
+              'Expected delivery': p.expectedDeliveryDate,
+            }))}
+            search={{
+              placeholder: `Search ${activeTab === 'po' ? 'POs' : 'FGS'}...`,
+              value: searchTerm,
+              onChange: (e) => {
+                setSearchTerm(e.target.value);
+                resetPageOnFilterChange();
+              },
+            }}
+            filters={[
+              {
+                key: 'status',
+                type: 'select',
+                props: {
+                  placeholder: 'All Statuses',
+                  allowClear: true,
+                  value: filters.status || undefined,
+                  onChange: (val) => setFilters((p) => ({ ...p, status: val || '', page: 1 })),
+                  options: (activeTab === 'po' ? poStatuses : fgsStatuses).map((s) => ({
+                    value: s,
+                    label: (s.charAt(0).toUpperCase() + s.slice(1)).replace(/_/g, ' '),
+                  })),
+                },
+              },
+              ...(activeTab === 'po'
+                ? [
+                    {
+                      key: 'vendor',
+                      type: 'select',
+                      props: {
+                        placeholder: 'All vendors',
+                        allowClear: true,
+                        showSearch: true,
+                        optionFilterProp: 'label',
+                        value: filters.vendorId || undefined,
+                        onChange: (v) => setFilters((p) => ({ ...p, vendorId: v || '', page: 1 })),
+                        options: (vendorsData || []).map((v) => ({
+                          value: v.id,
+                          label: v.vendorName,
+                        })),
+                      },
+                    },
+                    {
+                      key: 'dates',
+                      type: 'dateRange',
+                      props: {
+                        format: 'D MMM YY',
+                        value: filters.range,
+                        onChange: (v) => setFilters((p) => ({ ...p, range: v, page: 1 })),
+                        presets: [
+                          { label: 'This month', value: [dayjs().startOf('month'), dayjs()] },
+                          { label: 'Last 30 days', value: [dayjs().subtract(30, 'day'), dayjs()] },
+                          { label: 'This year', value: [dayjs().startOf('year'), dayjs()] },
+                        ],
+                      },
+                    },
+                  ]
+                : []),
+              {
+                key: 'sort',
+                type: 'select',
+                props: {
+                  value: sortBy,
+                  onChange: (v) => {
                     setSortBy(v);
                     resetPageOnFilterChange();
-                  }}
-                  style={{ width: 180 }}
-                >
-                  {sortOptions.map((opt) => (
-                    <Option key={opt} value={opt}>
-                      {opt}
-                    </Option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-
-            <div className="col-lg-5">
-              <div className="d-flex justify-content-lg-end flex-wrap gap-2 mt-3 mt-lg-0">
-                <div className="position-relative me-2 flex-grow-1">
-                  <span className="input-icon-addon">
-                    <SearchOutlined />
-                  </span>
-                  <input
-                    className="form-control"
-                    placeholder={`Search ${activeTab === 'po' ? 'POs' : 'FGS'}...`}
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      resetPageOnFilterChange();
-                    }}
-                  />
-                </div>
-                <button className="btn btn-outline-secondary" onClick={handleClearFilters}>
-                  Clear
-                </button>
-              </div>
-            </div>
-          </div>
+                  },
+                  options: sortOptions.map((opt) => ({ value: opt, label: opt })),
+                },
+              },
+            ]}
+            onClear={handleClearFilters}
+          />
 
           {renderTable()}
         </div>

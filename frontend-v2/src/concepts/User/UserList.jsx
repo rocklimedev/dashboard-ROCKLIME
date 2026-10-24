@@ -1,5 +1,8 @@
+import ListToolbar from '../../components/Common/ListToolbar';
+import ListPagination from '../../components/Common/ListPagination';
+import './UserList.styles.css';
 import React, { useState, useMemo, useEffect } from 'react';
-import { SearchOutlined, UnorderedListOutlined } from '@ant-design/icons';
+import { UnorderedListOutlined } from '@ant-design/icons';
 import Avatar from 'react-avatar';
 import {
   useGetAllUsersQuery,
@@ -16,9 +19,9 @@ import {
   MoreOutlined,
   MailOutlined,
 } from '@ant-design/icons';
-import { Dropdown, Menu, Button, Pagination, Tooltip } from 'antd';
+import { Dropdown, Menu, Button, Tooltip } from 'antd';
 import DeleteModal from '../../components/Common/DeleteModal';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/Common/PageHeader';
 import { useResendVerificationEmailMutation } from '../../api/authApi';
@@ -97,22 +100,22 @@ const UserList = () => {
   const handleStatusChange = async (userId, newStatus) => {
     try {
       await updateStatus({ userId, status: newStatus }).unwrap();
-      message.success('Status updated');
+      toast.success('Status updated');
     } catch {
-      message.error('Failed to update status');
+      toast.error('Failed to update status');
     }
   };
 
   const handleConfirmDelete = async () => {
     try {
       await deleteUser(userToDelete).unwrap();
-      message.success('User deleted');
+      toast.success('User deleted');
 
       if (filteredUsers.length === 1 && currentPage > 1) {
         setCurrentPage((p) => p - 1);
       }
     } catch {
-      message.error('Failed to delete user');
+      toast.error('Failed to delete user');
     } finally {
       setShowDeleteModal(false);
       setUserToDelete(null);
@@ -124,8 +127,8 @@ const UserList = () => {
     if (resendUserId && selectedUser?.email) {
       resendVerificationEmail({ email: selectedUser.email })
         .unwrap()
-        .then(() => message.success('Verification email sent'))
-        .catch(() => message.error('Failed to send email'))
+        .then(() => toast.success('Verification email sent'))
+        .catch(() => toast.error('Failed to send email'))
         .finally(() => setResendUserId(null));
     }
   }, [resendUserId, selectedUser, resendVerificationEmail]);
@@ -141,42 +144,49 @@ const UserList = () => {
 
         <div className="card-body">
           {/* Filters & Controls */}
-          <div className="row mb-4 align-items-center">
-            <div className="col-lg-6">
-              <div className="d-flex align-items-center gap-3 flex-wrap">
-                <div className="btn-group">
-                  {Object.keys(groupedUsers).map((tab) => (
-                    <button
-                      key={tab}
-                      className={`btn btn-sm ${
-                        activeTab === tab ? 'btn-primary' : 'btn-outline-secondary'
-                      }`}
-                      onClick={() => setActiveTab(tab)}
-                    >
-                      {tab} ({groupedUsers[tab].length})
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="col-lg-6 text-lg-end">
-              <div className="d-flex justify-content-end gap-2 flex-wrap">
-                <div className="input-group" style={{ maxWidth: '280px' }}>
-                  <span className="input-group-text">
-                    <SearchOutlined />
-                  </span>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search users..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <ListToolbar
+            onClear={() => {
+              setSearchTerm('');
+              setActiveTab('All');
+              setCurrentPage(1);
+            }}
+            exportTitle={'Users'}
+            exportData={filteredUsers.map((u) => ({
+              Name: u.name,
+              Email: u.email,
+              Username: u.username,
+              Phone: u.mobileNumber,
+              Roles: safeRoles(u.roles),
+              Status: u.status,
+            }))}
+            search={{
+              type: 'text',
+              placeholder: 'Search users...',
+              value: searchTerm,
+              onChange: (e) => setSearchTerm(e.target.value),
+            }}
+            filters={[
+              {
+                key: 'status',
+                type: 'custom',
+                content: (
+                  <div className="btn-group">
+                    {Object.keys(groupedUsers).map((tab) => (
+                      <button
+                        key={tab}
+                        className={`btn btn-sm ${
+                          activeTab === tab ? 'btn-primary' : 'btn-outline-secondary'
+                        }`}
+                        onClick={() => setActiveTab(tab)}
+                      >
+                        {tab} ({groupedUsers[tab].length})
+                      </button>
+                    ))}
+                  </div>
+                ),
+              },
+            ]}
+          />
 
           {/* LIST VIEW (Only View Now) */}
           <div className="table-responsive">
@@ -254,8 +264,8 @@ const UserList = () => {
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
-                            className="me-3 text-primary"
-                            style={{ cursor: 'pointer', fontSize: 16 }}
+                            className="me-3 text-primary fv2-userlist-4c5e59716b"
+
                             onClick={() => handleEditUser(user)}
                           />
                         </Tooltip>
@@ -270,7 +280,7 @@ const UserList = () => {
                                 onClick={() =>
                                   reportUser(user.userId)
                                     .unwrap()
-                                    .then(() => message.success('Reported'))
+                                    .then(() => toast.success('Reported'))
                                 }
                               >
                                 <ExclamationCircleOutlined /> Report
@@ -287,7 +297,10 @@ const UserList = () => {
                           }
                           trigger={['click']}
                         >
-                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined className="fv2-userlist-0fa68bfb43" />}
+                          />
                         </Dropdown>
                       </td>
                     </tr>
@@ -299,15 +312,14 @@ const UserList = () => {
 
           {/* Pagination */}
           {totalUsers > 0 && (
-            <div className="d-flex justify-content-end mt-4">
-              <Pagination
-                current={currentPage}
-                pageSize={itemsPerPage}
-                total={totalUsers}
-                onChange={setCurrentPage}
-                showSizeChanger={false}
-              />
-            </div>
+            <ListPagination
+              itemLabel="users"
+              current={currentPage}
+              pageSize={itemsPerPage}
+              total={totalUsers}
+              onChange={setCurrentPage}
+              showSizeChanger={false}
+            />
           )}
         </div>
 

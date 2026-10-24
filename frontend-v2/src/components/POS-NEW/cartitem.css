@@ -2,11 +2,11 @@
 .cart-sheet-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--fv2-font-13px);
 }
 .cart-sheet-table th {
-  background: #fafafa;
-  border-bottom: 1px solid #f0f0f0;
+  background: var(--fv2-color-fafafa);
+  border-bottom: 1px solid var(--fv2-color-f0f0f0);
   padding: 8px 10px;
   text-align: left;
   font-weight: 600;
@@ -14,23 +14,23 @@
 }
 .cart-sheet-table td.cart-cell {
   padding: 8px 10px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--fv2-color-f0f0f0);
   vertical-align: middle;
 }
 .cart-option-row {
-  background: #fff7f0;
+  background: var(--fv2-color-fff7f0);
 }
 .cart-option-arrow {
-  color: #ff4d4f;
+  color: var(--fv2-color-ff4d4f);
   margin-right: 4px;
 }
 .cart-drag-handle:active {
   cursor: grabbing;
 }
 .cart-readonly {
-  color: #595959;
+  color: var(--fv2-color-595959);
 }
 .cart-total-cell {
   font-weight: 600;
-  color: #52c41a;
+  color: var(--fv2-color-52c41a);
 }

@@ -1,3 +1,4 @@
+import './AccessDenied.styles.css';
 import { Button, Result, Space, Typography } from 'antd';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
@@ -22,7 +23,7 @@ export default function AccessDenied({ permission }) {
             </Space>
           }
         >
-          <Space direction="vertical" style={{ width: '100%', textAlign: 'center' }}>
+          <Space className="fv2-accessdenied-3d8e88b6bf" direction="vertical">
             <Typography.Text>
               Page: <Typography.Text code>{location.pathname}</Typography.Text>
             </Typography.Text>

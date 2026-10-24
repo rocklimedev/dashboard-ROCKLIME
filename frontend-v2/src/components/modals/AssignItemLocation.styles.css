@@ -1,0 +1,16 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-assignitemlocation-0175fe9e6b) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-assignitemlocation-4954be4880) {
+  border: 1px solid var(--fv2-color-f0f0f0);
+  padding: 12px;
+  border-radius: 8px;
+  background-color: var(--fv2-color-fafafa);
+}
+
+:is(#fv2-style-priority, .fv2-assignitemlocation-542f6603e5) {
+  width: 100%;
+  justify-content: space-between;
+}

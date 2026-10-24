@@ -1,0 +1,12 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-appswitcher-91241a7909) {
+  padding: 0;
+}
+
+:is(#fv2-style-priority, .fv2-appswitcher-1683dcff6d) {
+  background: var(--fv2-color-262626);
+}
+
+:is(#fv2-style-priority, .fv2-appswitcher-7aa2ed41f5) {
+  font-size: var(--fv2-font-19px);
+}

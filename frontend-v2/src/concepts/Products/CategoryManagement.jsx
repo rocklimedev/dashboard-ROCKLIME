@@ -1,7 +1,9 @@
+import './CategoryManagement.styles.css';
 // src/pages/categories/CategoryManagement.jsx
 import React, { useState, useMemo } from 'react';
 import { EditOutlined, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
-import { Dropdown, Menu, Button, Tooltip, message, Tabs, Input } from 'antd';
+import { Dropdown, Menu, Button, Tooltip, Tabs, Input } from 'antd';
+import { toast } from 'sonner';
 
 import { useSearchParams } from 'react-router-dom';
 
@@ -136,19 +138,19 @@ const CategoryManagement = () => {
     try {
       if (deleteType === 'parent') {
         await deleteParent(deleteId).unwrap();
-        message.success('Parent Category deleted successfully');
+        toast.success('Parent Category deleted successfully');
         refetchParents();
       } else if (deleteType === 'category') {
         await deleteCategory(deleteId).unwrap();
-        message.success('Category deleted successfully');
+        toast.success('Category deleted successfully');
         refetchCategories();
       } else if (deleteType === 'keyword') {
         await deleteKeyword(deleteId).unwrap();
-        message.success('Keyword deleted successfully');
+        toast.success('Keyword deleted successfully');
         refetchKeywords();
       }
     } catch (err) {
-      message.error(err?.data?.message || `Failed to delete ${deleteType}`);
+      toast.error(err?.data?.message || `Failed to delete ${deleteType}`);
     } finally {
       setShowDeleteModal(false);
       setDeleteId(null);
@@ -209,7 +211,7 @@ const CategoryManagement = () => {
           <div className="row mb-4">
             <div className="col-lg-6" />
             <div className="col-lg-6 text-lg-end">
-              <div style={{ maxWidth: '340px', marginLeft: 'auto' }}>
+              <div className="fv2-categorymanagement-915b3c7997">
                 <Search
                   placeholder={
                     currentTab === 'parent'
@@ -233,7 +235,7 @@ const CategoryManagement = () => {
                 <thead className="table-light">
                   <tr>
                     <th>Parent Category Name</th>
-                    <th style={{ width: 140 }}>Actions</th>
+                    <th className="fv2-categorymanagement-71fa47318d">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -245,8 +247,8 @@ const CategoryManagement = () => {
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
-                            className="me-3 text-primary"
-                            style={{ cursor: 'pointer', fontSize: 18 }}
+                            className="me-3 text-primary fv2-categorymanagement-f9b5aa4b93"
+
                             onClick={() => openModal('parent', item)}
                           />
                         </Tooltip>
@@ -260,7 +262,10 @@ const CategoryManagement = () => {
                           }
                           trigger={['click']}
                         >
-                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined className="fv2-categorymanagement-372898b1b4" />}
+                          />
                         </Dropdown>
                       </td>
                     </tr>
@@ -277,7 +282,7 @@ const CategoryManagement = () => {
                   <tr>
                     <th>Category Name</th>
                     <th>Parent Category</th>
-                    <th style={{ width: 140 }}>Actions</th>
+                    <th className="fv2-categorymanagement-71fa47318d">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -290,8 +295,8 @@ const CategoryManagement = () => {
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
-                            className="me-3 text-primary"
-                            style={{ cursor: 'pointer', fontSize: 18 }}
+                            className="me-3 text-primary fv2-categorymanagement-f9b5aa4b93"
+
                             onClick={() => openModal('category', item)}
                           />
                         </Tooltip>
@@ -308,7 +313,10 @@ const CategoryManagement = () => {
                           }
                           trigger={['click']}
                         >
-                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined className="fv2-categorymanagement-372898b1b4" />}
+                          />
                         </Dropdown>
                       </td>
                     </tr>
@@ -325,7 +333,7 @@ const CategoryManagement = () => {
                   <tr>
                     <th>Keyword</th>
                     <th>Category</th>
-                    <th style={{ width: 140 }}>Actions</th>
+                    <th className="fv2-categorymanagement-71fa47318d">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -340,8 +348,8 @@ const CategoryManagement = () => {
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
-                            className="me-3 text-primary"
-                            style={{ cursor: 'pointer', fontSize: 18 }}
+                            className="me-3 text-primary fv2-categorymanagement-f9b5aa4b93"
+
                             onClick={() => openModal('keyword', item)}
                           />
                         </Tooltip>
@@ -355,7 +363,10 @@ const CategoryManagement = () => {
                           }
                           trigger={['click']}
                         >
-                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined className="fv2-categorymanagement-372898b1b4" />}
+                          />
                         </Dropdown>
                       </td>
                     </tr>

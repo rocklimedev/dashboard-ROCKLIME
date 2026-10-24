@@ -1,0 +1,15 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-userpage-8ffe2721a3) {
+  background: var(--fv2-color-f8fafc);
+  min-height: 100vh;
+  padding: 32px 16px;
+}
+
+:is(#fv2-style-priority, .fv2-userpage-fd1796ab87) {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+:is(#fv2-style-priority, .fv2-userpage-6d39244ac4) {
+  background-color: var(--fv2-color-e0f2fe);
+}

@@ -1,23 +1,9 @@
+import Loader from '../../components/Common/Loader';
+import './ImportJob.styles.css';
 // src/pages/products/BulkProductImport.jsx
 import React, { useState, useMemo, useEffect } from 'react';
-import {
-  Steps,
-  Upload,
-  Button,
-  message,
-  Card,
-  Table,
-  Tag,
-  Spin,
-  Space,
-  Progress,
-  Typography,
-  Alert,
-  Result,
-  Divider,
-  Select,
-  Tabs,
-} from 'antd';
+import { Steps, Upload, Button, Card, Table, Tag, Space, Progress, Typography, Alert, Result, Divider, Select, Tabs } from 'antd';
+import { toast } from 'sonner';
 import {
   UploadOutlined,
   DownloadOutlined,
@@ -287,7 +273,7 @@ const BulkProductImport = () => {
 
   const handleFileUpload = (uploadedFile) => {
     if (activeTab === 'products' && !selectedBrandId) {
-      message.error('Please select a brand first');
+      toast.error('Please select a brand first');
       return false;
     }
 
@@ -295,7 +281,7 @@ const BulkProductImport = () => {
       uploadedFile.name.toLowerCase().endsWith('.csv') || /\.(xlsx|xls)$/.test(uploadedFile.name);
 
     if (!isValidFile) {
-      message.error('Only CSV or Excel files are allowed');
+      toast.error('Only CSV or Excel files are allowed');
       return false;
     }
 
@@ -322,9 +308,9 @@ const BulkProductImport = () => {
 
         const cleanHeaders = parsedHeaders.map((h) => (h || '').toString().trim()).filter(Boolean);
         setHeaders(cleanHeaders);
-        message.success('File loaded successfully. Now map columns.');
+        toast.success('File loaded successfully. Now map columns.');
       } catch (err) {
-        message.error('Failed to parse file');
+        toast.error('Failed to parse file');
       }
     };
 
@@ -345,13 +331,13 @@ const BulkProductImport = () => {
 
     if (!isMappingValid) {
       console.warn('⚠️ Mapping invalid:', mapping);
-      message.warning('Please map all required fields');
+      toast.warning('Please map all required fields');
       return;
     }
 
     if (activeTab === 'products' && !selectedBrandId) {
       console.error('❌ Brand missing for product import');
-      message.error('Please select a brand before starting import');
+      toast.error('Please select a brand before starting import');
       return;
     }
 
@@ -406,7 +392,7 @@ const BulkProductImport = () => {
 
         console.log('📡 API RESPONSE:', result);
 
-        message.success(
+        toast.success(
           `Inventory Update Completed! ${result.successCount} successful, ${result.failedCount} failed`,
         );
 
@@ -430,7 +416,7 @@ const BulkProductImport = () => {
 
         console.log('📡 Product API response:', result);
 
-        message.success('Product import job started successfully!');
+        toast.success('Product import job started successfully!');
         setJobId(result.jobId);
         setCurrentStep(2);
         setStartTime(Date.now());
@@ -439,7 +425,7 @@ const BulkProductImport = () => {
     } catch (err) {
       console.error('🔥 IMPORT ERROR:', err);
 
-      message.error(err?.data?.message || err?.message || 'Failed to start import');
+      toast.error(err?.data?.message || err?.message || 'Failed to start import');
     } finally {
       setImporting(false);
       console.log('🏁 Import finished');
@@ -514,7 +500,7 @@ const BulkProductImport = () => {
   const handleBrandCreated = () => {
     refetchBrands();
     setShowAddBrandModal(false);
-    message.success('Brand added successfully!');
+    toast.success('Brand added successfully!');
   };
 
   const tabItems = [
@@ -542,28 +528,28 @@ const BulkProductImport = () => {
     <div className="page-wrapper">
       <div className="content container-fluid">
         <Card>
-          <Space align="center" style={{ marginBottom: 24, flexWrap: 'wrap' }} size="middle">
-            <Title level={3} style={{ margin: 0 }}>
+          <Space className="fv2-importjob-349713e79e" align="center" size="middle">
+            <Title className="fv2-importjob-6fbc51e631" level={3}>
               Bulk Import Center
             </Title>
           </Space>
 
           <Alert
+            className="fv2-importjob-b7b3df7fe7"
             message="All imports run in the background"
             description="You can safely navigate away. The job will continue processing on the server."
             type="info"
             showIcon
-            style={{ marginBottom: 32 }}
           />
 
           <Tabs
+            className="fv2-importjob-b7b3df7fe7"
             activeKey={activeTab}
             onChange={handleTabChange}
             items={tabItems}
-            style={{ marginBottom: 32 }}
           />
 
-          <Steps current={currentStep} style={{ margin: '32px 0' }}>
+          <Steps className="fv2-importjob-7136be9cfb" current={currentStep}>
             <Step title="Select & Upload" />
             <Step title="Map Columns" />
             <Step title="Import Progress" />
@@ -573,20 +559,15 @@ const BulkProductImport = () => {
           {currentStep === 0 && (
             <Card>
               {activeTab === 'products' && (
-                <div style={{ marginBottom: 32 }}>
-                  <label
-                    style={{
-                      fontWeight: 500,
-                      display: 'block',
-                      marginBottom: 12,
-                    }}
-                  >
+                <div className="fv2-importjob-b7b3df7fe7">
+                  <label className="fv2-importjob-1f94c6e773">
                     Select Brand (applied to all products in this import) *
                   </label>
-                  <Space style={{ width: '100%' }}>
+                  <Space className="fv2-importjob-6aec535794">
                     <Select
+                      className="fv2-importjob-4851fc65b0"
                       placeholder="Choose brand"
-                      style={{ width: '100%', minWidth: 320, maxWidth: 500 }}
+
                       showSearch
                       optionFilterProp="children"
                       value={selectedBrandId}
@@ -632,7 +613,7 @@ const BulkProductImport = () => {
                 <p className="ant-upload-hint">Supported formats: CSV, XLSX • Max ~50 MB</p>
               </Upload.Dragger>
 
-              <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <div className="fv2-importjob-bae68efb63">
                 <Button icon={<DownloadOutlined />} onClick={downloadTemplate}>
                   Download {activeTab === 'products' ? 'Products' : 'Inventory'} Template
                 </Button>
@@ -647,11 +628,11 @@ const BulkProductImport = () => {
             >
               {!isMappingValid && (
                 <Alert
+                  className="fv2-importjob-153b7b6e9d"
                   message="Required fields missing"
                   description={`Please map all * fields (${activeTab === 'products' ? 'Name & Code' : 'Code & Quantity'})`}
                   type="warning"
                   showIcon
-                  style={{ marginBottom: 16 }}
                 />
               )}
 
@@ -674,7 +655,8 @@ const BulkProductImport = () => {
                       const colIndex = headers.indexOf(header);
                       return (
                         <Select
-                          style={{ width: 340 }}
+                          className="fv2-importjob-02c5dd2c8d"
+
                           placeholder="Select matching field"
                           allowClear
                           value={mapping[colIndex]}
@@ -702,7 +684,7 @@ const BulkProductImport = () => {
 
               <Divider />
 
-              <div style={{ textAlign: 'right' }}>
+              <div className="fv2-importjob-595fc702ae">
                 <Button
                   type="primary"
                   size="large"
@@ -724,7 +706,7 @@ const BulkProductImport = () => {
               title={`Import Job #${(jobId || '').slice(0, 8)}... - ${activeTab.toUpperCase()}`}
             >
               {currentJobStatus ? (
-                <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                <Space className="fv2-importjob-6aec535794" direction="vertical" size="middle">
                   <Alert
                     message={`Status: ${currentJobStatus.status?.toUpperCase()}`}
                     type={
@@ -795,8 +777,8 @@ const BulkProductImport = () => {
                   )}
                 </Space>
               ) : (
-                <div style={{ textAlign: 'center', padding: '100px 0' }}>
-                  <Spin tip="Processing..." size="large" />
+                <div className="fv2-importjob-3e0328ca6d">
+                  <Loader tip="Processing..." size="large" />
                 </div>
               )}
             </Card>

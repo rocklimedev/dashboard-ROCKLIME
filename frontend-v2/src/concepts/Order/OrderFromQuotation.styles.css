@@ -1,0 +1,13 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-orderfromquotation-13f5112c65) {
+  max-width: 980px;
+}
+
+:is(#fv2-style-priority, .fv2-orderfromquotation-57785b8c6b) {
+  margin-bottom: 0;
+}
+
+:is(#fv2-style-priority, .fv2-orderfromquotation-25d1b1bd40) {
+  margin-top: 16px;
+  border-radius: 12px;
+}

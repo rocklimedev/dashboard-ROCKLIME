@@ -1,17 +1,17 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider, unstableSetRender } from 'antd';
+import { Toaster } from 'sonner';
 import './index.css';
 import App from './App.jsx';
+import ErrorBoundary from './components/Common/ErrorBoundary';
 
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import store from './store';
 import { AuthProvider } from './context/AuthContext';
 
-// antd v5 static APIs (message, notification, Modal.confirm) render through the
-// legacy ReactDOM.render, which React 19 removed, so their toasts silently never
-// appear. Route them through createRoot instead (antd's documented React 19 fix).
+// Keep Ant Design's static dialogs compatible with React 19.
 unstableSetRender((node, container) => {
   container._reactRoot ||= createRoot(container);
   const root = container._reactRoot;
@@ -23,15 +23,18 @@ unstableSetRender((node, container) => {
 });
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Provider store={store}>
-      <BrowserRouter>
-        <AuthProvider>
-          {/* popups (modals, drawers, dropdowns) above the fixed sidebar (z-index 1001) */}
-          <ConfigProvider theme={{ token: { zIndexPopupBase: 1100 } }}>
-            <App />
-          </ConfigProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </Provider>
+    <Toaster position="top-right" richColors closeButton duration={3000} />
+    <ErrorBoundary area="The application" variant="root">
+      <Provider store={store}>
+        <BrowserRouter>
+          <AuthProvider>
+            {/* popups (modals, drawers, dropdowns) above the fixed sidebar (z-index 1001) */}
+            <ConfigProvider theme={{ token: { zIndexPopupBase: 1100 } }}>
+              <App />
+            </ConfigProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </Provider>
+    </ErrorBoundary>
   </StrictMode>,
 );

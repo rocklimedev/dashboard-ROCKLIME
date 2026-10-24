@@ -1,0 +1,23 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-serverpdfframe-dbd877a046) {
+  position: relative;
+  min-height: 520px;
+  background: var(--fv2-color-525659);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+:is(#fv2-style-priority, .fv2-serverpdfframe-8b9b8660fa) {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+:is(#fv2-style-priority, .fv2-serverpdfframe-9e3e3f0d15) {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+}

@@ -1,0 +1,35 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-quotationpagesrenderer-79aed2c0bf) {
+  text-align: center;
+  font-size: var(--fv2-font-26px);
+  font-weight: bold;
+  color: var(--fv2-color-e31e24);
+  margin: 40px 0 20px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationpagesrenderer-f9c4b41c89) {
+  text-align: center;
+  font-style: italic;
+  color: var(--fv2-color-555);
+  margin-bottom: 32px;
+  font-size: var(--fv2-font-15px);
+}
+
+:is(#fv2-style-priority, .fv2-quotationpagesrenderer-45fde46851) {
+  text-align: right;
+  margin-top: 32px;
+  font-weight: bold;
+  font-size: var(--fv2-font-16px);
+}
+
+:is(#fv2-style-priority, .fv2-quotationpagesrenderer-0d78a9d12f) {
+  color: var(--fv2-color-e31e24);
+}
+
+:is(#fv2-style-priority, .fv2-quotationpagesrenderer-2a08c85c9d) {
+  text-align: center;
+  margin: 40px 0 60px;
+  font-size: var(--fv2-font-24px);
+  font-weight: bold;
+  color: var(--fv2-color-e31e24);
+}

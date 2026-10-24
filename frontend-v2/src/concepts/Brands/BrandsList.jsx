@@ -1,3 +1,6 @@
+import ListToolbar from '../../components/Common/ListToolbar';
+import ListPagination from '../../components/Common/ListPagination';
+import './BrandsList.styles.css';
 import React, { useState, useMemo } from 'react';
 import { EyeOutlined, EditOutlined, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
 import Avatar from 'react-avatar';
@@ -9,7 +12,8 @@ import {
 import { useGetAllProductMetaQuery, useDeleteProductMetaMutation } from '../../api/productMetaApi';
 import { useGetVendorsQuery, useDeleteVendorMutation } from '../../api/vendorApi';
 
-import { Dropdown, Menu, Button, Pagination, Tooltip, message, Tabs, Input } from 'antd';
+import { Dropdown, Menu, Button, Tooltip, Tabs } from 'antd';
+import { toast } from 'sonner';
 
 import DeleteModal from '../../components/Common/DeleteModal';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -22,7 +26,6 @@ import ProductMetaFormModal from '../../components/modals/ProductMetaModal';
 import AddVendorModal from '../../components/POS-NEW/AddVendorModal';
 
 const { TabPane } = Tabs;
-const { Search } = Input;
 
 const BrandList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,6 +36,7 @@ const BrandList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeBrandTab, setActiveBrandTab] = useState('All');
   const itemsPerPage = 20;
+  const [brandPaging, setBrandPaging] = useState({ filterKey: '', page: 1 });
 
   // Modal States
   const [brandModalVisible, setBrandModalVisible] = useState(false);
@@ -56,7 +60,7 @@ const BrandList = () => {
   const { data: metaData, refetch: refetchMeta } = useGetAllProductMetaQuery();
   const { data: vendorsData, refetch: refetchVendors } = useGetVendorsQuery();
 
-  const allBrands = brandsData?.brands || brandsData || [];
+  const allBrands = useMemo(() => brandsData?.brands || brandsData || [], [brandsData]);
   const brandParentCategories = categoriesData || [];
   const allMetaFields = metaData || [];
   const allVendors = vendorsData || [];
@@ -98,6 +102,16 @@ const BrandList = () => {
     }
     return result;
   }, [groupedBrands, activeBrandTab, searchTerm]);
+
+  const brandFilterKey = JSON.stringify([currentTab, activeBrandTab, searchTerm]);
+  const currentBrandPage =
+    brandPaging.filterKey === brandFilterKey
+      ? Math.min(brandPaging.page, Math.max(1, Math.ceil(filteredBrands.length / itemsPerPage)))
+      : 1;
+  const visibleBrands = filteredBrands.slice(
+    (currentBrandPage - 1) * itemsPerPage,
+    currentBrandPage * itemsPerPage,
+  );
 
   const filteredCategories = useMemo(() => {
     if (!searchTerm.trim()) return brandParentCategories;
@@ -171,23 +185,23 @@ const BrandList = () => {
     try {
       if (deleteType === 'brand') {
         await deleteBrand(deleteId).unwrap();
-        message.success('Brand deleted successfully');
+        toast.success('Brand deleted successfully');
         refetchBrands();
       } else if (deleteType === 'category') {
         await deleteBrandParentCategory(deleteId).unwrap();
-        message.success('Brand Category deleted successfully');
+        toast.success('Brand Category deleted successfully');
         refetchCategories();
       } else if (deleteType === 'meta') {
         await deleteProductMeta(deleteId).unwrap();
-        message.success('Meta field deleted successfully');
+        toast.success('Meta field deleted successfully');
         refetchMeta();
       } else if (deleteType === 'vendor') {
         await deleteVendor(deleteId).unwrap();
-        message.success('Vendor deleted successfully');
+        toast.success('Vendor deleted successfully');
         refetchVendors();
       }
     } catch (err) {
-      message.error(`Failed to delete ${deleteType}`);
+      toast.error(`Failed to delete ${deleteType}`);
     } finally {
       setShowDeleteModal(false);
       setDeleteId(null);
@@ -236,46 +250,69 @@ const BrandList = () => {
           </Tabs>
 
           {/* Search & Brand Sub-tabs */}
-          <div className="row mb-4 align-items-center">
-            <div className="col-lg-6">
-              {activeMainTab === 'brands' && (
-                <div className="d-flex align-items-center gap-3 flex-wrap">
-                  <div className="btn-group flex-wrap">
-                    {['All', ...brandParentCategories.map((c) => c.name)].map((tab) => (
-                      <button
-                        key={tab}
-                        className={`btn btn-sm ${
-                          activeBrandTab === tab ? 'btn-primary' : 'btn-outline-secondary'
-                        }`}
-                        onClick={() => setActiveBrandTab(tab)}
-                      >
-                        {tab} ({groupedBrands[tab]?.length || 0})
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="col-lg-6 text-lg-end">
-              <div style={{ maxWidth: '340px', marginLeft: 'auto' }}>
-                <Search
-                  placeholder={
-                    activeMainTab === 'brands'
-                      ? 'Search by brand name or slug...'
-                      : activeMainTab === 'categories'
-                        ? 'Search categories...'
-                        : activeMainTab === 'meta'
-                          ? 'Search meta fields by title, slug or type...'
-                          : 'Search vendors by name or ID...'
-                  }
-                  allowClear
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+          <ListToolbar
+            onClear={() => {
+              setSearchTerm('');
+              setActiveBrandTab('All');
+              setBrandPaging({ filterKey: '', page: 1 });
+            }}
+            exportTitle={
+              activeMainTab === 'brands'
+                ? 'Brands'
+                : activeMainTab === 'categories'
+                  ? 'Brand categories'
+                  : activeMainTab === 'meta'
+                    ? 'Meta fields'
+                    : 'Vendors'
+            }
+            exportData={
+              activeMainTab === 'brands'
+                ? visibleBrands.map((b) => ({ Name: b.brandName, Slug: b.brandSlug }))
+                : activeMainTab === 'categories'
+                  ? filteredCategories.map((c) => ({ Name: c.name, Slug: c.slug }))
+                  : activeMainTab === 'meta'
+                    ? filteredMeta.map((m) => ({ Title: m.title, Slug: m.slug, Type: m.fieldType }))
+                    : filteredVendors.map((v) => ({ Name: v.vendorName, ID: v.id }))
+            }
+            search={{
+              placeholder:
+                activeMainTab === 'brands'
+                  ? 'Search by brand name or slug...'
+                  : activeMainTab === 'categories'
+                    ? 'Search categories...'
+                    : activeMainTab === 'meta'
+                      ? 'Search meta fields by title, slug or type...'
+                      : 'Search vendors by name or ID...',
+              allowClear: true,
+              value: searchTerm,
+              onChange: (e) => setSearchTerm(e.target.value),
+            }}
+            filters={[
+              ...(activeMainTab === 'brands'
+                ? [
+                    {
+                      key: 'category',
+                      type: 'custom',
+                      content: (
+                        <div className="btn-group flex-wrap">
+                          {['All', ...brandParentCategories.map((c) => c.name)].map((tab) => (
+                            <button
+                              key={tab}
+                              className={`btn btn-sm ${
+                                activeBrandTab === tab ? 'btn-primary' : 'btn-outline-secondary'
+                              }`}
+                              onClick={() => setActiveBrandTab(tab)}
+                            >
+                              {tab} ({groupedBrands[tab]?.length || 0})
+                            </button>
+                          ))}
+                        </div>
+                      ),
+                    },
+                  ]
+                : []),
+            ]}
+          />
 
           {/* ==================== BRANDS TABLE ==================== */}
           {activeMainTab === 'brands' && (
@@ -283,15 +320,15 @@ const BrandList = () => {
               <table className="table table-hover align-middle">
                 <thead className="table-light">
                   <tr>
-                    <th style={{ width: 70 }}>Logo</th>
+                    <th className="fv2-brandslist-5a12f466f2">Logo</th>
                     <th>Brand Name</th>
                     <th>Slug</th>
                     <th>Parent Categories</th>
-                    <th style={{ width: 140 }}>Actions</th>
+                    <th className="fv2-brandslist-a3fd59d07c">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBrands.map((brand) => (
+                  {visibleBrands.map((brand) => (
                     <tr key={brand.id}>
                       <td>
                         <Avatar src={brand.logo} name={brand.brandName || ''} size="40" round />
@@ -322,8 +359,8 @@ const BrandList = () => {
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
-                            className="me-3 text-primary"
-                            style={{ cursor: 'pointer', fontSize: 18 }}
+                            className="me-3 text-primary fv2-brandslist-ccafe187b9"
+
                             onClick={() => handleEditBrand(brand)}
                           />
                         </Tooltip>
@@ -340,7 +377,10 @@ const BrandList = () => {
                           }
                           trigger={['click']}
                         >
-                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined className="fv2-brandslist-463c41f88b" />}
+                          />
                         </Dropdown>
                       </td>
                     </tr>
@@ -359,7 +399,7 @@ const BrandList = () => {
                     <th>Name</th>
                     <th>Slug</th>
                     <th>Attached Brands</th>
-                    <th style={{ width: 140 }}>Actions</th>
+                    <th className="fv2-brandslist-a3fd59d07c">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -377,8 +417,8 @@ const BrandList = () => {
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
-                            className="me-3 text-primary"
-                            style={{ cursor: 'pointer', fontSize: 18 }}
+                            className="me-3 text-primary fv2-brandslist-ccafe187b9"
+
                             onClick={() => handleEditCategory(category)}
                           />
                         </Tooltip>
@@ -398,7 +438,10 @@ const BrandList = () => {
                           }
                           trigger={['click']}
                         >
-                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined className="fv2-brandslist-463c41f88b" />}
+                          />
                         </Dropdown>
                       </td>
                     </tr>
@@ -418,7 +461,7 @@ const BrandList = () => {
                     <th>Slug</th>
                     <th>Field Type</th>
                     <th>Unit</th>
-                    <th style={{ width: 140 }}>Actions</th>
+                    <th className="fv2-brandslist-a3fd59d07c">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -435,8 +478,8 @@ const BrandList = () => {
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
-                            className="me-3 text-primary"
-                            style={{ cursor: 'pointer', fontSize: 18 }}
+                            className="me-3 text-primary fv2-brandslist-ccafe187b9"
+
                             onClick={() => openMetaModal(meta)}
                           />
                         </Tooltip>
@@ -450,7 +493,10 @@ const BrandList = () => {
                           }
                           trigger={['click']}
                         >
-                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined className="fv2-brandslist-463c41f88b" />}
+                          />
                         </Dropdown>
                       </td>
                     </tr>
@@ -469,7 +515,7 @@ const BrandList = () => {
                     <th>Vendor ID</th>
                     <th>Vendor Name</th>
                     <th>Associated Brand</th>
-                    <th style={{ width: 140 }}>Actions</th>
+                    <th className="fv2-brandslist-a3fd59d07c">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -502,7 +548,10 @@ const BrandList = () => {
                           }
                           trigger={['click']}
                         >
-                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined className="fv2-brandslist-463c41f88b" />}
+                          />
                         </Dropdown>
                       </td>
                     </tr>
@@ -513,15 +562,15 @@ const BrandList = () => {
           )}
 
           {/* Pagination for Brands */}
-          {activeMainTab === 'brands' && allBrands.length > itemsPerPage && (
-            <div className="d-flex justify-content-end mt-4">
-              <Pagination
-                current={1}
-                pageSize={itemsPerPage}
-                total={allBrands.length}
-                showSizeChanger={false}
-              />
-            </div>
+          {activeMainTab === 'brands' && filteredBrands.length > 0 && (
+            <ListPagination
+              itemLabel="brands"
+              current={currentBrandPage}
+              pageSize={itemsPerPage}
+              total={filteredBrands.length}
+              onChange={(page) => setBrandPaging({ filterKey: brandFilterKey, page })}
+              showSizeChanger={false}
+            />
           )}
         </div>
 

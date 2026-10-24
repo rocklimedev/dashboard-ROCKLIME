@@ -1,0 +1,14 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-cliqdrawer-2211ee230e) {
+  margin-left: auto;
+}
+
+:is(#fv2-style-priority, .fv2-cliqdrawer-0f8d83e552) {
+  font-size: var(--fv2-font-40px);
+  color: var(--fv2-color-527d70);
+}
+
+:is(#fv2-style-priority, .fv2-cliqdrawer-be92f20e06) {
+  display: block;
+  margin: 30px;
+}

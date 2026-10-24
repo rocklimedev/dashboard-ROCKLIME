@@ -1,24 +1,8 @@
+import './StockEntry.styles.css';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  AutoComplete,
-  Button,
-  Card,
-  Col,
-  Descriptions,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  List,
-  Row,
-  Segmented,
-  Select,
-  Space,
-  Tag,
-  Typography,
-  message,
-} from 'antd';
+import { AutoComplete, Button, Card, Col, Descriptions, Empty, Form, Input, InputNumber, List, Row, Segmented, Select, Space, Tag, Typography } from 'antd';
+import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import {
   useGetStockOverviewQuery,
@@ -77,8 +61,8 @@ export default function StockEntry() {
       (found?.data || []).map((p) => ({
         value: p.productId,
         label: (
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div className="fv2-stockentry-a0bc8e765a">
+            <span className="fv2-stockentry-c6d3cd6af5">
               {p.name} <Text type="secondary">{p.product_code}</Text>
             </span>
             <Text type="secondary">{fmtQty(p.available)} avail.</Text>
@@ -93,13 +77,13 @@ export default function StockEntry() {
   const typeMeta = TYPES.find((t) => t.value === type);
 
   const submit = async (v) => {
-    if (!product) return message.error('Choose a product first.');
+    if (!product) return toast.error('Choose a product first.');
     try {
       const r = await save({ type, productId: product.productId, ...v }).unwrap();
-      message.success(r.message || 'Saved');
+      toast.success(r.message || 'Saved');
       form.resetFields(['quantity', 'reason']);
     } catch (e) {
-      message.error(e?.data?.message || 'Could not save the entry');
+      toast.error(e?.data?.message || 'Could not save the entry');
     }
   };
 
@@ -108,7 +92,7 @@ export default function StockEntry() {
       <div className="content">
         <div className="ops-head">
           <div>
-            <Title level={4} style={{ margin: 0 }}>
+            <Title className="fv2-stockentry-077b33b434" level={4}>
               Stock entry
             </Title>
             <Text type="secondary">
@@ -135,7 +119,7 @@ export default function StockEntry() {
                     onChange={setType}
                     options={TYPES.map((t) => ({ value: t.value, label: t.label }))}
                   />
-                  <Text type="secondary" style={{ fontSize: 12 }}>
+                  <Text className="fv2-stockentry-b61592bbc3" type="secondary">
                     {typeMeta?.help}
                   </Text>
                 </Form.Item>
@@ -194,7 +178,7 @@ export default function StockEntry() {
                       name="quantity"
                       rules={[{ required: true, message: 'How many?' }]}
                     >
-                      <InputNumber min={1} style={{ width: '100%' }} />
+                      <InputNumber className="fv2-stockentry-67d356c077" min={1} />
                     </Form.Item>
                   </Col>
                 </Row>
@@ -217,12 +201,12 @@ export default function StockEntry() {
             </Card>
           </Col>
           <Col xs={24} lg={10}>
-            <Space direction="vertical" size={16} style={{ width: '100%' }}>
+            <Space className="fv2-stockentry-67d356c077" direction="vertical" size={16}>
               <Card className="ops-panel" size="small" title="Current stock">
                 {product ? (
                   <>
                     <Text strong>{product.name}</Text>
-                    <Descriptions size="small" column={2} style={{ marginTop: 8 }}>
+                    <Descriptions className="fv2-stockentry-4321c38191" size="small" column={2}>
                       <Descriptions.Item label="On hand">{fmtQty(totals.onHand)}</Descriptions.Item>
                       <Descriptions.Item label="Reserved">
                         {fmtQty(totals.reserved)}
@@ -238,7 +222,7 @@ export default function StockEntry() {
                       </Descriptions.Item>
                     </Descriptions>
                     {(detail?.balances || []).length > 1 && (
-                      <div style={{ marginTop: 4 }}>
+                      <div className="fv2-stockentry-23561d2438">
                         {detail.balances.map((w) => (
                           <Tag key={w.warehouseId}>
                             {w.warehouse}: {fmtQty(w.onHand)}
@@ -268,10 +252,10 @@ export default function StockEntry() {
                       const ch = x.onHandChange || x.damagedChange;
                       return (
                         <List.Item extra={<Text strong>{signed(ch)}</Text>}>
-                          <div style={{ minWidth: 0 }}>
+                          <div className="fv2-stockentry-b19db6d523">
                             <Text>{x.productName}</Text>
                             <div>
-                              <Text type="secondary" style={{ fontSize: 12 }}>
+                              <Text className="fv2-stockentry-b61592bbc3" type="secondary">
                                 {[
                                   MOVEMENT_LABELS[x.movement] || x.movement,
                                   x.reason,

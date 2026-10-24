@@ -1,0 +1,45 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-crmboard-a8eb4b00d7) {
+  margin-inline-end: 0;
+}
+
+:is(#fv2-style-priority, .fv2-crmboard-6e66c29847) {
+  font-size: var(--fv2-font-12px);
+  color: var(--fv2-color-8c8c8c);
+}
+
+:is(#fv2-style-priority, .fv2-crmboard-e58961b461) {
+  margin: 0;
+}
+
+:is(#fv2-style-priority, .fv2-crmboard-6a3bc3b7f9) {
+  width: 240px;
+}
+
+:is(#fv2-style-priority, .fv2-crmboard-4cddd8e1c8) {
+  width: 140px;
+}
+
+:is(#fv2-style-priority, .fv2-crmboard-fe5ce2fb80) {
+  width: 100px;
+}
+
+:is(#fv2-style-priority, .fv2-crmboard-c4cd0b7261) {
+  width: 120px;
+}
+
+:is(#fv2-style-priority, .fv2-crmboard-b0fcc76536) {
+  width: 150px;
+}
+
+:is(#fv2-style-priority, .fv2-crmboard-e197aee742) {
+  width: 130px;
+}
+
+:is(#fv2-style-priority, .fv2-crmboard-d7c7d5ab2a) {
+  width: 160px;
+}
+
+:is(#fv2-style-priority, .fv2-crmboard-f839121e90) {
+  flex: 1;
+}

@@ -1,3 +1,6 @@
+import ListToolbar from '../../components/Common/ListToolbar';
+import ListPagination from '../../components/Common/ListPagination';
+import './OrderWrapper.styles.css';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
@@ -7,23 +10,9 @@ import {
   useLazyDownloadOrderSummaryQuery,
   useGetOrderStatusCountsQuery,
 } from '../../api/orderApi';
+import { Button, Dropdown, Table, Tabs, Tag, Badge, Progress, Tooltip, Typography, Space } from 'antd';
+import { toast } from 'sonner';
 import {
-  message,
-  Input,
-  Button,
-  Select,
-  Dropdown,
-  Table,
-  Tabs,
-  Tag,
-  Badge,
-  Progress,
-  Tooltip,
-  Typography,
-  Space,
-} from 'antd';
-import {
-  SearchOutlined,
   EditOutlined,
   FileTextOutlined,
   DeleteOutlined,
@@ -186,9 +175,9 @@ const OrderWrapper = () => {
     if (!orderToDelete) return;
     try {
       await deleteOrder(orderToDelete).unwrap();
-      message.success('Order deleted');
+      toast.success('Order deleted');
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to delete order');
+      toast.error(err?.data?.message || 'Failed to delete order');
     } finally {
       setOrderToDelete(null);
     }
@@ -197,9 +186,9 @@ const OrderWrapper = () => {
   const changeStatus = async (order, status) => {
     try {
       await updateOrderStatus({ orderId: order.id, status }).unwrap();
-      message.success(`Order #${order.orderNo} → ${label(status)}`);
+      toast.success(`Order #${order.orderNo} → ${label(status)}`);
     } catch (err) {
-      message.error(err?.data?.message || 'Could not change the status');
+      toast.error(err?.data?.message || 'Could not change the status');
     }
   };
 
@@ -215,7 +204,7 @@ const OrderWrapper = () => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      message.error('Failed to download the order summary');
+      toast.error('Failed to download the order summary');
     }
   };
 
@@ -238,12 +227,12 @@ const OrderWrapper = () => {
             #{o.orderNo}
           </Link>
           {o.priority === 'high' && (
-            <Tag color="red" style={{ marginInlineStart: 6 }}>
+            <Tag className="fv2-orderwrapper-a8417f1750" color="red">
               High
             </Tag>
           )}
           <div>
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="fv2-orderwrapper-54244e29ba" type="secondary">
               {dayjs(o.createdAt).format('D MMM YYYY')}
               {o.quotation?.reference_number && (
                 <>
@@ -280,9 +269,9 @@ const OrderWrapper = () => {
               onClick: ({ key }) => changeStatus(o, key),
             }}
           >
-            <span style={{ cursor: 'pointer' }}>
+            <span className="fv2-orderwrapper-d44e548202">
               {tag}
-              <SwapOutlined style={{ fontSize: 11, color: '#8c8c8c' }} />
+              <SwapOutlined className="fv2-orderwrapper-7ca3a84401" />
             </span>
           </Dropdown>
         );
@@ -434,76 +423,93 @@ const OrderWrapper = () => {
             })}
           />
 
-          <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
-            <Input
-              prefix={<SearchOutlined />}
-              placeholder="Search order no. or customer"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              allowClear
-              style={{ width: 280 }}
-            />
-            <Select
-              placeholder="Priority"
-              value={priority || undefined}
-              onChange={(v) => {
-                setPriority(v || '');
-                setPage(1);
-              }}
-              allowClear
-              style={{ width: 130 }}
-              options={[
-                { value: 'high', label: 'High' },
-                { value: 'medium', label: 'Medium' },
-                { value: 'low', label: 'Low' },
-              ]}
-            />
-            <Select
-              value={sort}
-              onChange={(v) => {
-                setSort(v);
-                setPage(1);
-              }}
-              style={{ width: 190 }}
-              options={[
-                { value: 'createdAt_desc', label: 'Newest first' },
-                { value: 'dueDate_asc', label: 'Due date (soonest)' },
-                { value: 'dueDate_desc', label: 'Due date (latest)' },
-                { value: 'amount_desc', label: 'Amount (highest)' },
-              ]}
-            />
-            <Button onClick={clearFilters}>Clear</Button>
-          </div>
+          <ListToolbar
+            exportTitle={'Orders'}
+            exportData={orders.map((o) => ({
+              Order: o.orderNo,
+              Customer: o.customer?.name ?? '',
+              Status: o.status,
+              Amount: o.finalAmount,
+              Priority: o.priority,
+              'Due date': o.dueDate,
+            }))}
+            search={{
+              placeholder: 'Search order no. or customer',
+              value: searchTerm,
+              onChange: (e) => setSearchTerm(e.target.value),
+              allowClear: true,
+            }}
+            filters={[
+              {
+                key: 'priority',
+                type: 'select',
+                props: {
+                  placeholder: 'Priority',
+                  value: priority || undefined,
+                  onChange: (v) => {
+                    setPriority(v || '');
+                    setPage(1);
+                  },
+                  allowClear: true,
+                  options: [
+                    { value: 'high', label: 'High' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'low', label: 'Low' },
+                  ],
+                },
+              },
+              {
+                key: 'sort',
+                type: 'select',
+                props: {
+                  value: sort,
+                  onChange: (v) => {
+                    setSort(v);
+                    setPage(1);
+                  },
+                  options: [
+                    { value: 'createdAt_desc', label: 'Newest first' },
+                    { value: 'dueDate_asc', label: 'Due date (soonest)' },
+                    { value: 'dueDate_desc', label: 'Due date (latest)' },
+                    { value: 'amount_desc', label: 'Amount (highest)' },
+                  ],
+                },
+              },
+            ]}
+            onClear={clearFilters}
+          />
 
           {error ? (
             <div className="alert alert-danger">
               {error?.data?.message || 'Failed to load orders'}
             </div>
           ) : (
-            <Table
-              columns={columns}
-              dataSource={orders}
-              rowKey="id"
-              loading={isLoading || isFetching}
-              size="middle"
-              scroll={{ x: 'max-content' }}
-              rowClassName={(o) => (o.isLate ? 'order-row-late' : '')}
-              locale={{
-                emptyText: tab === 'LATE' ? 'No late orders' : 'No orders match these filters',
-              }}
-              pagination={{
-                current: page,
-                pageSize: limit,
-                total,
-                showSizeChanger: true,
-                pageSizeOptions: ['10', '20', '50', '100'],
-                showTotal: (t, r) => `${r[0]}–${r[1]} of ${t}`,
-                onChange: (p, s) => {
-                  setPage(s !== limit ? 1 : p);
-                  setLimit(s);
-                },
-              }}
-            />
+            <>
+              <Table
+                columns={columns}
+                dataSource={orders}
+                rowKey="id"
+                loading={isLoading || isFetching}
+                size="middle"
+                scroll={{ x: 'max-content' }}
+                rowClassName={(o) => (o.isLate ? 'order-row-late' : '')}
+                locale={{
+                  emptyText: tab === 'LATE' ? 'No late orders' : 'No orders match these filters',
+                }}
+                pagination={false}
+              />
+              <ListPagination
+                itemLabel="orders"
+                current={page}
+                pageSize={limit}
+                total={total}
+                showSizeChanger
+                onChange={(page, size) => {
+                  setPage(page);
+                  setLimit(size);
+                }}
+              />
+            </>
           )}
         </div>
 

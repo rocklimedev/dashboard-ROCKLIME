@@ -3,8 +3,8 @@
 /* root layout */
 .pd-root {
   font-family: 'Lato';
-  color: #333333;
-  background-color: #f7f7f7;
+  color: var(--fv2-color-333333);
+  background-color: var(--fv2-color-f7f7f7);
   padding: 24px;
   box-sizing: border-box;
 }
@@ -30,7 +30,7 @@
 
 /* gallery */
 .pd-gallery {
-  background: #ffffff;
+  background: var(--fv2-color-ffffff);
   border-radius: 10px;
   padding: 18px;
   box-shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
@@ -47,7 +47,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  background: linear-gradient(180deg, var(--fv2-color-ffffff), var(--fv2-color-fbfdff));
 }
 
 .pd-hero-img {
@@ -95,7 +95,7 @@
 
 /* summary card */
 .pd-summary {
-  background: #ffffff;
+  background: var(--fv2-color-ffffff);
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
@@ -105,7 +105,7 @@
 }
 
 .pd-title {
-  font-size: 22px;
+  font-size: var(--fv2-font-22px);
   margin: 0 0 6px 0;
   font-weight: 600;
   line-height: 1.2;
@@ -119,20 +119,20 @@
 
 .pd-price__mrp {
   text-decoration: line-through;
-  color: #6b7280;
-  font-size: 14px;
+  color: var(--fv2-color-6b7280);
+  font-size: var(--fv2-font-14px);
 }
 
 .pd-price__current {
-  font-size: 20px;
+  font-size: var(--fv2-font-20px);
   font-weight: 700;
-  color: #0f172a;
+  color: var(--fv2-color-0f172a);
 }
 
 /* description */
 .pd-description {
-  color: #374151;
-  font-size: 14px;
+  color: var(--fv2-color-374151);
+  font-size: var(--fv2-font-14px);
   margin: 6px 0 0 0;
   line-height: 1.5;
 }
@@ -148,7 +148,7 @@
 
 .pd-qty-label {
   font-weight: 600;
-  color: #374151;
+  color: var(--fv2-color-374151);
   min-width: 70px;
 }
 
@@ -168,7 +168,7 @@
 .pd-barcode__svg {
   width: 180px;
   height: 60px;
-  background: #fff;
+  background: var(--fv2-color-fff);
   border-radius: 6px;
   padding: 6px;
   box-shadow: 0 4px 12px rgba(16, 24, 40, 0.04);
@@ -177,8 +177,8 @@
 /* meta info */
 .pd-meta {
   margin-top: 14px;
-  font-size: 13px;
-  color: #374151;
+  font-size: var(--fv2-font-13px);
+  color: var(--fv2-color-374151);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -192,7 +192,7 @@
 
 /* tab content */
 .pd-tab-content {
-  background: #fff;
+  background: var(--fv2-color-fff);
   padding: 18px;
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(16, 24, 40, 0.04);
@@ -206,7 +206,7 @@
 
 .pd-info-list li {
   padding: 8px 0;
-  border-bottom: 1px dashed #eef2f7;
+  border-bottom: 1px dashed var(--fv2-color-eef2f7);
   display: flex;
   gap: 10px;
 }
@@ -214,7 +214,7 @@
 .pd-info-list li span {
   min-width: 120px;
   font-weight: 600;
-  color: #111827;
+  color: var(--fv2-color-111827);
 }
 
 /* related grid */

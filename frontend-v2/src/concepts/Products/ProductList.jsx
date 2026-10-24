@@ -1,19 +1,11 @@
+import ListToolbar from '../../components/Common/ListToolbar';
+import ListPagination from '../../components/Common/ListPagination';
+import Loader from '../../components/Common/Loader';
+import './ProductList.styles.css';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import {
-  Form,
-  Input,
-  Empty,
-  Table,
-  Button,
-  Tooltip,
-  Dropdown,
-  Menu,
-  Spin,
-  Pagination,
-  Select,
-} from 'antd';
-import { SearchOutlined, ShoppingCartOutlined, MoreOutlined } from '@ant-design/icons';
+import { Input, Empty, Table, Button, Tooltip, Dropdown, Menu } from 'antd';
+import { ShoppingCartOutlined, MoreOutlined } from '@ant-design/icons';
 import {
   useGetAllProductsQuery,
   useGetAllProductsByCategoryQuery,
@@ -25,7 +17,7 @@ import { useGetBrandParentCategoryByIdQuery } from '../../api/brandParentCategor
 import { useGetAllCategoriesQuery } from '../../api/categoryApi';
 import { useGetProfileQuery } from '../../api/userApi';
 import { useAddProductToCartMutation, useGetCartQuery } from '../../api/cartApi';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import '../../components/Product/productdetails.css';
 import DeleteModal from '../../components/Common/DeleteModal';
 import ProductStockDrawer from '../../components/Stock/ProductStockDrawer';
@@ -342,9 +334,9 @@ const ProductsList = () => {
       key: 'images',
       render: (images) => (
         <img
+          className="fv2-productlist-c5e5aeb7f0"
           src={parseImages(images)[0] || pos}
           alt="Product"
-          style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4 }}
         />
       ),
       width: 80,
@@ -403,7 +395,7 @@ const ProductsList = () => {
         ) : qty > 0 ? (
           `${qty} available`
         ) : (
-          <span style={{ color: '#ff4d4f' }}>Out of stock</span>
+          <span className="fv2-productlist-f6ef5ea3d6">Out of stock</span>
         );
       },
     },
@@ -416,13 +408,13 @@ const ProductsList = () => {
         const priceValid = price !== null;
 
         return (
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="fv2-productlist-a61d61ed01">
             <PermissionGate api="write" module="cart">
               <Tooltip title={!priceValid ? 'Price not available' : 'Add to cart'}>
                 <Button
                   icon={
                     cartLoadingStates[record.productId] ? (
-                      <Spin size="small" />
+                      <Loader size="small" />
                     ) : (
                       <ShoppingCartOutlined />
                     )
@@ -469,10 +461,10 @@ const ProductsList = () => {
 
   // ── Handlers ───────────────────────────────────────────
   const handleAddToCart = async (product) => {
-    if (!userId) return message.error('Please log in');
+    if (!userId) return toast.error('Please log in');
 
     const price = getNumericPrice(product);
-    if (price === null) return message.error('Price not available');
+    if (price === null) return toast.error('Price not available');
 
     setCartLoadingStates((prev) => ({ ...prev, [product.productId]: true }));
 
@@ -483,11 +475,11 @@ const ProductsList = () => {
         quantity: 1,
       }).unwrap();
 
-      message.success(product.quantity <= 0 ? 'Added to cart' : 'Added to cart');
+      toast.success(product.quantity <= 0 ? 'Added to cart' : 'Added to cart');
 
       refetchCart();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to add to cart');
+      toast.error(err?.data?.message || 'Failed to add to cart');
     } finally {
       setCartLoadingStates((prev) => ({ ...prev, [product.productId]: false }));
     }
@@ -505,9 +497,9 @@ const ProductsList = () => {
     if (!selectedProduct?.productId) return;
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
-      message.success('Product deleted');
+      toast.success('Product deleted');
     } catch (err) {
-      message.error(err?.data?.message || 'Delete failed');
+      toast.error(err?.data?.message || 'Delete failed');
     } finally {
       setDeleteModalVisible(false);
       setSelectedProduct(null);
@@ -563,80 +555,93 @@ const ProductsList = () => {
           extra={null} // or any JSX like <Button>Filter</Button>
         />
 
-        <div className="filter-bar bg-white p-3 shadow-sm mb-4">
-          <Form layout="inline" style={{ flexWrap: 'wrap', gap: 16 }}>
-            <Form.Item>
-              <Input
-                prefix={<SearchOutlined />}
-                placeholder="Search products... (e.g. essence l)"
-                value={localSearch}
-                onChange={handleSearchChange}
-                allowClear
-                size="large"
-                style={{ width: 300 }}
-                suffix={isSearchPending ? <Spin size="small" /> : null}
-              />
-            </Form.Item>
+        <ListToolbar
+          exportTitle={pageTitle}
+          exportData={processedProducts.map((p) => ({
+            Name: p.name,
+            Code: p.product_code,
+            Brand: getBrandsName(p.brandId),
+            Category: getCategoryName(p.categoryId),
+            Price: getNumericPrice(p),
+            Stock: p.quantity,
+          }))}
+          search={{
+            placeholder: 'Search products... (e.g. essence l)',
+            value: localSearch,
+            onChange: handleSearchChange,
+            allowClear: true,
+            size: 'large',
+            suffix: isSearchPending ? <Loader size="small" /> : null,
+          }}
+          filters={[
+            {
+              key: 'price-range',
+              type: 'custom',
+              label: 'Price Range (₹)',
+              content: (
+                <>
+                  <Input
+                    className="fv2-productlist-0e070d6d0a"
+                    placeholder="Min"
+                    value={priceMin}
+                    onChange={(e) => handlePriceChange('minPrice', e.target.value)}
 
-            <Form.Item label="Price Range (₹)">
-              <Input
-                placeholder="Min"
-                value={priceMin}
-                onChange={(e) => handlePriceChange('minPrice', e.target.value)}
-                style={{ width: 100 }}
-                type="number"
-                min={0}
-              />
-              <span style={{ margin: '0 8px' }}>–</span>
-              <Input
-                placeholder="Max"
-                value={priceMax}
-                onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
-                style={{ width: 100 }}
-                type="number"
-                min={0}
-              />
-            </Form.Item>
+                    type="number"
+                    min={0}
+                  />
+                  <span className="fv2-productlist-466d629f73">–</span>
+                  <Input
+                    className="fv2-productlist-0e070d6d0a"
+                    placeholder="Max"
+                    value={priceMax}
+                    onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
 
-            {showSizeFilter && (
-              <Form.Item label="Size (inches/feet)">
-                <Select
-                  mode="multiple"
-                  allowClear
-                  showSearch
-                  placeholder="Select size(s)"
-                  value={selectedSizes}
-                  onChange={(values) => {
-                    setSelectedSizes(values);
-                    setSearchParams((prev) => {
-                      const next = new URLSearchParams(prev);
-                      next.delete('size');
-                      values.forEach((v) => next.append('size', v));
-                      next.set('page', '1');
-                      return next;
-                    });
-                  }}
-                  style={{ minWidth: 240 }}
-                  filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                  }
-                  options={COMMON_SIZES_FEET.map((size) => ({
-                    label: size,
-                    value: size,
-                  }))}
-                />
-              </Form.Item>
-            )}
-
-            <Form.Item>
-              <Button onClick={resetFilters}>Reset</Button>
-            </Form.Item>
-          </Form>
-        </div>
+                    type="number"
+                    min={0}
+                  />
+                </>
+              ),
+            },
+            ...(showSizeFilter
+              ? [
+                  {
+                    key: 'size',
+                    type: 'select',
+                    label: 'Size (inches/feet)',
+                    props: {
+                      mode: 'multiple',
+                      allowClear: true,
+                      showSearch: true,
+                      placeholder: 'Select size(s)',
+                      value: selectedSizes,
+                      onChange: (values) => {
+                        setSelectedSizes(values);
+                        setSearchParams((prev) => {
+                          const next = new URLSearchParams(prev);
+                          next.delete('size');
+                          values.forEach((v) => next.append('size', v));
+                          next.set('page', '1');
+                          return next;
+                        });
+                      },
+                      filterOption: (input, option) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase()),
+                      options: COMMON_SIZES_FEET.map((size) => ({
+                        label: size,
+                        value: size,
+                      })),
+                    },
+                  },
+                ]
+              : []),
+          ]}
+          onClear={resetFilters}
+          clearLabel="Reset"
+        />
 
         {isLoading ? (
           <div className="text-center py-5">
-            <Spin size="large" />
+            <Loader size="large" />
           </div>
         ) : error ? (
           <div className="alert alert-danger">
@@ -644,24 +649,17 @@ const ProductsList = () => {
           </div>
         ) : processedProducts.length === 0 ? (
           <Empty
+            className="fv2-productlist-510bceec15"
             description={
               localSearch.trim() || priceMin || priceMax || sortField || selectedSizes.length > 0
                 ? `No products match "${localSearch.trim() || 'your filters'}"`
                 : 'No products found'
             }
-            style={{ margin: '80px 0' }}
           />
         ) : (
           <>
             {viewMode === 'card' ? (
-              <div
-                className="products-grid"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                  gap: '20px',
-                }}
-              >
+              <div className="products-grid fv2-productlist-2bdb263516">
                 {processedProducts.map((product) => (
                   <ProductCard
                     key={product.productId}
@@ -685,26 +683,21 @@ const ProductsList = () => {
               />
             )}
 
-            <div className="mt-4 d-flex justify-content-between align-items-center">
-              <div className="text-muted">
-                Showing {(currentPage - 1) * pageSize + 1}–
-                {Math.min(currentPage * pageSize, pagination.total)} of {pagination.total}
-              </div>
-              <Pagination
-                current={currentPage}
-                total={pagination.total}
-                pageSize={pageSize}
-                onChange={(page) => {
-                  setSearchParams((prev) => {
-                    const next = new URLSearchParams(prev);
-                    next.set('page', page.toString());
-                    return next;
-                  });
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                showSizeChanger={false}
-              />
-            </div>
+            <ListPagination
+              itemLabel="products"
+              current={currentPage}
+              total={pagination.total}
+              pageSize={pageSize}
+              onChange={(page) => {
+                setSearchParams((prev) => {
+                  const next = new URLSearchParams(prev);
+                  next.set('page', page.toString());
+                  return next;
+                });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              showSizeChanger={false}
+            />
           </>
         )}
       </div>

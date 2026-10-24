@@ -1,17 +1,9 @@
+import Loader from '../Common/Loader';
+import ModalShell from '../Common/ModalShell';
+import './OrderCreditNoteModal.styles.css';
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Modal,
-  Upload,
-  Button,
-  InputNumber,
-  Table,
-  message,
-  Typography,
-  Divider,
-  Alert,
-  Tag,
-  Spin,
-} from 'antd';
+import { Upload, Button, InputNumber, Table, Typography, Divider, Alert, Tag } from 'antd';
+import { toast } from 'sonner';
 import { UploadOutlined, FileTextOutlined, RollbackOutlined } from '@ant-design/icons';
 
 import {
@@ -368,7 +360,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
     const maxSize = 5 * 1024 * 1024;
 
     if (selected.size > maxSize) {
-      message.error('Credit note document must be smaller than 5MB');
+      toast.error('Credit note document must be smaller than 5MB');
       return;
     }
 
@@ -383,22 +375,22 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
 
   const handleSubmit = async () => {
     if (!order?.id) {
-      message.error('Order not found');
+      toast.error('Order not found');
       return;
     }
 
     if (dataLoading) {
-      message.warning('Please wait while dispatch and credit note information is loaded');
+      toast.warning('Please wait while dispatch and credit note information is loaded');
       return;
     }
 
     if (!selectedItems.length) {
-      message.error('Select at least one item to return');
+      toast.error('Select at least one item to return');
       return;
     }
 
     if (!file) {
-      message.error('Credit note document is required');
+      toast.error('Credit note document is required');
       return;
     }
 
@@ -419,7 +411,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
     });
 
     if (invalidItem) {
-      message.error(
+      toast.error(
         `${invalidItem.name}: credit note quantity cannot exceed the available dispatched quantity`,
       );
       return;
@@ -432,7 +424,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
     const unavailableItem = selectedItems.find((item) => Number(item.availableQuantity || 0) <= 0);
 
     if (unavailableItem) {
-      message.error(`${unavailableItem.name} has no available dispatched quantity for credit note`);
+      toast.error(`${unavailableItem.name} has no available dispatched quantity for credit note`);
       return;
     }
 
@@ -457,12 +449,12 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
         formData,
       }).unwrap();
 
-      message.success('Credit note created successfully');
+      toast.success('Credit note created successfully');
 
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to create credit note');
+      toast.error(err?.data?.message || 'Failed to create credit note');
     }
   };
 
@@ -563,13 +555,11 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
 
         return (
           <InputNumber
+            className="fv2-ordercreditnotemodal-df8ad01a7f"
             min={0}
             max={max}
             value={record.returnedQuantity}
             onChange={(value) => handleQuantityChange(value, record.productId)}
-            style={{
-              width: '100%',
-            }}
           />
         );
       },
@@ -605,7 +595,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
    */
 
   return (
-    <Modal
+    <ModalShell
       open={visible}
       onCancel={onClose}
       title={
@@ -616,22 +606,10 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
       }
       width={1100}
       destroyOnClose
-      footer={[
-        <Button key="cancel" onClick={onClose}>
-          Cancel
-        </Button>,
-
-        <Button
-          key="submit"
-          type="primary"
-          icon={<RollbackOutlined />}
-          loading={isLoading}
-          disabled={dataLoading || !selectedItems.length}
-          onClick={handleSubmit}
-        >
-          Create Credit Note
-        </Button>,
-      ]}
+      onOk={handleSubmit}
+      okText="Create Credit Note"
+      confirmLoading={isLoading}
+      okButtonProps={{ icon: <RollbackOutlined />, disabled: dataLoading || !selectedItems.length }}
     >
       {order && (
         <>
@@ -650,13 +628,8 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
           />
 
           {dataLoading ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '40px 0',
-              }}
-            >
-              <Spin size="large" />
+            <div className="fv2-ordercreditnotemodal-ff0eca19e0">
+              <Loader size="large" />
 
               <div className="mt-3">
                 <Text type="secondary">Loading dispatch and credit note history...</Text>
@@ -737,7 +710,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
           )}
         </>
       )}
-    </Modal>
+    </ModalShell>
   );
 };
 

@@ -1,3 +1,5 @@
+import Loader from '../../components/Common/Loader';
+import './CustomerDetails.styles.css';
 import React, { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useGetCustomerByIdQuery, useGetCustomerOverviewQuery } from '../../api/customerApi';
@@ -27,25 +29,8 @@ import {
   WhatsAppOutlined,
 } from '@ant-design/icons';
 
-import {
-  Card,
-  Table,
-  Tag,
-  Space,
-  Typography,
-  Avatar,
-  Button,
-  Modal,
-  message,
-  Tabs,
-  Statistic,
-  Row,
-  Col,
-  Timeline,
-  Empty,
-  Alert,
-  Spin,
-} from 'antd';
+import { Card, Table, Tag, Space, Typography, Avatar, Button, Modal, Tabs, Statistic, Row, Col, Timeline, Empty, Alert } from 'antd';
+import { toast } from 'sonner';
 import { Helmet } from 'react-helmet';
 import moment from 'moment';
 
@@ -164,20 +149,20 @@ const CustomerDetails = () => {
           addressId: editingAddress.addressId,
           updatedData: { ...values, customerId: customer.customerId },
         }).unwrap();
-        message.success('Address updated');
+        toast.success('Address updated');
       } else {
         await createAddress({
           ...values,
           customerId: customer.customerId,
           status: addresses.length === 0 ? 'PRIMARY' : 'ADDITIONAL',
         }).unwrap();
-        message.success('Address added');
+        toast.success('Address added');
       }
       setIsModalOpen(false);
       setEditingAddress(null);
       refetchAddresses();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save address');
+      toast.error(err?.data?.message || 'Failed to save address');
     }
   };
 
@@ -190,10 +175,10 @@ const CustomerDetails = () => {
       onOk: async () => {
         try {
           await deleteAddress(addressId).unwrap();
-          message.success('Address deleted');
+          toast.success('Address deleted');
           refetchAddresses();
         } catch {
-          message.error('Delete failed');
+          toast.error('Delete failed');
         }
       },
     });
@@ -273,9 +258,10 @@ const CustomerDetails = () => {
         <div>
           {can('crm', 'write') && (
             <Button
+              className="fv2-customerdetails-46bb660607"
               size="small"
               type="primary"
-              style={{ marginBottom: 10 }}
+
               onClick={() => setNewDeal(true)}
             >
               + New deal
@@ -437,7 +423,7 @@ const CustomerDetails = () => {
       label: `Addresses (${addresses.length})`,
       children: (
         <>
-          <div style={{ textAlign: 'right', marginBottom: 16 }}>
+          <div className="fv2-customerdetails-f6cc28e577">
             <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddressModal()}>
               Add Address
             </Button>
@@ -460,7 +446,7 @@ const CustomerDetails = () => {
                     ]}
                   >
                     <Card.Meta
-                      avatar={<EnvironmentOutlined style={{ fontSize: 28, color: '#1890ff' }} />}
+                      avatar={<EnvironmentOutlined className="fv2-customerdetails-0f8bff5dc7" />}
                       title={
                         addr.status === 'PRIMARY' ? (
                           <Tag color="gold">Primary</Tag>
@@ -488,10 +474,13 @@ const CustomerDetails = () => {
     },
   ];
 
-  if (ovLoading && !customer.customerId) return <Spin style={{ margin: 48 }} />;
+  if (ovLoading && !customer.customerId)
+    return <Loader className="fv2-customerdetails-908b2e3f7b" />;
   if (!customer.customerId)
     return (
-      <div style={{ padding: 24 }}>{ovError ? 'Customer not found.' : 'Loading customer...'}</div>
+      <div className="fv2-customerdetails-f4d05c6fe6">
+        {ovError ? 'Customer not found.' : 'Loading customer...'}
+      </div>
     );
 
   return (
@@ -502,21 +491,13 @@ const CustomerDetails = () => {
         </Helmet>
 
         {/* Header */}
-        <div
-          className="page-header"
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 24,
-          }}
-        >
+        <div className="page-header fv2-customerdetails-e60d7cbdad">
           <Space>
-            <Avatar size={72} style={{ backgroundColor: '#1890ff' }}>
+            <Avatar className="fv2-customerdetails-e922cba75f" size={72}>
               {getInitials(customer.name)}
             </Avatar>
             <div>
-              <Title level={3} style={{ margin: 0 }}>
+              <Title className="fv2-customerdetails-25d885354f" level={3}>
                 {customer.name}
               </Title>
               <Space>
@@ -557,22 +538,24 @@ const CustomerDetails = () => {
 
         {stats.overLimit && (
           <Alert
+            className="fv2-customerdetails-f2c0faf6ba"
             type="error"
             showIcon
-            style={{ marginBottom: 16 }}
+
             message={`Over credit limit: owes ${inr(stats.due)} against a limit of ${inr(stats.creditLimit)}.`}
           />
         )}
         {!stats.overLimit && stats.overdue > 0 && (
           <Alert
+            className="fv2-customerdetails-f2c0faf6ba"
             type="warning"
             showIcon
-            style={{ marginBottom: 16 }}
+
             message={`${inr(stats.overdue)} is overdue (older than ${stats.creditDays} days).`}
           />
         )}
 
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Row className="fv2-customerdetails-85c545b001" gutter={[16, 16]}>
           <Col xs={12} md={8} xl={4}>
             <Card size="small">
               <Statistic title={`Orders (${stats.orders || 0})`} value={inr(stats.orderValue)} />
@@ -604,7 +587,7 @@ const CustomerDetails = () => {
                 valueStyle={{ color: stats.overLimit ? '#cf1322' : undefined }}
                 suffix={
                   stats.creditLimit ? (
-                    <Text type="secondary" style={{ fontSize: 12 }}>
+                    <Text className="fv2-customerdetails-dbe96dbb5b" type="secondary">
                       of {inr(stats.creditLimit)}
                     </Text>
                   ) : null
@@ -632,9 +615,9 @@ const CustomerDetails = () => {
 
         <Row gutter={24}>
           <Col xs={24} lg={7} xl={6}>
-            <Space direction="vertical" size={24} style={{ width: '100%' }}>
+            <Space className="fv2-customerdetails-2ab77978c3" direction="vertical" size={24}>
               <Card title="Contact Information">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="fv2-customerdetails-fb9afa7ac9">
                   <div>
                     <Text type="secondary">
                       <PhoneOutlined /> Phone
@@ -680,7 +663,7 @@ const CustomerDetails = () => {
                   {customer.notes && (
                     <div>
                       <Text type="secondary">Notes</Text>
-                      <div style={{ whiteSpace: 'pre-wrap' }}>{customer.notes}</div>
+                      <div className="fv2-customerdetails-2527a7bc9e">{customer.notes}</div>
                     </div>
                   )}
                 </div>
@@ -697,17 +680,14 @@ const CustomerDetails = () => {
                   size="small"
                 >
                   {referrals.map((r) => (
-                    <div
-                      key={r.customerId}
-                      style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}
-                    >
+                    <div className="fv2-customerdetails-2c66b23ebc" key={r.customerId}>
                       <Link to={`/customer/${r.customerId}`}>{r.name}</Link>
                       <Text type="secondary">
                         {r.orders} order{r.orders === 1 ? '' : 's'} · {inr(r.orderValue)}
                       </Text>
                     </div>
                   ))}
-                  <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 8, paddingTop: 8 }}>
+                  <div className="fv2-customerdetails-9dd6610412">
                     <Text strong>
                       Total business: {inr(referrals.reduce((a, r) => a + r.orderValue, 0))}
                     </Text>
@@ -717,7 +697,7 @@ const CustomerDetails = () => {
 
               {primaryAddress && (
                 <Card title="Primary Address">
-                  <EnvironmentOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+                  <EnvironmentOutlined className="fv2-customerdetails-3d9f63e629" />
                   {primaryAddress.street}
                   <br />
                   {primaryAddress.city}, {primaryAddress.state} {primaryAddress.postalCode}

@@ -1,18 +1,8 @@
+import './CrmBoard.styles.css';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import {
-  message,
-  Button,
-  Empty,
-  Input,
-  Segmented,
-  Select,
-  Space,
-  Table,
-  Tag,
-  Tooltip,
-  Typography,
-} from 'antd';
+import { Button, Empty, Input, Segmented, Select, Space, Table, Tag, Tooltip, Typography } from 'antd';
+import { toast } from 'sonner';
 import {
   PlusOutlined,
   SearchOutlined,
@@ -75,7 +65,7 @@ function CardBody({ deal, onOpen, dragging, ...rest }) {
       <div className="crm-card__top">
         <span className="crm-card__title">{deal.title}</span>
         {deal.tag && (
-          <Tag color={TAG_COLOR[deal.tag]} bordered={false} style={{ marginInlineEnd: 0 }}>
+          <Tag className="fv2-crmboard-a8eb4b00d7" color={TAG_COLOR[deal.tag]} bordered={false}>
             {deal.tag}
           </Tag>
         )}
@@ -94,7 +84,7 @@ function CardBody({ deal, onOpen, dragging, ...rest }) {
           <BiginBadge deal={deal} compact />
           {deal.quotationRef && (
             <Tooltip title={`Quotation ${deal.quotationRef}`}>
-              <Tag bordered={false} color="orange" style={{ marginInlineEnd: 0 }}>
+              <Tag className="fv2-crmboard-a8eb4b00d7" bordered={false} color="orange">
                 Q
               </Tag>
             </Tooltip>
@@ -232,9 +222,9 @@ export default function CrmBoard() {
     try {
       await moveDeal({ id: deal.id, stage, lostReason, boardArgs: filters }).unwrap();
       const label = meta?.stages.find((s) => s.id === stage)?.label;
-      message.success(`${deal.title} → ${label}`);
+      toast.success(`${deal.title} → ${label}`);
     } catch (e) {
-      message.error(e?.data?.message || 'Could not move the deal');
+      toast.error(e?.data?.message || 'Could not move the deal');
     }
   };
 
@@ -250,7 +240,7 @@ export default function CrmBoard() {
         <div>
           <a onClick={() => setOpenId(d.id)}>{t}</a>{' '}
           {d.tag && <Tag color={TAG_COLOR[d.tag]}>{d.tag}</Tag>}
-          <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+          <div className="fv2-crmboard-6e66c29847">
             {[d.customerName || d.contactName, d.phone, d.city].filter(Boolean).join(' · ')}
           </div>
         </div>
@@ -312,7 +302,7 @@ export default function CrmBoard() {
     <div className="page-wrapper crm-page">
       <div className="crm-head">
         <div>
-          <Title level={3} style={{ margin: 0 }}>
+          <Title className="fv2-crmboard-e58961b461" level={3}>
             Pipeline
           </Title>
           <Text type="secondary">
@@ -335,11 +325,11 @@ export default function CrmBoard() {
                   sync()
                     .unwrap()
                     .then(({ result: r }) =>
-                      message.success(
+                      toast.success(
                         `Bigin: ${r.created} new, ${r.updated} updated, ${r.pushed} sent`,
                       ),
                     )
-                    .catch((e) => message.error(e?.data?.message || 'Sync failed'))
+                    .catch((e) => toast.error(e?.data?.message || 'Sync failed'))
                 }
               >
                 Sync Bigin
@@ -391,6 +381,7 @@ export default function CrmBoard() {
 
       <div className="crm-filters">
         <Input
+          className="fv2-crmboard-6a3bc3b7f9"
           allowClear
           prefix={<SearchOutlined />}
           placeholder="Name, mobile, city, company"
@@ -400,7 +391,6 @@ export default function CrmBoard() {
             if (!e.target.value) setFilter('q', '');
           }}
           onPressEnter={() => setFilter('q', search.trim())}
-          style={{ width: 240 }}
         />
         <Segmented
           value={filters.owner === 'me' ? 'me' : 'all'}
@@ -411,9 +401,10 @@ export default function CrmBoard() {
           onChange={(v) => setFilter('owner', v === 'me' ? 'me' : '')}
         />
         <Select
+          className="fv2-crmboard-4cddd8e1c8"
           allowClear
           placeholder="Owner"
-          style={{ width: 140 }}
+
           value={filters.owner && filters.owner !== 'me' ? filters.owner : undefined}
           onChange={(v) => setFilter('owner', v)}
           showSearch
@@ -421,33 +412,37 @@ export default function CrmBoard() {
           options={(meta?.owners || []).map((o) => ({ value: o.id, label: o.name }))}
         />
         <Select
+          className="fv2-crmboard-4cddd8e1c8"
           allowClear
           placeholder="Source"
-          style={{ width: 140 }}
+
           value={filters.source}
           onChange={(v) => setFilter('source', v)}
           options={(meta?.sources || []).map((x) => ({ value: x, label: x }))}
         />
         <Select
+          className="fv2-crmboard-fe5ce2fb80"
           allowClear
           placeholder="Tag"
-          style={{ width: 100 }}
+
           value={filters.tag}
           onChange={(v) => setFilter('tag', v)}
           options={(meta?.tags || []).map((x) => ({ value: x, label: x }))}
         />
         <Select
+          className="fv2-crmboard-c4cd0b7261"
           allowClear
           placeholder="Type"
-          style={{ width: 120 }}
+
           value={filters.customerType}
           onChange={(v) => setFilter('customerType', v)}
           options={(meta?.customerTypes || []).map((x) => ({ value: x, label: x }))}
         />
         <Select
+          className="fv2-crmboard-b0fcc76536"
           allowClear
           placeholder="Closing"
-          style={{ width: 150 }}
+
           value={filters.closing}
           onChange={(v) => setFilter('closing', v)}
           options={[
@@ -457,9 +452,10 @@ export default function CrmBoard() {
         />
         {bigin?.connected && (
           <Select
+            className="fv2-crmboard-e197aee742"
             allowClear
             placeholder="Bigin"
-            style={{ width: 130 }}
+
             value={filters.bigin}
             onChange={(v) => setFilter('bigin', v)}
             options={[
@@ -470,8 +466,9 @@ export default function CrmBoard() {
           />
         )}
         <Select
+          className="fv2-crmboard-d7c7d5ab2a"
           placeholder="Sort"
-          style={{ width: 160 }}
+
           value={filters.sort || 'updated'}
           onChange={(v) => setFilter('sort', v === 'updated' ? '' : v)}
           options={[
@@ -491,7 +488,7 @@ export default function CrmBoard() {
             Clear filters
           </Button>
         )}
-        <div style={{ flex: 1 }} />
+        <div className="fv2-crmboard-f839121e90" />
         <Segmented
           value={view}
           onChange={(v) => setFilter('view', v === 'list' ? 'list' : '')}

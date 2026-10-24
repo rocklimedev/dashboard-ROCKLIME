@@ -1,3 +1,4 @@
+import './UserPage.styles.css';
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useGetUserByIdQuery } from '../../api/userApi';
@@ -79,14 +80,8 @@ const UserPage = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div
-          style={{
-            background: '#f8fafc',
-            minHeight: '100vh',
-            padding: '32px 16px',
-          }}
-        >
-          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div className="fv2-userpage-8ffe2721a3">
+          <div className="fv2-userpage-fd1796ab87">
             {/* Header */}
             <div className="mb-8">
               <Link
@@ -106,8 +101,7 @@ const UserPage = () => {
                       size={140}
                       src={user.photo_thumbnail || user.avatarUrl}
                       icon={<UserOutlined />}
-                      className="shadow-2xl border-8 border-white"
-                      style={{ backgroundColor: '#e0f2fe' }}
+                      className="shadow-2xl border-8 border-white fv2-userpage-6d39244ac4"
                     />
                   </div>
 

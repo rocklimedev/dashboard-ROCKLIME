@@ -1,0 +1,274 @@
+body {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+@media (max-width: 768px) {
+  .page-wrapper {
+    margin-top: 49px;
+  }
+} /* header.css */ /* Professional Table Styling */
+.image-upload {
+  border: 2px dashed var(--fv2-color-ccc);
+  border-radius: 4px;
+  padding: 20px;
+  text-align: center;
+  transition: background-color 0.2s;
+}
+.image-upload.bg-light {
+  background-color: var(--fv2-color-f8f9fa);
+}
+.image-preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.image-preview-container img {
+  border: 1px solid var(--fv2-color-ddd);
+  border-radius: 4px;
+}
+.image-preview-container .btn-danger {
+  padding: 0 6px;
+  line-height: 1.5;
+}
+.professional-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: var(--fv2-color-fff);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+.professional-table th,
+.professional-table td {
+  padding: 12px 15px;
+  text-align: left;
+  font-size: var(--fv2-font-14px);
+  border-bottom: 1px solid var(--fv2-color-e9ecef);
+}
+.professional-table th {
+  background-color: var(--fv2-color-f8f9fa);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--fv2-color-495057);
+}
+.professional-table tr:hover {
+  background-color: var(--fv2-color-f1f3f5);
+}
+.checkbox-column {
+  width: 40px;
+  text-align: center;
+}
+.action-column {
+  width: 180px;
+  text-align: center;
+}
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.btn-icon {
+  padding: 8px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+.btn-icon svg {
+  font-size: var(--fv2-font-16px);
+}
+.btn-primary {
+  background-color: var(--fv2-color-e31e24);
+  border: none;
+  color: var(--fv2-color-fff);
+}
+.btn-primary:hover {
+  background-color: var(--fv2-color-e31e24);
+}
+.btn-warning {
+  background-color: var(--fv2-color-ffc107);
+  border: none;
+  color: var(--fv2-color-212529);
+}
+.btn-warning:hover {
+  background-color: var(--fv2-color-e0a800);
+}
+.btn-success {
+  background-color: var(--fv2-color-28a745);
+  border: none;
+  color: var(--fv2-color-fff);
+}
+.btn-success:hover {
+  background-color: var(--fv2-color-218838);
+}
+.btn-danger {
+  background-color: var(--fv2-color-e31e24);
+  border: none;
+  color: var(--fv2-color-fff);
+}
+.btn-danger:hover {
+  background-color: var(--fv2-color-c82333);
+}
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: var(--fv2-font-12px);
+  font-weight: 500;
+  text-transform: capitalize;
+}
+.status-badge.created {
+  background-color: var(--fv2-color-e7f3ff);
+  color: var(--fv2-color-e31e24);
+}
+.status-badge.pending {
+  background-color: var(--fv2-color-fff3cd);
+  color: var(--fv2-color-856404);
+}
+.status-badge.completed {
+  background-color: var(--fv2-color-d4edda);
+  color: var(--fv2-color-155724);
+}
+.priority-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: var(--fv2-font-12px);
+  font-weight: 500;
+  text-transform: capitalize;
+}
+.priority-badge.high {
+  background-color: var(--fv2-color-f8d7da);
+  color: var(--fv2-color-e31e24);
+}
+.priority-badge.medium {
+  background-color: var(--fv2-color-fff3cd);
+  color: var(--fv2-color-856404);
+}
+.priority-badge.low {
+  background-color: var(--fv2-color-d4edda);
+  color: var(--fv2-color-155724);
+}
+.due-date-close {
+  font-weight: 600;
+}
+.due-date-link {
+  cursor: pointer;
+
+  text-decoration: underline;
+}
+.due-date-link:hover {
+  color: var(--fv2-color-e31e24);
+}
+.no-data {
+  text-align: center;
+  padding: 20px;
+  color: var(--fv2-color-6c757d);
+  font-size: var(--fv2-font-16px);
+} /* Tooltip Styling */
+.react-tooltip {
+  background-color: var(--fv2-color-343a40);
+  color: var(--fv2-color-fff);
+  font-size: var(--fv2-font-12px);
+  padding: 8px 12px;
+  border-radius: 4px;
+  z-index: 1000;
+}
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.create-button {
+  padding: 6px 12px;
+  background-color: var(--fv2-color-e31e24);
+  color: var(--fv2-color-fff);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.create-button:hover {
+  background-color: var(--fv2-color-a12434);
+}
+.ordertable-lable,
+.order-table-content {
+  padding: 12px;
+  border-bottom: 1px solid var(--fv2-color-eee);
+  text-align: left;
+}
+.badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  display: inline-block;
+}
+.new-order {
+  background-color: var(--fv2-color-cce5ff);
+  color: var(--fv2-color-004085);
+}
+.inproduction {
+  background-color: var(--fv2-color-ffe5b5);
+  color: var(--fv2-color-856404);
+}
+.shipped {
+  background-color: var(--fv2-color-d4edda);
+  color: var(--fv2-color-155724);
+}
+.cancelled {
+  background-color: var(--fv2-color-f8d7da);
+  color: var(--fv2-color-e31e24);
+}
+.rejected {
+  background-color: var(--fv2-color-f5c6cb);
+  color: var(--fv2-color-e31e24);
+}
+.draft {
+  background-color: var(--fv2-color-e2e3e5);
+  color: var(--fv2-color-383d41);
+}
+.shipping-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+.standard {
+  background-color: var(--fv2-color-cce5ff);
+  color: var(--fv2-color-004085);
+}
+.priority {
+  background-color: var(--fv2-color-ffe5b5);
+  color: var(--fv2-color-856404);
+}
+.express {
+  background-color: var(--fv2-color-d4edda);
+  color: var(--fv2-color-155724);
+}
+.edit {
+  cursor: pointer;
+  color: var(--fv2-color-e31e24);
+}
+.pagination {
+  text-align: center;
+  padding: 10px;
+  margin-top: 20px;
+}
+.pagination button {
+  padding: 5px 10px;
+  margin: 0 5px;
+  border: 1px solid var(--fv2-color-ddd);
+  background: var(--fv2-color-fff);
+  cursor: pointer;
+  border-radius: 4px;
+}
+.pagination button:disabled {
+  cursor: not-allowed;
+  color: var(--fv2-color-ccc);
+}
+.pagination button:hover:not(:disabled) {
+  background-color: var(--fv2-color-f0f0f0);
+}

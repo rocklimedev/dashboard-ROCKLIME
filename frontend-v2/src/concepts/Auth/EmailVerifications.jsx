@@ -1,3 +1,4 @@
+import './EmailVerifications.styles.css';
 // src/pages/auth/EmailVerification.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -5,7 +6,7 @@ import { useResendVerificationEmailMutation } from '../../api/authApi';
 import logo from '../../assets/img/logo.png';
 import logoWhite from '../../assets/img/logo.png';
 import { MailOutlined } from '@ant-design/icons';
-import { message } from 'antd';
+import { toast } from 'sonner';
 const EmailVerification = () => {
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
@@ -21,15 +22,15 @@ const EmailVerification = () => {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
 
-    if (!trimmed) return message.error('Please enter an email address');
-    if (!emailRegex.test(trimmed)) return message.error('Invalid email format');
+    if (!trimmed) return toast.error('Please enter an email address');
+    if (!emailRegex.test(trimmed)) return toast.error('Invalid email format');
 
     try {
       await resendVerificationEmail({ email: trimmed }).unwrap();
       setEmailSent(true);
       setTimer(60);
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to send verification email');
+      toast.error(err?.data?.message || 'Failed to send verification email');
     }
   };
 
@@ -108,9 +109,8 @@ const EmailVerification = () => {
                 <div className="mb-3">
                   <button
                     type="submit"
-                    className="btn btn-primary w-100"
+                    className="btn btn-primary w-100 fv2-emailverifications-a26ab8269d"
                     disabled={isLoading}
-                    style={{ minHeight: '44px' }}
                   >
                     Send Verification Email
                   </button>

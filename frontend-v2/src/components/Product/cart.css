@@ -7,9 +7,9 @@
 }
 
 .floating-cart .ant-btn-primary {
-  background: #1890ff;
-  border-color: #1890ff;
-  font-size: 16px;
+  background: var(--fv2-color-1890ff);
+  border-color: var(--fv2-color-1890ff);
+  font-size: var(--fv2-font-16px);
   height: 40px;
   display: flex;
   align-items: center;
@@ -17,13 +17,13 @@
 
 .floating-cart .ant-btn-primary:hover,
 .floating-cart .ant-btn-primary:focus {
-  background: #40a9ff;
-  border-color: #40a9ff;
+  background: var(--fv2-color-40a9ff);
+  border-color: var(--fv2-color-40a9ff);
 }
 
 .floating-cart .ant-badge-count {
-  background: #e31e24;
-  color: #fff;
+  background: var(--fv2-color-e31e24);
+  color: var(--fv2-color-fff);
 }
 
 /* Cart Modal */
@@ -40,7 +40,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--fv2-color-f0f0f0);
 }
 
 .cart-modal-item:last-child {
@@ -64,7 +64,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 16px;
-  background: #fff;
+  background: var(--fv2-color-fff);
 }
 
 .cart-header {
@@ -97,7 +97,7 @@
 
 .empty-cart p {
   font-weight: bold;
-  color: #666;
+  color: var(--fv2-color-666);
   margin-top: 16px;
 }
 
@@ -106,16 +106,16 @@
 }
 
 .checkout-button {
-  background: #1890ff;
-  border-color: #1890ff;
-  font-size: 16px;
+  background: var(--fv2-color-1890ff);
+  border-color: var(--fv2-color-1890ff);
+  font-size: var(--fv2-font-16px);
   height: 48px;
 }
 
 .checkout-button:hover,
 .checkout-button:focus {
-  background: #40a9ff;
-  border-color: #40a9ff;
+  background: var(--fv2-color-40a9ff);
+  border-color: var(--fv2-color-40a9ff);
 }
 
 .remove-item {
@@ -132,11 +132,11 @@
 }
 
 .ant-btn-link.danger {
-  color: #e31e24;
+  color: var(--fv2-color-e31e24);
 }
 
 .ant-btn-link.danger:hover {
-  color: #ff7875;
+  color: var(--fv2-color-ff7875);
 }
 
 .ant-divider {
@@ -156,7 +156,7 @@
   }
 
   .cart-item {
-    font-size: 14px;
+    font-size: var(--fv2-font-14px);
   }
 
   .cart-item-image {
@@ -165,7 +165,7 @@
   }
 
   .checkout-button {
-    font-size: 14px;
+    font-size: var(--fv2-font-14px);
     height: 40px;
   }
 
@@ -175,7 +175,7 @@
   }
 
   .floating-cart .ant-btn-primary {
-    font-size: 14px;
+    font-size: var(--fv2-font-14px);
     height: 36px;
   }
 }

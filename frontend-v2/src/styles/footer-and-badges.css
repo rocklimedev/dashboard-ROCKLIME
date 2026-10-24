@@ -1,0 +1,108 @@
+/* Base styles for the footer */
+.footer {
+  width: 100%;
+  padding: 8px 16px;
+  box-sizing: border-box;
+}
+.footer-text {
+  font-size: var(--fv2-font-16px); /* Default font size for desktop */
+  line-height: 1.5;
+} /* Styles for the Rocklime link */
+.rocklime-link {
+  color: var(--fv2-color-ed7c2f) !important;
+  font-family: 'Neuropol', sans-serif !important;
+  text-decoration: none;
+}
+.rocklime-link:hover {
+  text-decoration: underline;
+} /* Mobile responsiveness */
+@media (max-width: 576px) {
+  .footer {
+    flex-direction: column; /* Stack items vertically on mobile */
+    padding: 12px 8px; /* Adjust padding for smaller screens */
+    min-height: 60px; /* Allow more height for stacked content */
+  }
+
+  .footer-text {
+    font-size: var(--fv2-font-14px); /* Smaller font size for mobile */
+    margin: 4px 0; /* Add vertical spacing between stacked text */
+  }
+
+  .container {
+    padding: 0 8px; /* Reduce container padding on mobile */
+  }
+} /* Notification badge */
+.badge-count {
+  background-color: var(--fv2-color-3e64ff);
+  color: var(--fv2-color-fff);
+  padding: 5px 10px;
+  font-size: var(--fv2-font-12px);
+  border-radius: 20px;
+  font-weight: 500;
+  display: inline-block;
+} /* Category box hover animation */
+.category-box {
+  transition: 0.3s ease-in-out;
+}
+.category-box:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.invoice-link {
+  color: var(--fv2-color-ffeb3b); /* Bright yellow */
+  text-decoration: underline;
+}
+.invoice-link:hover {
+  color: var(--fv2-color-fff59d); /* Light yellow */
+  text-decoration: underline;
+} /* RecentInvoices.css */
+.btn .fa-eye {
+  font-size: var(--fv2-font-0_9rem); /* Smaller icon size */
+  vertical-align: middle; /* Align with text */
+}
+.module-tags {
+  background-color: var(--fv2-color-f8f9fa);
+  border-bottom: 1px solid var(--fv2-color-dee2e6);
+}
+.module-tag {
+  padding: 6px 12px;
+  font-size: var(--fv2-font-0_875rem);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.module-tag.badge-primary {
+  background-color: var(--fv2-color-e31e24);
+  color: white;
+}
+.module-tag.badge-secondary {
+  background-color: var(--fv2-color-6c757d);
+  color: white;
+}
+.module-tag:hover {
+  opacity: 0.9;
+}
+.profile-pic {
+  width: 100px;
+  height: 100px;
+  overflow: hidden;
+}
+.avatar-picker {
+  background-color: var(--fv2-color-f8f9fa);
+  border: 1px solid var(--fv2-color-dee2e6);
+  border-radius: 4px;
+  padding: 10px;
+}
+.avatar-option {
+  transition: transform 0.2s ease;
+}
+.avatar-option:hover {
+  transform: scale(1.1);
+}
+.btn-outline-warning {
+  color: var(--fv2-color-ffc107);
+  border-color: var(--fv2-color-ffc107);
+}
+.btn-outline-warning:hover {
+  background-color: var(--fv2-color-ffc107);
+  color: var(--fv2-color-fff);
+}

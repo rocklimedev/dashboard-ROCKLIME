@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { message } from 'antd';
+import { toast } from 'sonner';
 
 const generatePDF = (data, title) => {
   const doc = new jsPDF('l', 'mm', 'a4');
@@ -61,7 +61,7 @@ const generatePDF = (data, title) => {
 
 const generateExcel = (data, title) => {
   if (!data || data.length === 0) {
-    message.warning('No data to export');
+    toast.warning('No data to export');
     return;
   }
   const ws = XLSX.utils.json_to_sheet(data);

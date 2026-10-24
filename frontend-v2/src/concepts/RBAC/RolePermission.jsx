@@ -1,3 +1,4 @@
+import './RolePermission.styles.css';
 import React, { useState, useMemo } from 'react';
 import { useGetRolesQuery, useDeleteRoleMutation } from '../../api/rolesApi';
 import { useGetAllPermissionsQuery } from '../../api/permissionApi';
@@ -8,7 +9,7 @@ import { Link } from 'react-router-dom';
 import AddRoleModal from '../../components/RolesPermission/AddRoleModal';
 import DeleteModal from '../../components/Common/DeleteModal';
 import DataTablePagination from '../../components/Common/DataTablePagination';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import PageHeader from '../../components/Common/PageHeader';
 
 const RolePermission = () => {
@@ -96,7 +97,7 @@ const RolePermission = () => {
 
   const handleConfirmDelete = async () => {
     if (!selectedRole) {
-      message.error('No role selected for deletion');
+      toast.error('No role selected for deletion');
       setShowDeleteModal(false);
       return;
     }
@@ -106,7 +107,7 @@ const RolePermission = () => {
         setCurrentPage((p) => p - 1);
       }
     } catch (error) {
-      message.error(`Failed to delete role: ${error.data?.message || 'Unknown error'}`);
+      toast.error(`Failed to delete role: ${error.data?.message || 'Unknown error'}`);
     } finally {
       setShowDeleteModal(false);
       setSelectedRole(null);
@@ -128,7 +129,7 @@ const RolePermission = () => {
       <div className="content">
         <div className="card">
           <div className="card-body">
-            <div style={{ color: '#e31e24', fontWeight: 500 }}>
+            <div className="fv2-rolepermission-06a64bb49b">
               Error loading roles! Please try again later.
             </div>
           </div>
@@ -156,7 +157,7 @@ const RolePermission = () => {
               <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div className="input-icon-start position-relative">
                   <span className="input-icon-addon">
-                    <SearchOutlined style={{ color: '#595959' }} />
+                    <SearchOutlined className="fv2-rolepermission-2876f358f5" />
                   </span>
                   <input
                     type="text"
@@ -168,8 +169,8 @@ const RolePermission = () => {
                 </div>
 
                 <button
-                  className="btn btn-outline-secondary"
-                  style={{ color: '#595959', borderColor: '#595959' }}
+                  className="btn btn-outline-secondary fv2-rolepermission-82bcdce7e3"
+
                   onClick={clearFilters}
                 >
                   Clear Filters
@@ -179,7 +180,7 @@ const RolePermission = () => {
           </div>
 
           {paginatedRoles.length === 0 ? (
-            <p style={{ color: '#595959' }} className="text-center py-4">
+            <p className="text-center py-4 fv2-rolepermission-2876f358f5">
               No roles match the applied filters.
             </p>
           ) : (
@@ -187,9 +188,9 @@ const RolePermission = () => {
               <table className="table table-hover">
                 <thead>
                   <tr>
-                    <th style={{ color: '#595959' }}>Role</th>
-                    <th style={{ color: '#595959' }}>Associated Users</th>
-                    <th style={{ color: '#595959' }}>Actions</th>
+                    <th className="fv2-rolepermission-2876f358f5">Role</th>
+                    <th className="fv2-rolepermission-2876f358f5">Associated Users</th>
+                    <th className="fv2-rolepermission-2876f358f5">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -197,10 +198,10 @@ const RolePermission = () => {
                     const roleUsers = usersList.filter((u) => u.roleId === role.roleId);
                     return (
                       <tr key={role.roleId}>
-                        <td style={{ color: '#595959' }}>{role.roleName || 'N/A'}</td>
+                        <td className="fv2-rolepermission-2876f358f5">{role.roleName || 'N/A'}</td>
                         <td>
                           {roleUsers.length === 0 ? (
-                            <span style={{ color: '#595959' }}>No users assigned</span>
+                            <span className="fv2-rolepermission-2876f358f5">No users assigned</span>
                           ) : (
                             <div className="d-flex flex-wrap gap-2">
                               {roleUsers.map((user) => (
@@ -217,13 +218,7 @@ const RolePermission = () => {
                                     round={true}
                                     className="me-1"
                                   />
-                                  <span
-                                    style={{
-                                      color: '#595959',
-                                      maxWidth: '100px',
-                                    }}
-                                    className="text-truncate"
-                                  >
+                                  <span className="text-truncate fv2-rolepermission-074c50eb69">
                                     {user.name || user.username || user.email || 'Unknown'}
                                   </span>
                                 </Link>
@@ -235,15 +230,15 @@ const RolePermission = () => {
                           <div className="action-buttons d-flex gap-2">
                             <a
                               href={`/roles-permission/permissions/${role.roleId}`}
-                              className="btn btn-icon btn-sm"
-                              style={{ color: '#e31e24' }}
+                              className="btn btn-icon btn-sm fv2-rolepermission-b72bc3f81d"
+
                               aria-label={`View permissions for ${role.roleName}`}
                             >
                               <SafetyOutlined />
                             </a>
                             <button
-                              className="btn btn-icon btn-sm"
-                              style={{ color: '#e31e24' }}
+                              className="btn btn-icon btn-sm fv2-rolepermission-b72bc3f81d"
+
                               onClick={() => handleOpenDeleteModal(role)}
                               disabled={isDeleting}
                               aria-label={`Delete ${role.roleName}`}

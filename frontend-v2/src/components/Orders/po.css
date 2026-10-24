@@ -7,7 +7,7 @@
 /* Backdrop wrapper that centers the document and gives it a page-like
    canvas to sit on, similar to a print preview. */
 .po-page-preview {
-  background-color: #e9ecef;
+  background-color: var(--fv2-color-e9ecef);
   padding: 24px;
   display: flex;
   justify-content: center;
@@ -20,7 +20,7 @@
   min-height: var(--po-page-min-height);
   margin: 0 auto;
   padding: 40px;
-  background-color: #ffffff;
+  background-color: var(--fv2-color-ffffff);
   box-sizing: border-box;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
   font-family: Arial, sans-serif;
@@ -34,36 +34,36 @@
 
 .po-table th,
 .po-table td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--fv2-color-ddd);
   padding: 8px;
   text-align: left;
 }
 
 .po-table th {
-  background-color: #f2f2f2;
+  background-color: var(--fv2-color-f2f2f2);
   font-weight: bold;
 }
 
 .po-table .label-cell {
   font-weight: bold;
-  background-color: #f9f9f9;
+  background-color: var(--fv2-color-f9f9f9);
 }
 
 .po-table .title-cell {
-  font-size: 18px;
+  font-size: var(--fv2-font-18px);
   font-weight: bold;
   text-align: center;
 }
 
 .po-table .brand-cell {
-  font-size: 14px;
+  font-size: var(--fv2-font-14px);
   font-weight: bold;
   text-align: center;
 }
 
 .po-table.bordered td,
 .po-table.bordered th {
-  border: 1px solid #000;
+  border: 1px solid var(--fv2-color-000);
 }
 
 .po-table .text-right {
@@ -89,7 +89,7 @@
 }
 
 .back-icon {
-  color: #007bff;
+  color: var(--fv2-color-007bff);
   text-decoration: none;
 }
 
@@ -101,7 +101,7 @@
    (e.g. via Ctrl+P) instead of the exported PDF flow. */
 @media print {
   .po-page-preview {
-    background-color: #ffffff;
+    background-color: var(--fv2-color-ffffff);
     padding: 0;
   }
 

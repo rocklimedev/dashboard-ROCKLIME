@@ -1,5 +1,8 @@
+import Loader from '../../components/Common/Loader';
+import './page.styles.css';
 import React, { useState, useMemo } from 'react';
-import { Card, Row, Col, Button, Space, Typography, Select, message, DatePicker, Spin } from 'antd';
+import { Card, Row, Col, Button, Space, Typography, Select, DatePicker } from 'antd';
+import { toast } from 'sonner';
 import {
   DownloadOutlined,
   BarChartOutlined,
@@ -136,7 +139,7 @@ const ReportsPage = () => {
           }));
 
           generateInventoryReportPDF(filteredProducts);
-          message.success('Inventory Report generated!');
+          toast.success('Inventory Report generated!');
           break;
         }
 
@@ -150,7 +153,7 @@ const ReportsPage = () => {
             dateRange?.[1]?.format?.('DD/MM/YYYY'),
           );
 
-          message.success('Order Report generated!');
+          toast.success('Order Report generated!');
           break;
         }
 
@@ -171,7 +174,7 @@ const ReportsPage = () => {
 
           await generateQuotationReportPDF(filteredQuotations, reportStartDate, reportEndDate);
 
-          message.success('Quotation Report generated!');
+          toast.success('Quotation Report generated!');
           break;
         }
 
@@ -185,7 +188,7 @@ const ReportsPage = () => {
             dateRange?.[1]?.format?.('DD/MM/YYYY'),
           );
 
-          message.success('Purchase Order Report generated!');
+          toast.success('Purchase Order Report generated!');
           break;
         }
 
@@ -193,16 +196,16 @@ const ReportsPage = () => {
         case 'lowstock': {
           await generateLowStockReportPDF(lowStockProducts);
 
-          message.success('Low Stock Report generated!');
+          toast.success('Low Stock Report generated!');
           break;
         }
 
         default:
-          message.warning('Report type not implemented');
+          toast.warning('Report type not implemented');
       }
     } catch (err) {
       console.error(err);
-      message.error('Failed to generate report');
+      toast.error('Failed to generate report');
     } finally {
       setLoadingReport(null);
     }
@@ -224,11 +227,11 @@ const ReportsPage = () => {
       <PageHeader title="Reports" subtitle="Business Intelligence & Analytics" />
 
       <div className="content">
-        {isLoading && <Spin size="large" tip="Loading report data..." />}
+        {isLoading && <Loader size="large" tip="Loading report data..." />}
 
         {/* Stats Overview */}
         <InventoryReportActions products={products} loading={loadingProducts} />
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Row className="fv2-page-69249fd15b" gutter={[16, 16]}>
           <Col xs={12} sm={6}>
             <Card>
               <Statistic title="Total Orders" value={stats.totalOrders} />
@@ -252,11 +255,12 @@ const ReportsPage = () => {
         </Row>
 
         {/* Custom Report Builder */}
-        <Card title="Custom Report Builder" style={{ borderRadius: 12 }}>
+        <Card className="fv2-page-dc2d81d1f7" title="Custom Report Builder">
           <Row gutter={[16, 16]} align="middle">
             <Col xs={24} md={6}>
               <Select
-                style={{ width: '100%' }}
+                className="fv2-page-392b5728f9"
+
                 value={selectedReportType}
                 onChange={setSelectedReportType}
                 options={[
@@ -271,7 +275,8 @@ const ReportsPage = () => {
 
             <Col xs={24} md={6}>
               <Select
-                style={{ width: '100%' }}
+                className="fv2-page-392b5728f9"
+
                 value={quickFilter}
                 onChange={(value) => {
                   setQuickFilter(value);
@@ -291,7 +296,8 @@ const ReportsPage = () => {
 
             <Col xs={24} md={8}>
               <RangePicker
-                style={{ width: '100%' }}
+                className="fv2-page-392b5728f9"
+
                 value={dateRange}
                 onChange={setDateRange}
                 disabled={quickFilter !== 'all'}

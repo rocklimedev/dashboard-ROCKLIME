@@ -1,0 +1,201 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+.fv2-cartitemrow-item-container {
+  padding: 12px 8px;
+  transition: all 0.2s;
+  background: var(--fv2-color-fff);
+  border-radius: 8px;
+  position: relative;
+}
+.fv2-cartitemrow-item-container:hover {
+  background: var(--fv2-color-fafafa);
+}
+.fv2-cartitemrow-item-container--dragging {
+  opacity: 0.75;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+@media (min-width: 768px) {
+  .fv2-cartitemrow-item-container {
+    padding: 14px 10px;
+  }
+}
+:is(#fv2-style-priority, .fv2-cartitemrow-645379e773) {
+  padding: 20px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-23e4be640d) {
+  min-width: 0;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-b8fd776dfa) {
+  display: block;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-1fbc87ccc0) {
+  margin-top: 4px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-318bf3c263) {
+  margin-left: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-938dfc111d) {
+  width: 220px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-d8f7c55c9a) {
+  margin-top: 6px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-43c85038d7) {
+  padding: 0;
+  height: auto;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-16aa65c514) {
+  margin-top: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-fb26dcf3b0) {
+  width: 120px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-f30652ca3e) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-0d7e10774a) {
+  width: 100%;
+  margin-top: 4px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-9a71741ce7) {
+  width: 70px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-f89aeb003c) {
+  width: 90px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-9cb1382127) {
+  width: 56px;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-784a37453a) {
+  text-align: right;
+}
+
+:is(#fv2-style-priority, .fv2-cartitemrow-9ef4911efa) {
+  color: var(--fv2-color-52c41a);
+  font-size: var(--fv2-font-15px);
+}
+
+/* Component layout and responsive rules. */
+
+.fv2-cartitemrow-main-row {
+  flex-wrap: wrap;
+}
+@media (min-width: 576px) {
+  .fv2-cartitemrow-main-row {
+    flex-wrap: nowrap;
+  }
+}
+
+.fv2-cartitemrow-sno-handle {
+  cursor: grab;
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fv2-font-13px);
+  font-weight: 600;
+  color: var(--fv2-color-595959);
+  border-radius: 6px;
+  user-select: none;
+  background: var(--fv2-color-f5f5f5);
+}
+.fv2-cartitemrow-sno-handle:hover {
+  background: var(--fv2-color-e6f4ff);
+  color: var(--fv2-color-1677ff);
+}
+.fv2-cartitemrow-sno-handle:active {
+  cursor: grabbing;
+}
+
+.fv2-cartitemrow-cart-item-image {
+  border-radius: 8px;
+  object-fit: cover;
+  width: 56px;
+  height: 56px;
+  background: var(--fv2-color-f5f5f5);
+}
+@media (min-width: 576px) {
+  .fv2-cartitemrow-cart-item-image {
+    width: 64px;
+    height: 64px;
+  }
+}
+@media (min-width: 768px) {
+  .fv2-cartitemrow-cart-item-image {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+.fv2-cartitemrow-qty-total-col {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+}
+@media (min-width: 576px) {
+  .fv2-cartitemrow-qty-total-col {
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 8px;
+    width: auto;
+    margin-top: 0;
+  }
+}
+
+.fv2-cartitemrow-remove-label {
+  display: none;
+}
+@media (min-width: 576px) {
+  .fv2-cartitemrow-remove-label {
+    display: inline;
+    margin-left: 4px;
+  }
+}
+
+.fv2-cartitemrow-responsive-divider {
+  margin: 12px 0 0 0 !important;
+}
+@media (min-width: 576px) {
+  .fv2-cartitemrow-responsive-divider {
+    margin: 12px 0 0 80px !important;
+  }
+}
+
+.fv2-cartitemrow-location-chip {
+  margin-top: 6px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fv2-cartitemrow-split-tags {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.fv2-cartitemrow-assign-row {
+  margin-top: 8px;
+}

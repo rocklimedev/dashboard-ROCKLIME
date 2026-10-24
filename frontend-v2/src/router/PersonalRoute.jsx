@@ -1,4 +1,5 @@
-import { Alert, Button, Result, Spin } from 'antd';
+import Loader from '../components/Common/Loader';
+import { Alert, Button, Result } from 'antd';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGetProfileQuery } from '../api/userApi';
@@ -11,7 +12,7 @@ export default function PersonalRoute({ children }) {
     return (
       <div className="page-wrapper">
         <div className="content">
-          <Spin size="large" />
+          <Loader size="large" />
         </div>
       </div>
     );

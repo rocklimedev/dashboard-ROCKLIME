@@ -1,28 +1,19 @@
+import ListToolbar from '../../components/Common/ListToolbar';
+import ListPagination from '../../components/Common/ListPagination';
+import './CustomerList.styles.css';
 import React, { useState, useEffect } from 'react';
 import { useGetCustomersQuery, useDeleteCustomerMutation } from '../../api/customerApi';
 import Avatar from 'react-avatar';
 import { BiTrash } from 'react-icons/bi';
-import { EyeOutlined, SearchOutlined, EditOutlined, MoreOutlined } from '@ant-design/icons';
-import {
-  message,
-  Button,
-  Dropdown,
-  Menu,
-  Pagination,
-  Select,
-  Input,
-  Segmented,
-  Space,
-  Tag,
-} from 'antd';
+import { EyeOutlined, EditOutlined, MoreOutlined } from '@ant-design/icons';
+import { Button, Dropdown, Menu, Segmented, Space, Tag } from 'antd';
+import { toast } from 'sonner';
 import DeleteModal from '../../components/Common/DeleteModal';
 import PageHeader from '../../components/Common/PageHeader';
 
 const Checkable = Tag.CheckableTag;
 import { useNavigate } from 'react-router-dom';
 import PermissionGate from '../../context/PermissionGate';
-
-const { Option } = Select;
 
 const CustomerList = () => {
   const navigate = useNavigate();
@@ -115,7 +106,7 @@ const CustomerList = () => {
 
     try {
       await deleteCustomer(customerToDelete).unwrap();
-      message.success('Customer deleted successfully');
+      toast.success('Customer deleted successfully');
 
       if (filteredCustomers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
@@ -123,9 +114,9 @@ const CustomerList = () => {
     } catch (err) {
       const msg = err?.data?.message || 'Failed to delete customer';
       if (msg.toLowerCase().includes('quotation')) {
-        message.error('Cannot delete — customer has linked quotations.');
+        toast.error('Cannot delete — customer has linked quotations.');
       } else {
-        message.error(msg);
+        toast.error(msg);
       }
     } finally {
       setShowDeleteModal(false);
@@ -173,56 +164,70 @@ const CustomerList = () => {
 
         <div className="card-body">
           {/* Filters */}
-          <div className="row mb-4 align-items-center g-3">
-            <div className="col-12">
-              <Space wrap size={8}>
-                <Segmented
-                  value={customerTypeFilter}
-                  onChange={(val) => {
-                    setCustomerTypeFilter(val);
-                    setCurrentPage(1);
-                  }}
-                  options={customerTypes.map((t) => ({
-                    value: t.value,
-                    label: t.value === 'All' ? 'All' : t.label,
-                  }))}
-                />
-                <Checkable
-                  checked={statusFilter === 'OWES'}
-                  onChange={(on) => {
-                    setStatusFilter(on ? 'OWES' : 'ALL');
-                    setCurrentPage(1);
-                  }}
-                >
-                  Owes money
-                </Checkable>
-              </Space>
-            </div>
-
-            <div className="col-lg-4">
-              <Input
-                prefix={<SearchOutlined className="text-muted" />}
-                placeholder="Search name, email, phone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                size="large"
-                allowClear
-              />
-            </div>
-
-            <div className="col-lg-5 d-flex justify-content-end gap-2 flex-wrap">
-              <Select value={sortBy} onChange={setSortBy} style={{ width: 180 }} size="large">
-                <Option value="Recently Added">Newest first</Option>
-                <Option value="Oldest">Oldest first</Option>
-                <Option value="Ascending">Name: A to Z</Option>
-                <Option value="Descending">Name: Z to A</Option>
-              </Select>
-
-              <Button onClick={clearFilters} size="large">
-                Clear
-              </Button>
-            </div>
-          </div>
+          <ListToolbar
+            exportTitle={'Customers'}
+            exportData={filteredCustomers.map((c) => ({
+              Name: c.name,
+              Email: c.email,
+              Phone: c.phone ?? c.mobileNumber,
+              Type: c.customerType,
+              'Business value': c.businessValue,
+              Due: c.due,
+            }))}
+            search={{
+              placeholder: 'Search name, email, phone...',
+              value: searchTerm,
+              onChange: (e) => setSearchTerm(e.target.value),
+              size: 'large',
+              allowClear: true,
+            }}
+            filters={[
+              {
+                key: 'customer-type',
+                type: 'custom',
+                content: (
+                  <Space wrap size={8}>
+                    <Segmented
+                      value={customerTypeFilter}
+                      onChange={(val) => {
+                        setCustomerTypeFilter(val);
+                        setCurrentPage(1);
+                      }}
+                      options={customerTypes.map((t) => ({
+                        value: t.value,
+                        label: t.value === 'All' ? 'All' : t.label,
+                      }))}
+                    />
+                    <Checkable
+                      checked={statusFilter === 'OWES'}
+                      onChange={(on) => {
+                        setStatusFilter(on ? 'OWES' : 'ALL');
+                        setCurrentPage(1);
+                      }}
+                    >
+                      Owes money
+                    </Checkable>
+                  </Space>
+                ),
+              },
+              {
+                key: 'sort',
+                type: 'select',
+                props: {
+                  value: sortBy,
+                  onChange: setSortBy,
+                  size: 'large',
+                  options: [
+                    { value: 'Recently Added', label: 'Newest first' },
+                    { value: 'Oldest', label: 'Oldest first' },
+                    { value: 'Ascending', label: 'Name: A to Z' },
+                    { value: 'Descending', label: 'Name: Z to A' },
+                  ],
+                },
+              },
+            ]}
+            onClear={clearFilters}
+          />
 
           {/* Loading indicator */}
           {isFetching && !isLoading && (
@@ -399,21 +404,15 @@ const CustomerList = () => {
 
           {/* Pagination */}
           {pagination.total > 0 && (
-            <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-              <div className="text-muted small">
-                Showing {(currentPage - 1) * pageSize + 1}–
-                {Math.min(currentPage * pageSize, pagination.total)} of {pagination.total} customers
-              </div>
-              <Pagination
-                current={currentPage}
-                pageSize={pageSize}
-                total={pagination.total}
-                onChange={handlePageChange}
-                showSizeChanger
-                pageSizeOptions={['10', '20', '50', '100']}
-                disabled={isFetching}
-              />
-            </div>
+            <ListPagination
+              itemLabel="customers"
+              current={currentPage}
+              pageSize={pageSize}
+              total={pagination.total}
+              onChange={handlePageChange}
+              showSizeChanger
+              disabled={isFetching}
+            />
           )}
         </div>
 

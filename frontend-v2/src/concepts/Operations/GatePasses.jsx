@@ -1,3 +1,4 @@
+import './GatePasses.styles.css';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, DatePicker, Input, Space, Table, Tag, Typography } from 'antd';
@@ -27,7 +28,7 @@ export default function GatePasses() {
       <div className="content">
         <div className="ops-head">
           <div>
-            <Title level={4} style={{ margin: 0 }}>
+            <Title className="fv2-gatepasses-fa530646a3" level={4}>
               Gate passes
             </Title>
             <Text type="secondary">
@@ -37,13 +38,13 @@ export default function GatePasses() {
           </div>
           <Space wrap>
             <Input.Search
+              className="fv2-gatepasses-eb17ac99a3"
               placeholder="Order, customer, vehicle, LR"
               allowClear
               onSearch={(v) => {
                 setSearch(v);
                 setPage(1);
               }}
-              style={{ width: 260 }}
             />
             <RangePicker
               value={range}

@@ -1,5 +1,6 @@
+import ModalShell from '../Common/ModalShell';
 import React from 'react';
-import { Modal, Form, Select } from 'antd';
+import { Form, Select } from 'antd';
 
 const { Option } = Select;
 
@@ -11,7 +12,7 @@ export const AREA_OPTIONS = [
 
 export default function AddAreaModal({ visible, onCancel, onFinish, form }) {
   return (
-    <Modal
+    <ModalShell
       title="Add Area (choose from fixed options)"
       open={visible}
       onOk={() => form.submit()}
@@ -33,6 +34,6 @@ export default function AddAreaModal({ visible, onCancel, onFinish, form }) {
           </Select>
         </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }

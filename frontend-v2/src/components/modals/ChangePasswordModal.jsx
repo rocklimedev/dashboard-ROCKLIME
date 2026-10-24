@@ -1,6 +1,9 @@
+import ModalShell from '../Common/ModalShell';
+import './ChangePasswordModal.styles.css';
 // src/components/settings/ChangePasswordModal.jsx
 import React from 'react';
-import { Modal, Form, Input, Button, message } from 'antd';
+import { Form, Input } from 'antd';
+import { toast } from 'sonner';
 import { useChangePasswordMutation } from '../../api/authApi';
 
 const ChangePasswordModal = ({ visible, onClose }) => {
@@ -14,23 +17,31 @@ const ChangePasswordModal = ({ visible, onClose }) => {
         newPassword: values.newPassword,
       }).unwrap();
 
-      message.success('Password changed successfully!');
+      toast.success('Password changed successfully!');
       form.resetFields();
       onClose();
     } catch (error) {
-      message.error(error?.data?.message || 'Failed to change password');
+      toast.error(error?.data?.message || 'Failed to change password');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       title="Change Password"
       open={visible}
       onCancel={() => {
         form.resetFields();
         onClose();
       }}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>Save Changes</>}
+      onCancelButton={() => {
+        form.resetFields();
+        onClose();
+      }}
+      confirmLoading={isLoading}
+      okButtonProps={{ disabled: isLoading }}
+      cancelButtonProps={{ className: 'fv2-changepasswordmodal-af7645dc97' }}
       width={500}
       destroyOnClose
     >
@@ -53,23 +64,8 @@ const ChangePasswordModal = ({ visible, onClose }) => {
         >
           <Input.Password placeholder="Enter new password" />
         </Form.Item>
-
-        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-          <Button
-            onClick={() => {
-              form.resetFields();
-              onClose();
-            }}
-            style={{ marginRight: 8 }}
-          >
-            Cancel
-          </Button>
-          <Button type="primary" htmlType="submit" loading={isLoading} disabled={isLoading}>
-            Save Changes
-          </Button>
-        </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

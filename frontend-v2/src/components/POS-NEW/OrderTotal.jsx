@@ -1,3 +1,4 @@
+import './OrderTotal.styles.css';
 // Totals box for the cart, quotation and order forms. Every line is shown
 // (zero lines too) so the customer's price is never a surprise. Same maths as
 // the server and the PDF (utils/quotationMath). GST rate and freight can be
@@ -11,34 +12,26 @@ const { Text } = Typography;
 const GST_RATES = [0, 5, 12, 18, 28];
 
 const Line = ({ label, sub, value, strong, muted, negative, control }) => (
-  <div
-    style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      gap: 8,
-      padding: '7px 2px',
-      borderBottom: '1px solid #f3f3f3',
-    }}
-  >
-    <div style={{ minWidth: 0 }}>
+  <div className="fv2-ordertotal-80d7a86e54">
+    <div className="fv2-ordertotal-4d26cba4a0">
       <Text strong={strong} type={muted ? 'secondary' : undefined}>
         {label}
       </Text>
       {sub && (
         <div>
-          <Text type="secondary" style={{ fontSize: 11.5 }}>
+          <Text className="fv2-ordertotal-ae070caf83" type="secondary">
             {sub}
           </Text>
         </div>
       )}
     </div>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className="fv2-ordertotal-1cc4f2d2d8">
       {control}
       <Text
+        className="fv2-ordertotal-c70a10cd2d"
         strong={strong}
         type={muted && !negative ? 'secondary' : undefined}
-        style={{ color: negative && value ? '#cf1322' : undefined, whiteSpace: 'nowrap' }}
+        style={{ color: negative && value ? '#cf1322' : undefined }}
       >
         {negative && value ? '− ' : ''}
         {inr(Math.abs(value))}
@@ -62,6 +55,8 @@ const OrderTotal = React.memo(
     miscellaneousChargeItems = null,
     additionalDiscount = 0,
     flatPrice = null,
+    gstInclusive = false,
+    onGstInclusiveChange,
     onGstChange,
     onShippingChange,
   }) => {
@@ -76,7 +71,7 @@ const OrderTotal = React.memo(
           shipping: n(shipping),
           extraDiscount: n(extraDiscount),
           extraDiscountType,
-          gstRate: n(gst),
+          gstRate: gstInclusive ? 0 : n(gst),
           interState,
         }),
       [
@@ -86,6 +81,7 @@ const OrderTotal = React.memo(
         extraDiscountType,
         shipping,
         gst,
+        gstInclusive,
         interState,
         items,
         miscellaneousChargeItems,
@@ -123,12 +119,12 @@ const OrderTotal = React.memo(
           control={
             onShippingChange ? (
               <InputNumber
+                className="fv2-ordertotal-08875aefa5"
                 size="small"
                 min={0}
                 value={n(shipping) || null}
                 placeholder="0"
                 onChange={(v) => onShippingChange(v || 0)}
-                style={{ width: 90 }}
               />
             ) : null
           }
@@ -139,6 +135,20 @@ const OrderTotal = React.memo(
           value={t.extraDiscountAmount}
           negative
         />
+        {onGstInclusiveChange && (
+          <div>
+            <Text>GST inclusive in product prices</Text>{' '}
+            <Select
+              aria-label="GST inclusive in product prices"
+              value={gstInclusive}
+              onChange={onGstInclusiveChange}
+              options={[
+                { value: true, label: 'True' },
+                { value: false, label: 'False' },
+              ]}
+            />
+          </div>
+        )}
         <Line label="Taxable value" value={t.taxableValue} strong />
         {interState ? (
           <Line label={`IGST ${t.gstRate}%`} value={t.igst} control={gstControl()} />
@@ -149,33 +159,17 @@ const OrderTotal = React.memo(
           </>
         )}
         <Line label="Round off" value={t.roundOff} muted negative={t.roundOff < 0} />
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: 10,
-            padding: '12px 14px',
-            background: '#d7232f',
-            borderRadius: 10,
-            color: '#fff',
-          }}
-        >
-          <span style={{ letterSpacing: '0.08em', fontSize: 12, textTransform: 'uppercase' }}>
-            Grand total
-          </span>
-          <span style={{ fontSize: 20, fontWeight: 600 }}>{inr(t.grandTotal)}</span>
+        <div className="fv2-ordertotal-196763f7ac">
+          <span className="fv2-ordertotal-7f63929170">Grand total</span>
+          <span className="fv2-ordertotal-53ea192b55">{inr(t.grandTotal)}</span>
         </div>
         {n(discount) + t.extraDiscountAmount > 0 && (
-          <Text
-            type="secondary"
-            style={{ display: 'block', textAlign: 'right', fontSize: 12, marginTop: 6 }}
-          >
+          <Text className="fv2-ordertotal-e8acd27b53" type="secondary">
             Customer saves {inr(n(discount) + t.extraDiscountAmount)} on MRP
           </Text>
         )}
         {n(optionalTotal) > 0 && (
-          <Text type="secondary" style={{ display: 'block', textAlign: 'right', fontSize: 12 }}>
+          <Text className="fv2-ordertotal-6d8009f27c" type="secondary">
             Optional items (not in total): {inr(optionalTotal)}
           </Text>
         )}
@@ -183,12 +177,13 @@ const OrderTotal = React.memo(
     );
 
     function gstControl() {
-      return onGstChange ? (
+      return onGstChange && !gstInclusive ? (
         <Select
+          className="fv2-ordertotal-8226c438fd"
           size="small"
           value={t.gstRate}
           onChange={onGstChange}
-          style={{ width: 76 }}
+
           options={GST_RATES.map((r) => ({ value: r, label: `${r}%` }))}
         />
       ) : null;

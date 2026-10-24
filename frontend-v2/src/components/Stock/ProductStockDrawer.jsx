@@ -1,27 +1,9 @@
+import Loader from '../Common/Loader';
+import './ProductStockDrawer.styles.css';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Alert,
-  AutoComplete,
-  Button,
-  Card,
-  Col,
-  Drawer,
-  Empty,
-  Form,
-  InputNumber,
-  Row,
-  Segmented,
-  Select,
-  Space,
-  Spin,
-  Statistic,
-  Table,
-  Tabs,
-  Tag,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, AutoComplete, Button, Card, Col, Drawer, Empty, Form, InputNumber, Row, Segmented, Select, Space, Statistic, Table, Tabs, Tag, Typography } from 'antd';
+import { toast } from 'sonner';
 import {
   useAdjustStockMutation,
   useGetProductStockQuery,
@@ -53,11 +35,11 @@ function AdjustForm({ productId, warehouses, onDone }) {
         change,
         reason: v.reason,
       }).unwrap();
-      message.success(res?.message || 'Stock adjusted');
+      toast.success(res?.message || 'Stock adjusted');
       form.resetFields(['quantity', 'reason']);
       onDone?.();
     } catch (e) {
-      message.error(e?.data?.message || 'Could not adjust stock');
+      toast.error(e?.data?.message || 'Could not adjust stock');
     }
   };
   return (
@@ -68,6 +50,7 @@ function AdjustForm({ productId, warehouses, onDone }) {
       initialValues={{ warehouseId: warehouses[0]?.id }}
     >
       <Segmented
+        className="fv2-productstockdrawer-d523a678ba"
         block
         value={direction}
         onChange={setDirection}
@@ -75,7 +58,6 @@ function AdjustForm({ productId, warehouses, onDone }) {
           { label: 'Add stock', value: 'add' },
           { label: 'Remove stock', value: 'remove' },
         ]}
-        style={{ marginBottom: 16 }}
       />
       <Row gutter={12}>
         <Col span={12}>
@@ -84,7 +66,7 @@ function AdjustForm({ productId, warehouses, onDone }) {
             label="Quantity"
             rules={[{ required: true, message: 'Enter a quantity' }]}
           >
-            <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+            <InputNumber className="fv2-productstockdrawer-193b4c2608" min={1} precision={0} />
           </Form.Item>
         </Col>
         <Col span={12}>
@@ -104,7 +86,7 @@ function AdjustForm({ productId, warehouses, onDone }) {
           filterOption={(input, o) => o.value.toLowerCase().includes(input.toLowerCase())}
         />
       </Form.Item>
-      <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+      <Text className="fv2-productstockdrawer-5764c85a7e" type="secondary">
         Use this only for corrections. Receipts come from purchase orders, and stock leaves through
         dispatch.
       </Text>
@@ -129,11 +111,11 @@ function TransferForm({ productId, warehouses, onDone }) {
   const submit = async (v) => {
     try {
       await transfer({ productId, ...v }).unwrap();
-      message.success('Stock moved');
+      toast.success('Stock moved');
       form.resetFields(['quantity', 'reason']);
       onDone?.();
     } catch (e) {
-      message.error(e?.data?.message || 'Could not move stock');
+      toast.error(e?.data?.message || 'Could not move stock');
     }
   };
   const opts = warehouses.map((w) => ({ value: w.id, label: w.name }));
@@ -152,7 +134,7 @@ function TransferForm({ productId, warehouses, onDone }) {
         </Col>
       </Row>
       <Form.Item name="quantity" label="Quantity" rules={[{ required: true }]}>
-        <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+        <InputNumber className="fv2-productstockdrawer-193b4c2608" min={1} precision={0} />
       </Form.Item>
       <Form.Item name="reason" label="Note">
         <AutoComplete options={[{ value: 'Showroom display' }, { value: 'Site delivery stock' }]} />
@@ -192,7 +174,7 @@ export default function ProductStockDrawer({ productId, open, onClose }) {
         p ? (
           <Space direction="vertical" size={0}>
             <span>{p.name}</span>
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="fv2-productstockdrawer-1d5e3dbbfa" type="secondary">
               {p.product_code} ·{' '}
               <Link to={`/product/${p.productId}`} onClick={close}>
                 Open product
@@ -208,12 +190,12 @@ export default function ProductStockDrawer({ productId, open, onClose }) {
       {error ? (
         <Alert type="error" showIcon message={error?.data?.message || 'Could not load stock'} />
       ) : !data ? (
-        <div style={{ textAlign: 'center', padding: 48 }}>
-          <Spin />
+        <div className="fv2-productstockdrawer-375e7abfd5">
+          <Loader />
         </div>
       ) : (
-        <Spin spinning={isFetching}>
-          <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+        <Loader loading={isFetching}>
+          <Row className="fv2-productstockdrawer-d523a678ba" gutter={[12, 12]}>
             {[
               [
                 'Available',
@@ -236,16 +218,17 @@ export default function ProductStockDrawer({ productId, open, onClose }) {
               </Col>
             ))}
           </Row>
-          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+          <Text className="fv2-productstockdrawer-e6998e5f25" type="secondary">
             Available = On hand − Reserved. Low-stock alert at {fmtQty(t.lowAt)}.
           </Text>
 
           {data.balances?.length > 1 && (
             <Table
+              className="fv2-productstockdrawer-d523a678ba"
               size="small"
               rowKey="warehouseId"
               pagination={false}
-              style={{ marginBottom: 16 }}
+
               dataSource={data.balances}
               columns={[
                 { title: 'Godown', dataIndex: 'warehouse' },
@@ -344,7 +327,7 @@ export default function ProductStockDrawer({ productId, open, onClose }) {
                           <Space direction="vertical" size={0}>
                             <span>{MOVEMENT_LABELS[m] || m}</span>
                             {r.refNo && (
-                              <Text type="secondary" style={{ fontSize: 12 }}>
+                              <Text className="fv2-productstockdrawer-1d5e3dbbfa" type="secondary">
                                 {r.refNo}
                               </Text>
                             )}
@@ -417,7 +400,7 @@ export default function ProductStockDrawer({ productId, open, onClose }) {
                 : []),
             ]}
           />
-        </Spin>
+        </Loader>
       )}
     </Drawer>
   );

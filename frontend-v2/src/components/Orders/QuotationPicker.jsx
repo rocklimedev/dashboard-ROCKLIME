@@ -1,18 +1,10 @@
+import ModalShell from '../Common/ModalShell';
+import './QuotationPicker.styles.css';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import {
-  Alert,
-  Button,
-  Input,
-  List,
-  Modal,
-  Pagination,
-  Segmented,
-  Space,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Input, List, Pagination, Segmented, Space, Typography } from 'antd';
+import { toast } from 'sonner';
 import { FileTextOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { quotationApi, useGetAllQuotationsQuery } from '../../api/quotationApi';
@@ -58,22 +50,22 @@ export function QuotationPickList({ onPicked }) {
       onPicked?.();
       navigate('/order/add', { state: orderStateFromQuotation(full) });
     } catch (e) {
-      message.error(e?.data?.message || 'Could not open the quotation');
+      toast.error(e?.data?.message || 'Could not open the quotation');
     } finally {
       setBusy(null);
     }
   };
 
   return (
-    <Space direction="vertical" size={12} style={{ width: '100%' }}>
-      <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
+    <Space className="fv2-quotationpicker-8bc712a529" direction="vertical" size={12}>
+      <Space className="fv2-quotationpicker-fb7e537a8b" wrap>
         <Input.Search
+          className="fv2-quotationpicker-3cbd5cf654"
           autoFocus
           allowClear
           placeholder="Quotation no., customer, phone or title"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ width: 340, maxWidth: '100%' }}
         />
         <Segmented
           value={which}
@@ -89,7 +81,7 @@ export function QuotationPickList({ onPicked }) {
           ]}
         />
       </Space>
-      <div style={{ height: 'min(400px, 45vh)', overflowY: 'auto', overflowX: 'hidden' }}>
+      <div className="fv2-quotationpicker-fac570ba74">
         {error ? (
           <Alert
             type="error"
@@ -104,7 +96,8 @@ export function QuotationPickList({ onPicked }) {
             locale={{ emptyText: q ? 'No quotation matches' : 'No open quotations' }}
             renderItem={(r) => (
               <List.Item
-                style={{ cursor: 'pointer', padding: '10px 8px', borderRadius: 8 }}
+                className="fv2-quotationpicker-74d5ad6711"
+
                 onClick={() => convert(r)}
                 actions={[
                   <Button
@@ -120,9 +113,7 @@ export function QuotationPickList({ onPicked }) {
                 ]}
               >
                 <List.Item.Meta
-                  avatar={
-                    <FileTextOutlined style={{ fontSize: 22, color: '#d4380d', marginTop: 4 }} />
-                  }
+                  avatar={<FileTextOutlined className="fv2-quotationpicker-279c665455" />}
                   title={
                     <Space size={8} wrap>
                       <Text strong>{r.reference_number}</Text>
@@ -166,7 +157,7 @@ export function QuotationPickList({ onPicked }) {
 export default function NewOrderModal({ open, onClose }) {
   const navigate = useNavigate();
   return (
-    <Modal
+    <ModalShell
       open={open}
       onCancel={onClose}
       width={760}
@@ -174,7 +165,7 @@ export default function NewOrderModal({ open, onClose }) {
       footer={null}
       destroyOnClose
     >
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+      <div className="fv2-quotationpicker-3c2182b967">
         <Button
           onClick={() => {
             onClose?.();
@@ -184,11 +175,11 @@ export default function NewOrderModal({ open, onClose }) {
           Start without a quotation
         </Button>
       </div>
-      <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+      <Text className="fv2-quotationpicker-f1abcbada3" type="secondary">
         Pick the quotation the customer agreed to. The order opens with its products, prices,
         discounts and GST.
       </Text>
       <QuotationPickList onPicked={onClose} />
-    </Modal>
+    </ModalShell>
   );
 }

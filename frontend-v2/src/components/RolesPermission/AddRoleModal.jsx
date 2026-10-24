@@ -1,5 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './AddRoleModal.styles.css';
 import React, { useState } from 'react';
-import { message, Modal, Input, Form, Button, Typography } from 'antd';
+import { Input, Form, Typography } from 'antd';
+import { toast } from 'sonner';
 import { useCreateRoleMutation } from '../../api/rolesApi';
 
 const { Title } = Typography;
@@ -11,18 +14,18 @@ const AddRoleModal = ({ show, onClose }) => {
 
   const handleSubmit = async () => {
     if (!roleName.trim()) {
-      message.error('Role name is required.');
+      toast.error('Role name is required.');
       return;
     }
 
     try {
       await createRole({ roleName }).unwrap();
-      message.success('Role added successfully!');
+      toast.success('Role added successfully!');
       setRoleName('');
       form.resetFields();
       onClose();
     } catch (error) {
-      message.error(`Failed to add role: ${error.data?.message || 'Please try again.'}`);
+      toast.error(`Failed to add role: ${error.data?.message || 'Please try again.'}`);
     }
   };
 
@@ -33,15 +36,19 @@ const AddRoleModal = ({ show, onClose }) => {
   };
 
   return (
-    <Modal
+    <ModalShell
       open={show}
       onCancel={handleCancel}
       title={
-        <Title level={4} style={{ margin: 0 }}>
+        <Title className="fv2-addrolemodal-cbed51f617" level={4}>
           Add New Role
         </Title>
       }
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>Add Role</>}
+      onCancelButton={handleCancel}
+      confirmLoading={isLoading}
+      cancelButtonProps={{ className: 'fv2-addrolemodal-0148e35b6b' }}
       centered
       width={500}
       confirmLoading={isLoading}
@@ -62,17 +69,8 @@ const AddRoleModal = ({ show, onClose }) => {
             size="large"
           />
         </Form.Item>
-
-        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-          <Button onClick={handleCancel} style={{ marginRight: 8 }}>
-            Cancel
-          </Button>
-          <Button type="primary" htmlType="submit" loading={isLoading}>
-            Add Role
-          </Button>
-        </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

@@ -16,13 +16,13 @@
 }
 
 .title {
-  font-size: 1.875rem;
+  font-size: var(--fv2-font-1_875rem);
   font-weight: 700;
   margin: 0;
 }
 
 .statusBadge {
-  font-size: 1rem !important;
+  font-size: var(--fv2-font-1rem) !important;
 }
 
 .mainGrid {
@@ -49,13 +49,13 @@
 }
 
 .sectionTitle {
-  font-size: 1.25rem;
+  font-size: var(--fv2-font-1_25rem);
   font-weight: 600;
   margin-bottom: 1rem;
 }
 
 .productTable :global(.ant-table-thead > tr > th) {
-  background: #f8fafc;
+  background: var(--fv2-color-f8fafc);
   font-weight: 600;
 }
 
@@ -64,14 +64,14 @@
   height: 60px;
   object-fit: cover;
   border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--fv2-color-e5e7eb);
 }
 
 .totalRow {
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: var(--fv2-font-1_1rem);
   padding: 12px 0;
-  border-top: 2px solid #e5e7eb;
+  border-top: 2px solid var(--fv2-color-e5e7eb);
 }
 
 .metaList {
@@ -84,11 +84,11 @@
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--fv2-color-f0f0f0);
 }
 
 .metaLabel {
-  color: #6b7280;
+  color: var(--fv2-color-6b7280);
   font-weight: 500;
 }
 
@@ -106,13 +106,13 @@
 }
 
 .commentOwn {
-  background: #2563eb;
+  background: var(--fv2-color-2563eb);
   color: white;
   margin-left: auto;
 }
 
 .commentOther {
-  background: #f1f5f9;
+  background: var(--fv2-color-f1f5f9);
 }
 
 .commentHeader {
@@ -120,12 +120,12 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 4px;
-  font-size: 0.9rem;
+  font-size: var(--fv2-font-0_9rem);
 }
 
 .commentTime {
-  font-size: 0.75rem;
-  color: #9ca3af;
+  font-size: var(--fv2-font-0_75rem);
+  color: var(--fv2-color-9ca3af);
   margin-top: 6px;
   display: block;
 }
@@ -134,12 +134,12 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #e2e8f0;
+  background: var(--fv2-color-e2e8f0);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: #4b5563;
+  color: var(--fv2-color-4b5563);
   margin-right: 12px;
   flex-shrink: 0;
 }

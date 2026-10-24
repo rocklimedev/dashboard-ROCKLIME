@@ -1,0 +1,47 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-productlist-c5e5aeb7f0) {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+:is(#fv2-style-priority, .fv2-productlist-f6ef5ea3d6) {
+  color: var(--fv2-color-ff4d4f);
+}
+
+:is(#fv2-style-priority, .fv2-productlist-a61d61ed01) {
+  display: flex;
+  gap: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-productlist-de4c2271a6) {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-productlist-0fd63a0621) {
+  width: 300px;
+}
+
+:is(#fv2-style-priority, .fv2-productlist-0e070d6d0a) {
+  width: 100px;
+}
+
+:is(#fv2-style-priority, .fv2-productlist-466d629f73) {
+  margin: 0 8px;
+}
+
+:is(#fv2-style-priority, .fv2-productlist-418a9029cc) {
+  min-width: 240px;
+}
+
+:is(#fv2-style-priority, .fv2-productlist-510bceec15) {
+  margin: 80px 0;
+}
+
+:is(#fv2-style-priority, .fv2-productlist-2bdb263516) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}

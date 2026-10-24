@@ -1,8 +1,10 @@
+import ModalShell from '../Common/ModalShell';
+import './AddCategoryModal.styles.css';
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Button } from 'antd';
+import { Form, Input, Select } from 'antd';
 import { useCreateCategoryMutation, useUpdateCategoryMutation } from '../../api/categoryApi';
 import { useGetAllParentCategoriesQuery } from '../../api/parentCategoryApi';
-import { message } from 'antd';
+import { toast } from 'sonner';
 const AddCategoryModal = ({ open, onClose, editMode = false, categoryData = {} }) => {
   const [form] = Form.useForm();
   const [createCategory] = useCreateCategoryMutation();
@@ -35,16 +37,18 @@ const AddCategoryModal = ({ open, onClose, editMode = false, categoryData = {} }
       }
       onClose();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save category');
+      toast.error(err?.data?.message || 'Failed to save category');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       title={editMode ? 'Edit Category' : 'Add Category'}
       open={open}
       onCancel={onClose}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>{editMode ? 'Update' : 'Add'} Category</>}
+      onCancelButton={onClose}
       width={500}
     >
       <Form
@@ -79,17 +83,8 @@ const AddCategoryModal = ({ open, onClose, editMode = false, categoryData = {} }
             <Select.Option value="0">0</Select.Option>
           </Select>
         </Form.Item>
-
-        <Form.Item style={{ marginBottom: 0 }}>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <Button onClick={onClose}>Cancel</Button>
-            <Button type="primary" htmlType="submit">
-              {editMode ? 'Update' : 'Add'} Category
-            </Button>
-          </div>
-        </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

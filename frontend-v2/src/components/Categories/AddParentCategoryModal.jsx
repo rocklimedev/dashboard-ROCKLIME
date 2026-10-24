@@ -1,11 +1,13 @@
+import ModalShell from '../Common/ModalShell';
+import './AddParentCategoryModal.styles.css';
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Button } from 'antd';
+import { Form, Input, Select } from 'antd';
 import {
   useCreateParentCategoryMutation,
   useUpdateParentCategoryMutation,
 } from '../../api/parentCategoryApi';
 import { useGetAllBrandsQuery } from '../../api/brandsApi';
-import { message } from 'antd';
+import { toast } from 'sonner';
 const AddParentCategoryModal = ({ open, onClose, editMode = false, parentCategoryData = {} }) => {
   const [form] = Form.useForm();
 
@@ -27,7 +29,7 @@ const AddParentCategoryModal = ({ open, onClose, editMode = false, parentCategor
 
   const onFinish = async (values) => {
     if (!values.brandId) {
-      message.error('Please select a brand');
+      toast.error('Please select a brand');
       return;
     }
 
@@ -42,16 +44,18 @@ const AddParentCategoryModal = ({ open, onClose, editMode = false, parentCategor
       }
       onClose();
     } catch (err) {
-      message.error(err?.data?.message || 'Operation failed');
+      toast.error(err?.data?.message || 'Operation failed');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       title={editMode ? 'Edit Parent Category' : 'Add Parent Category'}
       open={open}
       onCancel={onClose}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>{editMode ? 'Update' : 'Add'}</>}
+      onCancelButton={onClose}
       width={500}
     >
       <Form form={form} layout="vertical" onFinish={onFinish}>
@@ -84,17 +88,8 @@ const AddParentCategoryModal = ({ open, onClose, editMode = false, parentCategor
             ))}
           </Select>
         </Form.Item>
-
-        <Form.Item style={{ marginBottom: 0 }}>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <Button onClick={onClose}>Cancel</Button>
-            <Button type="primary" htmlType="submit">
-              {editMode ? 'Update' : 'Add'}
-            </Button>
-          </div>
-        </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

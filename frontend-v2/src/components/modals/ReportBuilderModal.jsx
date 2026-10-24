@@ -1,6 +1,9 @@
+import ModalShell from '../Common/ModalShell';
+import './ReportBuilderModal.styles.css';
 // src/components/inventory/ReportBuilderModal.jsx
 import React, { useState } from 'react';
-import { Modal, Input, Table, Button, Space, Typography, message, Empty, Select } from 'antd';
+import { Input, Table, Button, Space, Typography, Empty, Select } from 'antd';
+import { toast } from 'sonner';
 import { FileTextOutlined, FilePdfOutlined, FileExcelOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -21,9 +24,9 @@ const ReportBuilderModal = ({
   const handleAddProduct = (productId) => {
     if (!selectedIds.includes(productId)) {
       setSelectedIds([...selectedIds, productId]);
-      message.success('Product added to report');
+      toast.success('Product added to report');
     } else {
-      message.info('Already added');
+      toast.info('Already added');
     }
     setSearchValue(''); // Clear input
   };
@@ -53,7 +56,7 @@ const ReportBuilderModal = ({
   };
 
   return (
-    <Modal
+    <ModalShell
       title={
         <Title level={4}>
           <FileTextOutlined /> Build Custom Report
@@ -91,13 +94,14 @@ const ReportBuilderModal = ({
         </Button>,
       ]}
     >
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Space className="fv2-reportbuildermodal-2e9aea9e25" direction="vertical" size="large">
         {/* Search Dropdown */}
         <div>
           <Text strong>Add Product to Report</Text>
           <Select
+            className="fv2-reportbuildermodal-4124252bcf"
             showSearch
-            style={{ width: '100%', marginTop: 8 }}
+
             placeholder="Search by name, code, or company code..."
             value={searchValue}
             onChange={handleAddProduct}
@@ -120,11 +124,11 @@ const ReportBuilderModal = ({
               .slice(0, 50) // Limit for performance
               .map((p) => (
                 <Option key={p.productId} value={p.productId}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div className="fv2-reportbuildermodal-24bed8093c">
                     <span>
                       <strong>{p.name || 'Unnamed'}</strong>
                     </span>
-                    <span style={{ color: '#888', fontSize: 12 }}>
+                    <span className="fv2-reportbuildermodal-a8fe090131">
                       {p.product_code} • {getCompanyCode(p.metaDetails)} • Stock: {p.quantity}
                     </span>
                   </div>
@@ -139,11 +143,11 @@ const ReportBuilderModal = ({
             Selected Products ({selectedIds.length})
             {selectedIds.length > 0 && (
               <Button
+                className="fv2-reportbuildermodal-96620f34ea"
                 size="small"
                 danger
                 type="text"
                 onClick={() => setSelectedIds([])}
-                style={{ marginLeft: 16 }}
               >
                 Clear All
               </Button>
@@ -192,7 +196,7 @@ const ReportBuilderModal = ({
           )}
         </div>
       </Space>
-    </Modal>
+    </ModalShell>
   );
 };
 

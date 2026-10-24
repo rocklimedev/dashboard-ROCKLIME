@@ -2,8 +2,8 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  background-color: #fff;
-  border-bottom: 1px solid #e9ecef;
+  background-color: var(--fv2-color-fff);
+  border-bottom: 1px solid var(--fv2-color-e9ecef);
 }
 
 .mainHeader {
@@ -33,13 +33,13 @@
   display: block;
   width: 100%;
   height: 3px;
-  background: #333;
+  background: var(--fv2-color-333);
   border-radius: 2px;
   transition: all 0.3s ease;
 }
 
 .mobileBtn:hover .barIcon span {
-  background: #1890ff;
+  background: var(--fv2-color-1890ff);
 }
 
 @media (max-width: 767px) {
@@ -63,20 +63,20 @@
 
 .responsiveSearch {
   padding: 0 !important;
-  color: #333 !important;
+  color: var(--fv2-color-333) !important;
 }
 
 .responsiveSearch:hover {
-  color: #1890ff !important;
+  color: var(--fv2-color-1890ff) !important;
 }
 
 .fullscreenBtn {
   padding: 0 !important;
-  color: #333 !important;
+  color: var(--fv2-color-333) !important;
 }
 
 .fullscreenBtn:hover {
-  color: #1890ff !important;
+  color: var(--fv2-color-1890ff) !important;
 }
 
 .dropdownProfileNav {
@@ -111,14 +111,14 @@
 }
 
 .userMenuDropdown :global(.ant-dropdown-menu-item a) {
-  color: #333;
+  color: var(--fv2-color-333);
   text-decoration: none;
   display: flex;
   align-items: center;
 }
 
 .userMenuDropdown :global(.ant-dropdown-menu-item a:hover) {
-  color: #1890ff;
+  color: var(--fv2-color-1890ff);
 }
 
 .userMenuDropdown :global(.ant-dropdown-menu-item-disabled) {
@@ -127,5 +127,5 @@
 }
 
 .userMenuDropdown :global(.ant-dropdown-menu-item:hover) {
-  background-color: #f8f9fa;
+  background-color: var(--fv2-color-f8f9fa);
 }

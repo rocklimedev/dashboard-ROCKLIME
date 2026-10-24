@@ -1,7 +1,8 @@
+import './FGSDetails.styles.css';
 import React, { useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useGetFGSByIdQuery } from '../../api/fgsApi'; // ← your FGS API hook
-import { message } from 'antd';
+import { toast } from 'sonner';
 import logo from '../../assets/img/logo.png';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -52,7 +53,7 @@ const FGSDetails = () => {
     try {
       if (exportFormat === 'pdf') {
         if (!fgsRef.current) {
-          message.error('Field Generated Sheet content not found.');
+          toast.error('Field Generated Sheet content not found.');
           return;
         }
         const canvas = await html2canvas(fgsRef.current, {
@@ -160,7 +161,7 @@ const FGSDetails = () => {
         window.URL.revokeObjectURL(url);
       }
     } catch (err) {
-      message.error(`Export failed: ${err.message}`);
+      toast.error(`Export failed: ${err.message}`);
     } finally {
       setIsExporting(false);
     }
@@ -192,7 +193,7 @@ const FGSDetails = () => {
                 <table className="po-table full-width">
                   <tbody>
                     <tr>
-                      <td colSpan="3" style={{ textAlign: 'center' }}>
+                      <td className="fv2-fgsdetails-741caa8363" colSpan="3">
                         <img src={logo} alt="Company Logo" className="logo-img" />
                       </td>
                     </tr>
@@ -206,20 +207,16 @@ const FGSDetails = () => {
                 <table className="po-table full-width">
                   <tbody>
                     <tr>
-                      <td className="label-cell" style={{ width: '15%' }}>
-                        Vendor
-                      </td>
-                      <td style={{ width: '55%' }}>{vendor?.vendorName || 'N/A'}</td>
-                      <td className="label-cell" style={{ width: '15%' }}>
-                        Order Date
-                      </td>
-                      <td style={{ width: '15%' }}>
+                      <td className="label-cell fv2-fgsdetails-d29786622f">Vendor</td>
+                      <td className="fv2-fgsdetails-a4e0b21975">{vendor?.vendorName || 'N/A'}</td>
+                      <td className="label-cell fv2-fgsdetails-d29786622f">Order Date</td>
+                      <td className="fv2-fgsdetails-d29786622f">
                         {orderDate ? new Date(orderDate).toLocaleDateString('en-IN') : 'N/A'}
                       </td>
                     </tr>
                     <tr>
                       <td className="label-cell">Expected Delivery</td>
-                      <td style={{ width: '55%' }}>
+                      <td className="fv2-fgsdetails-a4e0b21975">
                         {expectDeliveryDate
                           ? new Date(expectDeliveryDate).toLocaleDateString('en-IN')
                           : 'N/A'}
@@ -249,15 +246,10 @@ const FGSDetails = () => {
                           <td>
                             {item.imageUrl ? (
                               <img
+                                className="fv2-fgsdetails-d469286fc7"
                                 src={item.imageUrl}
                                 alt={item.productName || 'Product image'}
-                                style={{
-                                  maxWidth: '80px',
-                                  maxHeight: '80px',
-                                  objectFit: 'contain',
-                                  borderRadius: '4px',
-                                  border: '1px solid #eee',
-                                }}
+
                                 onError={(e) => {
                                   e.currentTarget.src = { noimage };
                                   e.currentTarget.alt = 'Image failed to load';

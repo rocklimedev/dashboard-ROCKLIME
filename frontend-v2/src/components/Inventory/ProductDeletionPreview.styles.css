@@ -1,0 +1,21 @@
+/* Product deletion reference-check content. */
+:is(#fv2-style-priority, .fv2-productdeletemodal-237c943ad8) {
+  height: 70px;
+}
+
+:is(#fv2-style-priority, .fv2-productdeletemodal-e830f42839) {
+  margin-bottom: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-productdeletemodal-3a8f68a12e) {
+  max-height: 260px;
+  overflow: auto;
+}
+
+:is(#fv2-style-priority, .fv2-productdeletemodal-f0a14949a3) {
+  margin-bottom: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-productdeletemodal-28f7e7bb45) {
+  margin-top: 12px;
+}

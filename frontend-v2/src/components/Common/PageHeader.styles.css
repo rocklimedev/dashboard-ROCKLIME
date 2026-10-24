@@ -1,0 +1,12 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-pageheader-3949ef562b) {
+  font-size: var(--fv2-font-24px);
+  color: var(--fv2-color-e74c3c);
+  cursor: pointer;
+}
+
+:is(#fv2-style-priority, .fv2-pageheader-9fcb9c5593) {
+  font-size: var(--fv2-font-24px);
+  color: var(--fv2-color-27ae60);
+  cursor: pointer;
+}

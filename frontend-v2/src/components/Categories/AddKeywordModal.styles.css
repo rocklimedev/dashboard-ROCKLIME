@@ -1,0 +1,10 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-addkeywordmodal-daf461d9dc) {
+  margin-bottom: 0;
+}
+
+:is(#fv2-style-priority, .fv2-addkeywordmodal-39509e69a3) {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

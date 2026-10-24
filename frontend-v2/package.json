@@ -8,6 +8,11 @@
     "build": "vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "styles:audit": "node scripts/styles-audit.mjs",
+    "test:modals": "node --test src/components/Common/ModalShell.test.mjs",
+    "test:loader": "node --test src/components/Common/Loader.test.mjs",
+    "test:boundaries": "node --test src/components/Common/ErrorBoundary.test.mjs",
+    "test:lists": "node --test src/components/Common/ListControls.test.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview"
@@ -61,6 +66,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@babel/parser": "^7.29.8",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
@@ -70,6 +76,7 @@
     "eslint-plugin-react-refresh": "^0.5.6",
     "globals": "^17.12.0",
     "prettier": "^3.9.10",
+    "postcss": "^8.5.28",
     "vite": "^8.3.0",
     "vite-plugin-pwa": "^1.3.0"
   }

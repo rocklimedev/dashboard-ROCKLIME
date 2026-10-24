@@ -1,3 +1,4 @@
+import './AddNewOrder.styles.css';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { PlusOutlined, DeleteOutlined, UserAddOutlined, WarningOutlined } from '@ant-design/icons';
@@ -15,7 +16,7 @@ import {
   Collapse,
   Alert,
 } from 'antd';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import { debounce } from 'lodash';
 import Avatar from 'react-avatar';
 import styled from 'styled-components';
@@ -59,38 +60,15 @@ const STATUS_VALUES = [
 const INVOICE_EDITABLE_STATUSES = ['INVOICE', 'DISPATCHED', 'DELIVERED', 'PARTIALLY_DELIVERED'];
 
 /* ────────────────────── Styled ────────────────────── */
-const FormContainer = styled.div`
-  padding: 16px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-`;
-const FormSection = styled.div`
-  margin-bottom: 12px;
-`;
-const CompactSelect = styled(Select)`
-  width: 100%;
-  .ant-select-selector {
-    height: 32px !important;
-    padding: 0 8px !important;
-  }
-`;
-const CompactInput = styled(Input)`
-  height: 32px;
-`;
-const CompactTextArea = styled(Input.TextArea)`
-  resize: vertical;
-`;
-const ActionButton = styled(Button)`
-  padding: 0;
-  font-size: 12px;
-`;
-const HeaderContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-`;
+const FormContainer = styled.div.attrs({ className: 'fv2-addneworder-form-container' })``;
+const FormSection = styled.div.attrs({ className: 'fv2-addneworder-form-section' })``;
+const CompactSelect = styled(Select).attrs({ className: 'fv2-addneworder-compact-select' })``;
+const CompactInput = styled(Input).attrs({ className: 'fv2-addneworder-compact-input' })``;
+const CompactTextArea = styled(Input.TextArea).attrs({
+  className: 'fv2-addneworder-compact-text-area',
+})``;
+const ActionButton = styled(Button).attrs({ className: 'fv2-addneworder-action-button' })``;
+const HeaderContainer = styled.div.attrs({ className: 'fv2-addneworder-header-container' })``;
 
 const AddNewOrder = ({ adminName }) => {
   const { id } = useParams();
@@ -288,7 +266,7 @@ const AddNewOrder = ({ adminName }) => {
 
     // Guard: don't hit the API with data we already know is invalid
     if (!defaultAddress.street || !defaultAddress.city || !defaultAddress.state) {
-      message.error(
+      toast.error(
         'This customer has no complete billing address. Please add a shipping address manually.',
       );
       setUseBillingAddress(false); // stop the effect from re-firing
@@ -310,7 +288,7 @@ const AddNewOrder = ({ adminName }) => {
         const res = await createAddress(newAddr).unwrap();
         handleChange('shipTo', res.data.addressId);
       } catch (e) {
-        message.error(`Failed to create billing address: ${e.data?.message || 'Unknown error'}`);
+        toast.error(`Failed to create billing address: ${e.data?.message || 'Unknown error'}`);
         setUseBillingAddress(false); // ← critical: prevents infinite retry
         handleChange('shipTo', null);
       } finally {
@@ -410,9 +388,9 @@ const AddNewOrder = ({ adminName }) => {
     const dates = [...formData.followupDates];
     dates[idx] = m ? m.format('YYYY-MM-DD') : '';
     if (m && formData.dueDate && m.isAfter(moment(formData.dueDate), 'day'))
-      message.warning(`Timeline date ${idx + 1} cannot be after due date.`);
+      toast.warning(`Timeline date ${idx + 1} cannot be after due date.`);
     if (m && m.isBefore(moment().startOf('day')))
-      message.warning(`Timeline date ${idx + 1} cannot be before today.`);
+      toast.warning(`Timeline date ${idx + 1} cannot be before today.`);
     setFormData((p) => ({ ...p, followupDates: dates }));
   };
   const addFollowupDate = () =>
@@ -431,40 +409,40 @@ const AddNewOrder = ({ adminName }) => {
     if (submissionInFlight.current) return;
 
     // ---------- validation ----------
-    if (!formData.createdFor) return message.error('Please select a Customer.');
+    if (!formData.createdFor) return toast.error('Please select a Customer.');
     if (formData.secondaryUserId && !users.some((u) => u.userId === formData.secondaryUserId))
-      return message.error('Selected Secondary User does not exist.');
+      return toast.error('Selected Secondary User does not exist.');
     if (formData.sourceType && !formData.source)
-      return message.error('Please select a Source Customer for the selected Source Type.');
+      return toast.error('Please select a Source Customer for the selected Source Type.');
 
     if (assignmentType === 'team' && !formData.assignedTeamId)
-      return message.error('Please select a Team for assignment.');
+      return toast.error('Please select a Team for assignment.');
     if (assignmentType === 'users' && !formData.assignedUserId)
-      return message.error('Please select at least a Primary User for assignment.');
+      return toast.error('Please select at least a Primary User for assignment.');
     if (
       assignmentType === 'users' &&
       formData.assignedUserId &&
       formData.secondaryUserId &&
       formData.assignedUserId === formData.secondaryUserId
     )
-      return message.error('Primary and Secondary Users cannot be the same.');
+      return toast.error('Primary and Secondary Users cannot be the same.');
 
-    if (!formData.dueDate) return message.error('Please select a due date.');
+    if (!formData.dueDate) return toast.error('Please select a due date.');
     if (!validateFollowupDates())
-      return message.error('Timeline dates cannot be after the due date.');
+      return toast.error('Timeline dates cannot be after the due date.');
 
     if (formData.masterPipelineNo && !/^\d{1,2}\d{1,2}25\d{3,}$/.test(formData.masterPipelineNo))
-      return message.error('Master Pipeline Number must be DDMM25XXX.');
+      return toast.error('Master Pipeline Number must be DDMM25XXX.');
     if (formData.previousOrderNo && !/^\d{1,2}\d{1,2}25\d{3,}$/.test(formData.previousOrderNo))
-      return message.error('Previous Order Number must be DDMM25XXX.');
+      return toast.error('Previous Order Number must be DDMM25XXX.');
 
     if (formData.masterPipelineNo && orders.every((o) => o.orderNo !== formData.masterPipelineNo))
-      return message.error('Master Pipeline Number does not match any existing order.');
+      return toast.error('Master Pipeline Number does not match any existing order.');
     if (formData.previousOrderNo && orders.every((o) => o.orderNo !== formData.previousOrderNo))
-      return message.error('Previous Order Number does not match any existing order.');
+      return toast.error('Previous Order Number does not match any existing order.');
 
     if (!formData.shipTo && !useBillingAddress)
-      return message.error('Please select a shipping address.');
+      return toast.error('Please select a shipping address.');
 
     // ---------- payload ----------
     const sanitize = (v) => (v === '' || v == null ? null : v);
@@ -523,10 +501,10 @@ const AddNewOrder = ({ adminName }) => {
     try {
       if (isEditMode) {
         await updateOrder({ id, ...payload }).unwrap();
-        message.success('Order updated successfully');
+        toast.success('Order updated successfully');
       } else {
         const result = await createOrder(payload).unwrap();
-        message.success(`Order ${result.orderNo} created successfully`);
+        toast.success(`Order ${result.orderNo} created successfully`);
       }
       navigate('/orders/list');
     } catch (err) {
@@ -541,7 +519,7 @@ const AddNewOrder = ({ adminName }) => {
               ? 'Server error.'
               : 'Something went wrong.';
 
-      message.error(msg);
+      toast.error(msg);
     }
   };
 
@@ -552,7 +530,7 @@ const AddNewOrder = ({ adminName }) => {
       setFormData((p) => ({ ...p, createdFor: res.data.customerId }));
       setShowAddCustomerModal(false);
     } catch (e) {
-      message.error(e?.data?.message || 'Failed to create customer.');
+      toast.error(e?.data?.message || 'Failed to create customer.');
     }
   };
   const handleAddressSave = async (newId) => {
@@ -594,10 +572,11 @@ const AddNewOrder = ({ adminName }) => {
               <Col xs={24} md={12}>
                 <FormSection>
                   <Text strong>
-                    Customer <span style={{ color: 'red' }}>*</span>
+                    Customer <span className="fv2-addneworder-9dfaff592b">*</span>
                   </Text>
-                  <Space direction="horizontal" style={{ width: '100%' }}>
+                  <Space className="fv2-addneworder-2ade9eb7d5" direction="horizontal">
                     <CompactSelect
+                      className="fv2-addneworder-e007c174fc"
                       showSearch
                       value={formData.createdFor || undefined}
                       onChange={(v) => {
@@ -608,7 +587,6 @@ const AddNewOrder = ({ adminName }) => {
                       onSearch={debouncedCustomerSearch}
                       placeholder="Select a customer"
                       filterOption={false}
-                      style={{ flex: 1 }}
                     >
                       {filteredCustomers.length ? (
                         filteredCustomers.map((c) => (
@@ -631,6 +609,7 @@ const AddNewOrder = ({ adminName }) => {
               {formData.createdFor && (
                 <Col xs={24}>
                   <CreditAlert
+                    className="fv2-addneworder-53e3541e7d"
                     customerId={formData.createdFor}
                     amount={
                       quotationData.finalAmount ||
@@ -641,7 +620,6 @@ const AddNewOrder = ({ adminName }) => {
                         0,
                       )
                     }
-                    style={{ marginBottom: 8 }}
                   />
                 </Col>
               )}
@@ -650,15 +628,15 @@ const AddNewOrder = ({ adminName }) => {
               <Col xs={24} md={12}>
                 <FormSection>
                   <Text strong>
-                    Shipping Address <span style={{ color: 'red' }}>*</span>
+                    Shipping Address <span className="fv2-addneworder-9dfaff592b">*</span>
                   </Text>
-                  <Space direction="horizontal" style={{ width: '100%' }}>
+                  <Space className="fv2-addneworder-2ade9eb7d5" direction="horizontal">
                     <CompactSelect
+                      className="fv2-addneworder-e007c174fc"
                       value={useBillingAddress ? 'sameAsBilling' : formData.shipTo || undefined}
                       onChange={handleAddressChange}
                       placeholder="Select shipping address"
                       disabled={!formData.createdFor}
-                      style={{ flex: 1 }}
                     >
                       {formData.createdFor && defaultAddress && (
                         <Option value="sameAsBilling">Same as Billing Address</Option>
@@ -695,7 +673,7 @@ const AddNewOrder = ({ adminName }) => {
               <Col xs={24} md={12}>
                 <FormSection>
                   <Text strong>
-                    Due Date <span style={{ color: 'red' }}>*</span>
+                    Due Date <span className="fv2-addneworder-9dfaff592b">*</span>
                   </Text>
                   <DatePicker
                     selected={momentToDate(moment(formData.dueDate))}
@@ -773,12 +751,12 @@ const AddNewOrder = ({ adminName }) => {
                 <Col xs={24}>
                   <FormSection>
                     <Text strong>Team</Text>
-                    <Space size={4} style={{ width: '100%' }}>
+                    <Space className="fv2-addneworder-2ade9eb7d5" size={4}>
                       <CompactSelect
+                        className="fv2-addneworder-e007c174fc"
                         value={formData.assignedTeamId || undefined}
                         onChange={(v) => handleChange('assignedTeamId', v)}
                         placeholder="Select team"
-                        style={{ flex: 1 }}
                       >
                         {teams.length ? (
                           teams.map((t) => (
@@ -805,7 +783,7 @@ const AddNewOrder = ({ adminName }) => {
                   <Col xs={24} md={12}>
                     <FormSection>
                       <Text strong>
-                        Primary User <span style={{ color: 'red' }}>*</span>
+                        Primary User <span className="fv2-addneworder-9dfaff592b">*</span>
                       </Text>
                       <CompactSelect
                         value={formData.assignedUserId || undefined}
@@ -966,10 +944,11 @@ const AddNewOrder = ({ adminName }) => {
                         <FormSection>
                           <Text strong>Shipping Cost</Text>
                           <InputNumber
+                            className="fv2-addneworder-2ade9eb7d5"
                             min={0}
                             step={0.01}
                             precision={2}
-                            style={{ width: '100%' }}
+
                             value={formData.shipping}
                             onChange={(v) => handleNumericChange('shipping', v)}
                             placeholder="0.00"
@@ -981,11 +960,12 @@ const AddNewOrder = ({ adminName }) => {
                         <FormSection>
                           <Text strong>GST (%)</Text>
                           <InputNumber
+                            className="fv2-addneworder-2ade9eb7d5"
                             min={0}
                             max={100}
                             step={0.01}
                             precision={2}
-                            style={{ width: '100%' }}
+
                             value={formData.gst}
                             onChange={(v) => handleNumericChange('gst', v)}
                             placeholder="18.00"
@@ -1041,10 +1021,10 @@ const AddNewOrder = ({ adminName }) => {
                           <Text strong>Timeline Dates</Text>
                           {formData.followupDates.map((d, i) => (
                             <Space
+                              className="fv2-addneworder-8e2eeeb643"
                               key={i}
                               align="center"
                               size={4}
-                              style={{ marginBottom: 8, width: '100%' }}
                             >
                               <DatePicker
                                 selected={momentToDate(moment(d))}
@@ -1079,7 +1059,7 @@ const AddNewOrder = ({ adminName }) => {
 
               {/* ---------- Submit ---------- */}
               <Col xs={24}>
-                <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+                <Space className="fv2-addneworder-0281ac6e4b">
                   <Button type="default" onClick={() => navigate('/orders/list')}>
                     Cancel
                   </Button>

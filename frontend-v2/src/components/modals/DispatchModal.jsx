@@ -1,5 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './DispatchModal.styles.css';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Radio, Table, InputNumber, Input, Upload, Button, message } from 'antd';
+import { Radio, Table, InputNumber, Input, Upload, Button } from 'antd';
+import { toast } from 'sonner';
 import { UploadOutlined, FilePdfOutlined } from '@ant-design/icons';
 import { useCreateDispatchMutation, useGetOrderDispatchesQuery } from '../../api/orderApi';
 
@@ -211,12 +214,12 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
   const handleSubmit = async () => {
     // Document validation — both are mandatory for THIS dispatch
     if (!invoiceReady) {
-      message.error("Upload this dispatch's invoice, or let the ERP make the GST invoice.");
+      toast.error("Upload this dispatch's invoice, or let the ERP make the GST invoice.");
       return;
     }
 
     if (!gatePassReady) {
-      message.error("Upload this dispatch's gate pass, or let the ERP make it.");
+      toast.error("Upload this dispatch's gate pass, or let the ERP make it.");
       return;
     }
 
@@ -229,7 +232,7 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
       .filter((item) => item.quantity > 0);
 
     if (items.length === 0) {
-      message.error('Select at least one product/quantity to dispatch');
+      toast.error('Select at least one product/quantity to dispatch');
       return;
     }
 
@@ -259,7 +262,7 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
     }
     const eway = transport.ewayBillNo.replace(/\s/g, '');
     if (eway && !/^\d{12}$/.test(eway)) {
-      message.error('E-way bill number must be 12 digits');
+      toast.error('E-way bill number must be 12 digits');
       return;
     }
 
@@ -275,20 +278,20 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
         formData,
       }).unwrap();
 
-      message.success(
+      toast.success(
         (result?.orderStatus === 'DISPATCHED'
           ? 'Order fully dispatched'
           : 'Partial dispatch recorded') +
           (result?.invoice ? ` · invoice ${result.invoice.invoiceNo}` : ''),
       );
-      if (result?.note) message.info(result.note, 6);
+      if (result?.note) toast.info(result.note, { duration: 6 * 1000 });
 
       onSuccess?.(result);
       onClose();
     } catch (err) {
       console.error('Create Dispatch Error:', err);
 
-      message.error(err?.data?.message || 'Failed to create dispatch');
+      toast.error(err?.data?.message || 'Failed to create dispatch');
     }
   };
 
@@ -327,12 +330,12 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
 
       render: (_, record) => (
         <InputNumber
+          className="fv2-dispatchmodal-8dde8be86b"
           min={0}
           max={record.remaining}
           value={quantities[record.productId] ?? 0}
           disabled={dispatchType === 'full' || record.remaining === 0}
           onChange={(value) => handleQuantityChange(record.productId, value, record.remaining)}
-          style={{ width: '100%' }}
         />
       ),
     },
@@ -343,7 +346,7 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
   // ------------------------------------------------------------
 
   return (
-    <Modal
+    <ModalShell
       title={`Dispatch Order #${order?.orderNo || ''}`}
       open={visible}
       onCancel={onClose}
@@ -370,9 +373,9 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           {/* -------------------------------------------------- */}
 
           <Radio.Group
+            className="fv2-dispatchmodal-b54871c723"
             value={dispatchType}
             onChange={(e) => setDispatchType(e.target.value)}
-            style={{ marginBottom: 16 }}
           >
             <Radio.Button value="full">Full Dispatch</Radio.Button>
 
@@ -384,20 +387,20 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           {/* -------------------------------------------------- */}
 
           <Table
+            className="fv2-dispatchmodal-b54871c723"
             rowKey="productId"
             columns={columns}
             dataSource={lines}
             pagination={false}
             loading={loadingDispatches}
             size="small"
-            style={{ marginBottom: 16 }}
           />
 
           {/* -------------------------------------------------- */}
           {/* Invoice — mandatory per dispatch */}
           {/* -------------------------------------------------- */}
 
-          <div style={{ marginBottom: 16 }}>
+          <div className="fv2-dispatchmodal-b54871c723">
             <div className="fw-semibold mb-2">Invoice for this dispatch</div>
             <Radio.Group
               value={invoiceMode}
@@ -489,18 +492,18 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           {/* -------------------------------------------------- */}
 
           <TextArea
+            className="fv2-dispatchmodal-b54871c723"
             placeholder="Remarks (optional)"
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
             rows={2}
-            style={{ marginBottom: 16 }}
           />
 
           {/* -------------------------------------------------- */}
           {/* Gate Pass — mandatory per dispatch */}
           {/* -------------------------------------------------- */}
 
-          <div style={{ marginBottom: 16 }}>
+          <div className="fv2-dispatchmodal-b54871c723">
             <div className="fw-semibold mb-2">Gate pass</div>
             <Radio.Group
               value={gatePassMode}
@@ -548,7 +551,7 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           )}
         </>
       )}
-    </Modal>
+    </ModalShell>
   );
 };
 

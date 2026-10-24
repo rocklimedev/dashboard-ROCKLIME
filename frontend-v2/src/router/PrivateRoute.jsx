@@ -1,7 +1,8 @@
+import Loader from '../components/Common/Loader';
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Spin } from 'antd';
+
 import useCan, { useRoles } from '../utils/useCan';
 import { ADMIN_ROLES } from '../apps/registry';
 import AccessDenied from '../concepts/Error/AccessDenied';
@@ -11,14 +12,14 @@ const PrivateRoute = ({ requiredPermission, requiredAppPermission, children }) =
   const can = useCan();
   const roles = useRoles();
 
-  if (!authChecked) return <Spin size="large" />;
+  if (!authChecked) return <Loader size="large" />;
   if (!auth?.token) return <Navigate to="/login" replace />;
 
   if (isLoadingPermissions && !auth?.permissions)
     return (
       <div className="page-wrapper">
         <div className="content">
-          <Spin size="large" />
+          <Loader size="large" />
         </div>
       </div>
     );

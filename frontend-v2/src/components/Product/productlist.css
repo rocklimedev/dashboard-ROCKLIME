@@ -3,7 +3,7 @@
   z-index: 1000;
   margin-bottom: 24px;
   border-radius: 8px;
-  background: #fff;
+  background: var(--fv2-color-fff);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   padding: 16px;
 }
@@ -23,7 +23,7 @@
 .filter-form .ant-select-selector {
   border-radius: 6px;
   height: 40px;
-  font-size: 14px;
+  font-size: var(--fv2-font-14px);
 }
 
 .filter-form .ant-btn {
@@ -50,11 +50,11 @@
   width: 100%;
   display: grid;
   grid-template-rows: 1fr auto auto auto; /* image | name | price/qty | actions */
-  border: 1px solid #e8ecef;
+  border: 1px solid var(--fv2-color-e8ecef);
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  background: #fff;
+  background: var(--fv2-color-fff);
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease;
@@ -69,7 +69,7 @@
 .pro-img {
   position: relative;
   display: block;
-  background: #fafafa;
+  background: var(--fv2-color-fafafa);
 }
 
 .image-wrapper {
@@ -108,9 +108,9 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background-color: #e31e24;
-  color: #fff;
-  font-size: 12px;
+  background-color: var(--fv2-color-e31e24);
+  color: var(--fv2-color-fff);
+  font-size: var(--fv2-font-12px);
   padding: 2px 8px;
   border-radius: 12px;
 }
@@ -118,12 +118,12 @@
 /* ---------- TEXT AREAS ---------- */
 .product-name {
   margin: 8px 12px 0;
-  font-size: 14px;
+  font-size: var(--fv2-font-14px);
   font-weight: 600;
   line-height: 1.35;
 }
 .product-name a {
-  color: #222;
+  color: var(--fv2-color-222);
   text-decoration: none;
   display: -webkit-box;
   -webkit-line-clamp: 2; /* clamp to two lines */
@@ -131,7 +131,7 @@
   overflow: hidden;
 }
 .product-name a:hover {
-  color: #e31e24;
+  color: var(--fv2-color-e31e24);
 }
 
 /* ---------- PRICE + QTY ---------- */
@@ -142,7 +142,7 @@
   justify-content: space-between;
 }
 .text-gray-9 {
-  color: #28a745; /* Green color for price */
+  color: var(--fv2-color-28a745); /* Green color for price */
   font-weight: 600;
 }
 
@@ -154,8 +154,8 @@
 .qty-item .form-control {
   width: 52px;
   height: 30px;
-  font-size: 12px;
-  border: 1px solid #e8ecef;
+  font-size: var(--fv2-font-12px);
+  border: 1px solid var(--fv2-color-e8ecef);
   border-radius: 4px;
   text-align: center;
 }
@@ -163,9 +163,9 @@
 .inc {
   width: 30px;
   height: 30px;
-  border: 1px solid #e8ecef;
+  border: 1px solid var(--fv2-color-e8ecef);
   border-radius: 4px;
-  background: #f7f8fa;
+  background: var(--fv2-color-f7f8fa);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -173,13 +173,13 @@
 }
 .dec:hover,
 .inc:hover {
-  background: #eef1f4;
+  background: var(--fv2-color-eef1f4);
 }
 
 /* ---------- ACTIONS (same row) ---------- */
 .product-actions {
   padding: 10px 12px;
-  border-top: 1px solid #eef1f4;
+  border-top: 1px solid var(--fv2-color-eef1f4);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -210,15 +210,15 @@
   }
 
   .product-name {
-    font-size: 13px;
+    font-size: var(--fv2-font-13px);
   }
   .text-gray-9 {
-    font-size: 13px;
+    font-size: var(--fv2-font-13px);
   }
   .qty-item .form-control {
     width: 46px;
     height: 28px;
-    font-size: 11px;
+    font-size: var(--fv2-font-11px);
   }
   .dec,
   .inc {
@@ -243,15 +243,15 @@
   }
 
   .product-name {
-    font-size: 12px;
+    font-size: var(--fv2-font-12px);
   }
   .text-gray-9 {
-    font-size: 12px;
+    font-size: var(--fv2-font-12px);
   }
   .qty-item .form-control {
     width: 40px;
     height: 26px;
-    font-size: 10px;
+    font-size: var(--fv2-font-10px);
   }
   .dec,
   .inc {
@@ -275,18 +275,18 @@
   top: 8px;
   right: 8px;
   padding: 2px 8px;
-  font-size: 12px;
+  font-size: var(--fv2-font-12px);
   font-weight: 600;
   border-radius: 12px;
-  color: #fff;
+  color: var(--fv2-color-fff);
   z-index: 2;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .status-bar.in-stock {
-  background-color: #28a745; /* Green */
+  background-color: var(--fv2-color-28a745); /* Green */
 }
 
 .status-bar.out-of-stock {
-  background-color: #e31e24; /* Red */
+  background-color: var(--fv2-color-e31e24); /* Red */
 }

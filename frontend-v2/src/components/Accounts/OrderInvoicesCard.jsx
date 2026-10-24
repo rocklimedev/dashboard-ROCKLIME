@@ -1,19 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './OrderInvoicesCard.styles.css';
 import { useState } from 'react';
-import {
-  Alert,
-  Button,
-  Card,
-  DatePicker,
-  Descriptions,
-  Empty,
-  Modal,
-  Space,
-  Table,
-  Tag,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Card, DatePicker, Descriptions, Empty, Space, Table, Tag, Tooltip, Typography } from 'antd';
+import { toast } from 'sonner';
 import { FileDoneOutlined, FilePdfOutlined, PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
@@ -44,16 +33,16 @@ export default function OrderInvoicesCard({ orderId }) {
       setDate(dayjs());
       setDraft(await preview({ orderId }).unwrap());
     } catch (e) {
-      message.error(e?.data?.message || 'Could not prepare the invoice');
+      toast.error(e?.data?.message || 'Could not prepare the invoice');
     }
   };
   const confirm = async () => {
     try {
       const r = await create({ orderId, invoiceDate: date.format('YYYY-MM-DD') }).unwrap();
-      message.success(r.message);
+      toast.success(r.message);
       setDraft(null);
     } catch (e) {
-      message.error(e?.data?.message || 'Could not make the invoice');
+      toast.error(e?.data?.message || 'Could not make the invoice');
     }
   };
   const open = async (inv) => {
@@ -61,7 +50,7 @@ export default function OrderInvoicesCard({ orderId }) {
     try {
       await fetchFile(`/invoices/${inv.id}/pdf`, { open: true });
     } catch (e) {
-      message.error(e.message);
+      toast.error(e.message);
     } finally {
       setBusy(null);
     }
@@ -74,8 +63,8 @@ export default function OrderInvoicesCard({ orderId }) {
           <FileDoneOutlined /> GST invoices
         </span>
       }
-      className="section-card"
-      style={{ marginTop: 24 }}
+      className="section-card fv2-orderinvoicescard-366b9de23d"
+
       extra={
         data?.canInvoice &&
         can('orders', 'edit') && (
@@ -144,7 +133,7 @@ export default function OrderInvoicesCard({ orderId }) {
               render: (_, r) => (
                 <Button
                   type="text"
-                  icon={<FilePdfOutlined style={{ color: '#d32f2f' }} />}
+                  icon={<FilePdfOutlined className="fv2-orderinvoicescard-ccf8b37aab" />}
                   loading={busy === r.id}
                   onClick={() => open(r)}
                 />
@@ -154,7 +143,7 @@ export default function OrderInvoicesCard({ orderId }) {
         />
       )}
 
-      <Modal
+      <ModalShell
         open={!!draft}
         title="Make GST invoice"
         okText="Make invoice"
@@ -216,7 +205,7 @@ export default function OrderInvoicesCard({ orderId }) {
                 { title: 'Taxable', dataIndex: 'taxable', align: 'right', render: inr },
               ]}
             />
-            <div className="text-end mt-3" style={{ lineHeight: 1.8 }}>
+            <div className="text-end mt-3 fv2-orderinvoicescard-c2fddcd24f">
               {draft.freight > 0 && <div>Freight {inr(draft.freight)}</div>}
               {draft.discount > 0 && <div>Less discount − {inr(draft.discount)}</div>}
               <div>Taxable value {inr(draft.taxableValue)}</div>
@@ -232,14 +221,14 @@ export default function OrderInvoicesCard({ orderId }) {
               )}
               {draft.roundOff !== 0 && <div>Round off {inr(draft.roundOff)}</div>}
               <div>
-                <Text strong style={{ fontSize: 16 }}>
+                <Text className="fv2-orderinvoicescard-c792f5a149" strong>
                   Invoice total {inr(draft.total)}
                 </Text>
               </div>
             </div>
           </>
         )}
-      </Modal>
+      </ModalShell>
     </Card>
   );
 }

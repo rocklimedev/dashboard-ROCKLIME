@@ -1,0 +1,21 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-productreferencespage-ca44629c70) {
+  margin-bottom: 20px;
+}
+
+:is(#fv2-style-priority, .fv2-productreferencespage-37ea7fee10) {
+  margin-bottom: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-productreferencespage-f4ae513038) {
+  object-fit: contain;
+}
+
+:is(#fv2-style-priority, .fv2-productreferencespage-e3b9ea0364) {
+  margin-top: 0;
+}
+
+:is(#fv2-style-priority, .fv2-productreferencespage-c224b12cf1) {
+  max-width: 520px;
+  margin-bottom: 16px;
+}

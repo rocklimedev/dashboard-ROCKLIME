@@ -1,0 +1,34 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-accountspage-04a3b3a81a) {
+  margin-bottom: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-accountspage-a86914c4c8) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-accountspage-6a0dd3e0df) {
+  margin-bottom: 12px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+:is(#fv2-style-priority, .fv2-accountspage-34f392f738) {
+  width: 240px;
+}
+
+:is(#fv2-style-priority, .fv2-accountspage-62335f63d8) {
+  width: 170px;
+}
+
+:is(#fv2-style-priority, .fv2-accountspage-542dc2ab62) {
+  margin-bottom: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-accountspage-6c96ede3da) {
+  margin-bottom: 0;
+}
+
+:is(#fv2-style-priority, .fv2-accountspage-3b070c7a24) {
+  margin-top: 16px;
+}

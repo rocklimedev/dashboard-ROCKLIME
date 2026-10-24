@@ -1,0 +1,104 @@
+.cm-loader {
+  --loader-size: 26px;
+  --loader-stroke: 3px;
+  --loader-red: var(--fv2-color-e31e24, #e31e24);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--loader-red);
+  vertical-align: middle;
+}
+
+.cm-loader--small {
+  --loader-size: 16px;
+  --loader-stroke: 2px;
+}
+
+.cm-loader--large {
+  --loader-size: 40px;
+  --loader-stroke: 4px;
+}
+
+.cm-loader__ring {
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--loader-size);
+  height: var(--loader-size);
+  box-sizing: border-box;
+  border: var(--loader-stroke) solid rgba(227, 30, 36, 0.16);
+  border-top-color: var(--loader-red);
+  border-right-color: var(--loader-red);
+  border-radius: 50%;
+  animation: cm-loader-rotate 0.8s linear infinite;
+}
+
+.cm-loader__tip {
+  display: block;
+  font-size: var(--fv2-font-13px, 13px);
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.cm-loader__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.cm-loader-region {
+  position: relative;
+}
+
+.cm-loader-region--loading {
+  min-height: 80px;
+}
+
+.cm-loader-region--loading > .cm-loader-region__content {
+  opacity: 0.4;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cm-loader-region__cover {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+/* The ID keeps precedence over the legacy template's global-loader rules. */
+div#global-loader.cm-loader-fullscreen,
+.cm-loader-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+@keyframes cm-loader-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cm-loader__ring {
+    animation: none;
+  }
+}

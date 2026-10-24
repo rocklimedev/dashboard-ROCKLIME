@@ -1,21 +1,8 @@
+import './ReportsHub.styles.css';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Button,
-  Card,
-  Col,
-  DatePicker,
-  Empty,
-  InputNumber,
-  List,
-  Row,
-  Segmented,
-  Space,
-  Statistic,
-  Table,
-  Typography,
-  message,
-} from 'antd';
+import { Button, Card, Col, DatePicker, Empty, InputNumber, List, Row, Segmented, Space, Statistic, Table, Typography } from 'antd';
+import { toast } from 'sonner';
 import { DownloadOutlined, FilePdfOutlined } from '@ant-design/icons';
 import {
   Bar,
@@ -111,7 +98,7 @@ export default function ReportsHub() {
   );
 
   const exportExcel = () => {
-    if (!data?.rows?.length) return message.info('Nothing to export');
+    if (!data?.rows?.length) return toast.info('Nothing to export');
     const rows = data.rows.map((r) =>
       Object.fromEntries(
         data.columns.map((c) => [
@@ -134,7 +121,7 @@ export default function ReportsHub() {
       <div className="content">
         <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
           <div>
-            <Title level={3} style={{ marginBottom: 0 }}>
+            <Title className="fv2-reportshub-4e5cc84964" level={3}>
               Reports
             </Title>
             <Text type="secondary">See any report on screen first, then export it.</Text>
@@ -143,17 +130,16 @@ export default function ReportsHub() {
             <Button icon={<FilePdfOutlined />}>Printable PDF reports</Button>
           </Link>
         </div>
-        <Row gutter={16} style={{ marginTop: 16 }}>
+        <Row className="fv2-reportshub-768efb6258" gutter={16}>
           <Col xs={24} lg={6}>
             <Card size="small" styles={{ body: { padding: 0 } }}>
               <List
                 dataSource={reports}
                 renderItem={(r) => (
                   <List.Item
+                    className="fv2-reportshub-1670fefcad"
                     onClick={() => setKey(r.key)}
                     style={{
-                      cursor: 'pointer',
-                      padding: '10px 14px',
                       background: r.key === active?.key ? '#fff1f0' : undefined,
                       borderLeft:
                         r.key === active?.key ? '3px solid #e31e24' : '3px solid transparent',
@@ -161,7 +147,9 @@ export default function ReportsHub() {
                   >
                     <List.Item.Meta
                       title={r.title}
-                      description={<span style={{ fontSize: 12 }}>{r.description}</span>}
+                      description={
+                        <span className="fv2-reportshub-62014547ed">{r.description}</span>
+                      }
                     />
                   </List.Item>
                 )}
@@ -212,11 +200,11 @@ export default function ReportsHub() {
                   <span>
                     No order in the last{' '}
                     <InputNumber
+                      className="fv2-reportshub-e393d833ff"
                       min={15}
                       max={730}
                       value={days}
                       onChange={(v) => v && setDays(v)}
-                      style={{ width: 80 }}
                     />{' '}
                     days
                   </span>
@@ -267,7 +255,7 @@ export default function ReportsHub() {
                 </Row>
               )}
               {data?.chart && chartRows.length > 0 && (
-                <div style={{ height: 260, marginBottom: 16 }}>
+                <div className="fv2-reportshub-ae307273b0">
                   <ResponsiveContainer>
                     <BarChart data={chartRows} margin={{ left: 10, right: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />

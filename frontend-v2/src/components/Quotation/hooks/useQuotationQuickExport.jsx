@@ -1,6 +1,7 @@
+import './useQuotationQuickExport.styles.css';
 // src/components/Quotation/hooks/useQuotationQuickExport.js
 import { useState, useRef } from 'react';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import { createRoot } from 'react-dom/client';
 
 import { exportToPDF, exportToExcel, getSafeTitle } from './exportHelpers';
@@ -74,7 +75,7 @@ export const useQuotationQuickExport = () => {
     format = 'pdf', // "pdf" | "excel"
   }) => {
     if (!quotation?.quotationId) {
-      message.error('Invalid quotation data');
+      toast.error('Invalid quotation data');
       return;
     }
 
@@ -90,7 +91,7 @@ export const useQuotationQuickExport = () => {
     try {
       // Safety timeout: force stop after 45 seconds
       timeoutId = setTimeout(() => {
-        message.warning('Export is taking too long — cancelled');
+        toast.warning('Export is taking too long — cancelled');
         cleanup();
       }, 45000);
 
@@ -110,7 +111,7 @@ export const useQuotationQuickExport = () => {
       // 3. Mount React renderer
       root = createRoot(printArea);
       root.render(
-        <div style={{ width: '210mm', background: 'white' }}>
+        <div className="fv2-usequotationquickexport-56448cf33f">
           {QuotationPagesRenderer({
             quotation,
             mainProducts,
@@ -175,9 +176,9 @@ export const useQuotationQuickExport = () => {
         );
       }
 
-      message.success(`${format.toUpperCase()} exported successfully`);
+      toast.success(`${format.toUpperCase()} exported successfully`);
     } catch (err) {
-      message.error(`Export failed: ${err.message || 'Unknown error'}`);
+      toast.error(`Export failed: ${err.message || 'Unknown error'}`);
     } finally {
       clearTimeout(timeoutId);
       cleanup();

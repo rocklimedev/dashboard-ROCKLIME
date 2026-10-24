@@ -1,5 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './QuotationResyncModal.styles.css';
 import { useEffect, useState } from 'react';
-import { Alert, Checkbox, Image, Modal, Space, Table, message } from 'antd';
+import { Alert, Checkbox, Image, Space, Table } from 'antd';
+import { toast } from 'sonner';
 import { useLazyGetProductsByIdsQuery } from '../../api/productApi';
 import { catalogPrice, productImage } from './productSyncHelpers';
 
@@ -91,17 +94,21 @@ export default function QuotationResyncModal({ open, products, onCancel, onApply
       if (selection[id]?.imageUrl) patch.imageUrl = productImage(product);
       if (Object.keys(patch).length) updates[id] = patch;
     });
-    if (!Object.keys(updates).length) return message.warning('No available catalog data to resync');
+    if (!Object.keys(updates).length) return toast.warning('No available catalog data to resync');
     onApply(updates);
-    message.success(
+    toast.success(
       `Resynced ${Object.keys(updates).length} products. Save the quotation to keep changes.`,
     );
   };
   const image = (url) =>
-    url ? <Image src={url} width={48} height={48} style={{ objectFit: 'contain' }} /> : '—';
+    url ? (
+      <Image className="fv2-quotationresyncmodal-2025e2efb0" src={url} width={48} height={48} />
+    ) : (
+      '—'
+    );
   const price = (value) => (value === null ? 'Unavailable' : `₹${Number(value || 0).toFixed(2)}`);
   return (
-    <Modal
+    <ModalShell
       title="RESYNC quotation products"
       open={open}
       onCancel={onCancel}
@@ -110,7 +117,7 @@ export default function QuotationResyncModal({ open, products, onCancel, onApply
       onOk={apply}
       okButtonProps={{ disabled: loading || error || !hasSelection }}
     >
-      <Space direction="vertical" style={{ width: '100%' }}>
+      <Space className="fv2-quotationresyncmodal-8d7dadebc4" direction="vertical">
         <Alert
           type="info"
           showIcon
@@ -156,6 +163,6 @@ export default function QuotationResyncModal({ open, products, onCancel, onApply
           ]}
         />
       </Space>
-    </Modal>
+    </ModalShell>
   );
 }

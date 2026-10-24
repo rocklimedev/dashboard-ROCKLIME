@@ -1,0 +1,9 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-login-364251872c) {
+  width: 177px;
+  height: auto;
+}
+
+:is(#fv2-style-priority, .fv2-login-d5a5186866) {
+  min-height: 44px;
+}

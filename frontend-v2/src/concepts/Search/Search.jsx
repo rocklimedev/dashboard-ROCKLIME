@@ -1,20 +1,9 @@
+import Loader from '../../components/Common/Loader';
+import './Search.styles.css';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  Card,
-  Empty,
-  Spin,
-  Avatar,
-  Space,
-  Tag,
-  Row,
-  Col,
-  Typography,
-  Result,
-  Pagination,
-  Button,
-  message,
-} from 'antd';
+import { Card, Empty, Avatar, Space, Tag, Row, Col, Typography, Result, Pagination, Button } from 'antd';
+import { toast } from 'sonner';
 import {
   ReloadOutlined,
   UserOutlined,
@@ -89,10 +78,10 @@ const SearchPage = () => {
     e.stopPropagation();
 
     if (!userId) {
-      return message.error('Please login first');
+      return toast.error('Please login first');
     }
     if (!product?.productId) {
-      return message.error('Invalid product');
+      return toast.error('Invalid product');
     }
 
     const productKey = product.productId;
@@ -105,9 +94,9 @@ const SearchPage = () => {
         quantity: 1,
       }).unwrap();
 
-      message.success(`Added ${product.name || 'product'} to cart successfully!`);
+      toast.success(`Added ${product.name || 'product'} to cart successfully!`);
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to add to cart');
+      toast.error(err?.data?.message || 'Failed to add to cart');
     } finally {
       setCartLoadingStates((prev) => ({ ...prev, [productKey]: false }));
     }
@@ -119,14 +108,7 @@ const SearchPage = () => {
       const regex = new RegExp(`(${term.trim()})`, 'gi');
       return text.split(regex).map((part, i) =>
         regex.test(part) ? (
-          <mark
-            key={i}
-            style={{
-              backgroundColor: '#ffe58f',
-              padding: '0 2px',
-              borderRadius: 2,
-            }}
-          >
+          <mark className="fv2-search-9dd1d76fdd" key={i}>
             {part}
           </mark>
         ) : (
@@ -278,14 +260,14 @@ const SearchPage = () => {
       <div className="page-wrapper">
         <div className="content">
           <Empty
+            className="fv2-search-2db79a69ee"
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
-              <div style={{ marginTop: 16 }}>
+              <div className="fv2-search-ee2a5b7533">
                 <Paragraph strong>No search query provided</Paragraph>
                 <Text type="secondary">Use the search bar in the header to search the system</Text>
               </div>
             }
-            style={{ margin: '140px 0' }}
           />
         </div>
       </div>
@@ -295,9 +277,9 @@ const SearchPage = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Card style={{ marginBottom: 24 }}>
+        <Card className="fv2-search-6c3f70e18b">
           <Space align="center">
-            <Title level={4} style={{ margin: 0 }}>
+            <Title className="fv2-search-3469124879" level={4}>
               Search Results for "{queryFromUrl}"
             </Title>
             <Button icon={<ReloadOutlined />} onClick={refetch} loading={isFetching}>
@@ -318,15 +300,8 @@ const SearchPage = () => {
             }
           />
         ) : isLoading || isFetching ? (
-          <div
-            style={{
-              minHeight: 400,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Spin size="large" tip="Searching across all modules..." />
+          <div className="fv2-search-e3c8d5ffea">
+            <Loader size="large" tip="Searching across all modules..." />
           </div>
         ) : hasResults ? (
           <>
@@ -334,12 +309,12 @@ const SearchPage = () => {
               const { items, total } = group;
 
               return (
-                <section key={modelName} style={{ marginBottom: 48 }}>
-                  <Space align="center" style={{ marginBottom: 16 }}>
-                    <Title level={5} style={{ margin: 0, textTransform: 'capitalize' }}>
+                <section className="fv2-search-66b909c2e2" key={modelName}>
+                  <Space className="fv2-search-42f4373cd4" align="center">
+                    <Title className="fv2-search-191b72d501" level={5}>
                       {modelName}s
                     </Title>
-                    <Tag color="geekblue" style={{ fontSize: 14, padding: '4px 12px' }}>
+                    <Tag className="fv2-search-5dbe98b1ad" color="geekblue">
                       {total} found
                     </Tag>
                   </Space>
@@ -360,28 +335,22 @@ const SearchPage = () => {
                           key={item.id || item.userId || item.productId || Math.random()}
                         >
                           <Card
+                            className="fv2-search-5a2426b393"
                             hoverable
                             bodyStyle={{ padding: 16 }}
-                            style={{ height: '100%', borderRadius: 10 }}
                           >
-                            <Space align="start" size={16} style={{ width: '100%' }}>
+                            <Space className="fv2-search-2862e5291a" align="start" size={16}>
                               {getIcon(modelName, item)}
 
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <Title level={5} style={{ margin: '0 0 4px 0', fontSize: 16 }}>
-                                  <Link
-                                    to={to}
-                                    style={{
-                                      color: '#000',
-                                      textDecoration: 'none',
-                                    }}
-                                  >
+                              <div className="fv2-search-091080602a">
+                                <Title className="fv2-search-6f35857011" level={5}>
+                                  <Link className="fv2-search-b12fd4d564" to={to}>
                                     {highlight(title, queryFromUrl)}
                                   </Link>
                                 </Title>
 
                                 {subtitle && (
-                                  <Text type="secondary" style={{ fontSize: 13 }}>
+                                  <Text className="fv2-search-173a08445a" type="secondary">
                                     {highlight(subtitle, queryFromUrl)}
                                   </Text>
                                 )}
@@ -389,17 +358,12 @@ const SearchPage = () => {
                                 {/* Add to Cart Button for Products */}
                                 {isProduct && (
                                   <Button
+                                    className="fv2-search-f98e67cf0e"
                                     type="primary"
                                     icon={<ShoppingCartOutlined />}
                                     loading={isAdding}
                                     disabled={isCartLoadingGlobal}
                                     onClick={(e) => handleAddToCart(e, item)}
-                                    style={{
-                                      marginTop: 12,
-                                      backgroundColor: '#e31e24',
-                                      borderColor: '#e31e24',
-                                      width: '100%',
-                                    }}
                                   >
                                     Add to Cart
                                   </Button>
@@ -417,7 +381,7 @@ const SearchPage = () => {
 
             {/* Pagination */}
             {meta.totalPages > 1 && (
-              <div style={{ textAlign: 'center', margin: '60px 0 40px 0' }}>
+              <div className="fv2-search-2ec4227414">
                 <Pagination
                   current={currentPage}
                   total={meta.totalResults || 0}
@@ -432,14 +396,14 @@ const SearchPage = () => {
           </>
         ) : (
           <Empty
+            className="fv2-search-ae01e6e45b"
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
-              <div style={{ marginTop: 16 }}>
+              <div className="fv2-search-ee2a5b7533">
                 <Paragraph strong>No results found for "{queryFromUrl}"</Paragraph>
                 <Text type="secondary">Try different keywords or check your spelling</Text>
               </div>
             }
-            style={{ margin: '120px 0' }}
           />
         )}
       </div>

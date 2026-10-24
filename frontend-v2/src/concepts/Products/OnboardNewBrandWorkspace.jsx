@@ -1,21 +1,9 @@
+import ModalShell from '../../components/Common/ModalShell';
+import './OnboardNewBrandWorkspace.styles.css';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Alert,
-  Button,
-  Card,
-  Input,
-  Modal,
-  Result,
-  Select,
-  Space,
-  Steps,
-  Table,
-  Tabs,
-  Typography,
-  Upload,
-  message,
-} from 'antd';
+import { Alert, Button, Card, Input, Result, Select, Space, Steps, Table, Tabs, Typography, Upload } from 'antd';
+import { toast } from 'sonner';
 import { ArrowLeftOutlined, FileExcelOutlined, UploadOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 import { useGetAllBrandsQuery } from '../../api/brandsApi';
@@ -140,7 +128,7 @@ export default function OnboardNewBrandWorkspace() {
       loadSheet(book, book.SheetNames[0]);
       setWorkbook(book);
     } catch (error) {
-      message.error(error.message || 'Could not read this workbook.');
+      toast.error(error.message || 'Could not read this workbook.');
     }
     return false;
   };
@@ -189,12 +177,12 @@ export default function OnboardNewBrandWorkspace() {
       const body = payload();
       const response = await preview(body).unwrap();
       if (version !== revision.current)
-        return message.info(
+        return toast.info(
           'Data changed during validation. Review again to use the latest edits.',
         );
       setReview({ ...response, body });
     } catch (error) {
-      message.error(error.data?.message || error.message || 'Review failed.');
+      toast.error(error.data?.message || error.message || 'Review failed.');
     }
   };
   const importData = async () => {
@@ -205,7 +193,7 @@ export default function OnboardNewBrandWorkspace() {
     } catch (error) {
       setConfirmed(false);
       setReview(null);
-      message.error(error.data?.message || 'Import failed. Review again before retrying.');
+      toast.error(error.data?.message || 'Import failed. Review again before retrying.');
     }
   };
   const template = () => {
@@ -285,7 +273,7 @@ export default function OnboardNewBrandWorkspace() {
         subtitle="Upload, review, and create a brand catalog from Excel"
       />
       <div className="content">
-        <Space wrap style={{ marginBottom: 20 }}>
+        <Space className="fv2-onboardnewbrandworkspace-83668bd297" wrap>
           <Link to="/inventory/list">
             <Button icon={<ArrowLeftOutlined />}>Inventory</Button>
           </Link>
@@ -297,18 +285,19 @@ export default function OnboardNewBrandWorkspace() {
           </Button>
         </Space>
         <Steps
+          className="fv2-onboardnewbrandworkspace-98c0464d71"
           current={review ? 2 : workbook ? 1 : 0}
           items={[
             { title: 'Upload Excel' },
             { title: 'Map and edit' },
             { title: 'Review and create' },
           ]}
-          style={{ marginBottom: 24 }}
         />
-        <Card title="Brand and workbook" style={{ marginBottom: 20 }}>
+        <Card className="fv2-onboardnewbrandworkspace-83668bd297" title="Brand and workbook">
           <Space wrap align="start">
             <Select
-              style={{ width: 260 }}
+              className="fv2-onboardnewbrandworkspace-dd02220449"
+
               value={brandId}
               onChange={(v) => {
                 setBrandId(v);
@@ -323,10 +312,11 @@ export default function OnboardNewBrandWorkspace() {
             />
             {!brandId && (
               <Input
+                className="fv2-onboardnewbrandworkspace-dd02220449"
                 placeholder="New brand name"
                 value={brandName}
                 maxLength={100}
-                style={{ width: 260 }}
+
                 onChange={(e) => {
                   setBrandName(e.target.value);
                   changed();
@@ -345,7 +335,8 @@ export default function OnboardNewBrandWorkspace() {
             </Upload>
             {workbook && (
               <Select
-                style={{ width: 240 }}
+                className="fv2-onboardnewbrandworkspace-fb35a05a8d"
+
                 value={sheet}
                 options={workbook.SheetNames.map((name) => ({
                   value: name,
@@ -355,7 +346,7 @@ export default function OnboardNewBrandWorkspace() {
                   try {
                     loadSheet(workbook, value);
                   } catch (error) {
-                    message.error(error.message);
+                    toast.error(error.message);
                   }
                 }}
               />
@@ -365,9 +356,10 @@ export default function OnboardNewBrandWorkspace() {
         {workbook && (
           <>
             <Alert
+              className="fv2-onboardnewbrandworkspace-45c001dd1b"
               type="info"
               showIcon
-              style={{ marginBottom: 16 }}
+
               message="Review each column and row before creating. Unmapped extra columns default to new metadata fields. Excluded rows are not imported. Existing products are never overwritten."
             />
             <Tabs
@@ -440,7 +432,8 @@ export default function OnboardNewBrandWorkspace() {
                           title: 'Import as',
                           render: (_, r) => (
                             <Select
-                              style={{ width: 280 }}
+                              className="fv2-onboardnewbrandworkspace-59fa139739"
+
                               showSearch
                               optionFilterProp="label"
                               value={mapping[r.index]}
@@ -515,7 +508,7 @@ export default function OnboardNewBrandWorkspace() {
                 },
               ]}
             />
-            <Space style={{ margin: '20px 0' }}>
+            <Space className="fv2-onboardnewbrandworkspace-4e15116a23">
               <Button
                 type="primary"
                 loading={checking}
@@ -536,7 +529,7 @@ export default function OnboardNewBrandWorkspace() {
                       : 'Validation passed. Ready to create.'
                   }
                 />
-                <Typography.Paragraph style={{ marginTop: 16 }}>
+                <Typography.Paragraph className="fv2-onboardnewbrandworkspace-a0ea297475">
                   {review.summary.products} products · Categories:{' '}
                   {review.summary.categories.join(', ') || 'None'} · Parent categories:{' '}
                   {review.summary.parentCategories.join(', ') || 'None'}
@@ -567,9 +560,10 @@ export default function OnboardNewBrandWorkspace() {
                   />
                 )}
                 <Button
+                  className="fv2-onboardnewbrandworkspace-a0ea297475"
                   type="primary"
                   disabled={!!review.errors.length}
-                  style={{ marginTop: 16 }}
+
                   onClick={() => setConfirmed(true)}
                 >
                   Create brand catalog
@@ -578,7 +572,7 @@ export default function OnboardNewBrandWorkspace() {
             )}
           </>
         )}
-        <Modal
+        <ModalShell
           title="Create reviewed catalog"
           open={confirmed}
           onCancel={() => !saving && setConfirmed(false)}
@@ -592,7 +586,7 @@ export default function OnboardNewBrandWorkspace() {
           Create {review?.summary.products} new products for{' '}
           {brands.find((b) => b.id === brandId)?.brandName || brandName}, along with the reviewed
           categories and metadata fields?
-        </Modal>
+        </ModalShell>
       </div>
     </div>
   );

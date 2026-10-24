@@ -1,3 +1,4 @@
+import './QuotationPagesRenderer.styles.css';
 import React from 'react';
 import { amountInWords } from './hooks/calcHelpers';
 import logo from '../../assets/img/logo-quotation.png';
@@ -268,27 +269,11 @@ export const QuotationPagesRenderer = ({
           </div>
         </div>
 
-        <div
-          style={{
-            textAlign: 'center',
-            fontSize: '26px',
-            fontWeight: 'bold',
-            color: '#E31E24',
-            margin: '40px 0 20px',
-          }}
-        >
+        <div className="fv2-quotationpagesrenderer-79aed2c0bf">
           Optional / Suggested Accessories
         </div>
 
-        <div
-          style={{
-            textAlign: 'center',
-            fontStyle: 'italic',
-            color: '#555',
-            marginBottom: '32px',
-            fontSize: '15px',
-          }}
-        >
+        <div className="fv2-quotationpagesrenderer-f9c4b41c89">
           These items are <strong>not included</strong> in the quoted total.
           <br />
           They are recommended add-ons or compatible variants.
@@ -296,16 +281,9 @@ export const QuotationPagesRenderer = ({
 
         {renderProductTable(optionalProducts, true, globalSno)}
 
-        <div
-          style={{
-            textAlign: 'right',
-            marginTop: '32px',
-            fontWeight: 'bold',
-            fontSize: '16px',
-          }}
-        >
+        <div className="fv2-quotationpagesrenderer-45fde46851">
           Total Value of Optional Items:{' '}
-          <span style={{ color: '#E31E24' }}>
+          <span className="fv2-quotationpagesrenderer-0d78a9d12f">
             ₹
             {optionalProducts
               .reduce((sum, p) => sum + Number(p.total || 0), 0)
@@ -334,17 +312,7 @@ export const QuotationPagesRenderer = ({
           </div>
         </div>
 
-        <div
-          style={{
-            textAlign: 'center',
-            margin: '40px 0 60px',
-            fontSize: '24px',
-            fontWeight: 'bold',
-            color: '#E31E24',
-          }}
-        >
-          Quotation Summary
-        </div>
+        <div className="fv2-quotationpagesrenderer-2a08c85c9d">Quotation Summary</div>
 
         <div className={styles.finalSummaryWrapper}>
           <div className={styles.finalSummarySection}>

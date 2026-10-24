@@ -1,0 +1,12 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-orderpaymentscard-7d37610ab0) {
+  margin-top: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-orderpaymentscard-f9ffda6f15) {
+  margin-bottom: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-orderpaymentscard-b660e2a307) {
+  font-size: var(--fv2-font-12px);
+}

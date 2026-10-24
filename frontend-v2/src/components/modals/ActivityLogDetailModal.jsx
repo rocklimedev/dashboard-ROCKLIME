@@ -1,17 +1,7 @@
+import ModalShell from '../Common/ModalShell';
+import './ActivityLogDetailModal.styles.css';
 import React from 'react';
-import {
-  Modal,
-  Tag,
-  Typography,
-  Divider,
-  Space,
-  Row,
-  Col,
-  Card,
-  Avatar,
-  Alert,
-  Collapse,
-} from 'antd';
+import { Tag, Typography, Divider, Space, Row, Col, Card, Avatar, Alert, Collapse } from 'antd';
 import { UserOutlined, LoginOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 
 const { Text, Title, Paragraph } = Typography;
@@ -44,7 +34,7 @@ const renderMetadata = (metadata) => {
   if (!metadata || Object.keys(metadata).length === 0) return null;
 
   return (
-    <Card title="Metadata" size="small" style={{ marginTop: 16 }}>
+    <Card className="fv2-activitylogdetailmodal-642356d98a" title="Metadata" size="small">
       <Space wrap>
         {Object.entries(metadata).map(([key, value]) => {
           if (Array.isArray(value)) {
@@ -80,20 +70,10 @@ const renderChanges = (oldValues, newValues) => {
   const keys = [...new Set([...Object.keys(oldValues || {}), ...Object.keys(newValues || {})])];
 
   return (
-    <Card title="Changes" size="small" style={{ marginTop: 16 }}>
-      <Space direction="vertical" style={{ width: '100%' }}>
+    <Card className="fv2-activitylogdetailmodal-642356d98a" title="Changes" size="small">
+      <Space className="fv2-activitylogdetailmodal-917f0f9aa6" direction="vertical">
         {keys.map((key) => (
-          <div
-            key={key}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '10px 12px',
-              border: '1px solid #f0f0f0',
-              borderRadius: 8,
-            }}
-          >
+          <div className="fv2-activitylogdetailmodal-332257585b" key={key}>
             <Text strong>{key}</Text>
 
             <Space>
@@ -120,27 +100,24 @@ const ActivityLogDetailModal = ({ log, onClose }) => {
   const severityType = severityColors[log.severity] || 'info';
 
   return (
-    <Modal open={!!log} onCancel={onClose} footer={null} width={900} destroyOnClose title={null}>
+    <ModalShell
+      open={!!log}
+      onCancel={onClose}
+      footer={null}
+      width={900}
+      destroyOnClose
+      title={null}
+    >
       {/* HERO HEADER */}
-      <div
-        style={{
-          padding: 20,
-          borderRadius: 12,
-          border: '1px solid #f0f0f0',
-          background: 'linear-gradient(135deg,#fafafa,#ffffff)',
-          marginBottom: 16,
-        }}
-      >
+      <div className="fv2-activitylogdetailmodal-ed9e022d39">
         <Space align="start" size={16}>
           <Avatar
+            className="fv2-activitylogdetailmodal-e3db8cf89d"
             size={60}
             icon={<UserOutlined />}
-            style={{
-              background: '#1677ff',
-            }}
           />
 
-          <div style={{ flex: 1 }}>
+          <div className="fv2-activitylogdetailmodal-c9e45a9116">
             <Space wrap>
               <Tag color={ctxColor}>
                 {log.contextTag}
@@ -152,13 +129,7 @@ const ActivityLogDetailModal = ({ log, onClose }) => {
               <Tag color="green">{(log.severity || 'info').toUpperCase()}</Tag>
             </Space>
 
-            <Title
-              level={3}
-              style={{
-                marginTop: 10,
-                marginBottom: 4,
-              }}
-            >
+            <Title className="fv2-activitylogdetailmodal-a620298a84" level={3}>
               {log.entityName}
             </Title>
 
@@ -169,12 +140,12 @@ const ActivityLogDetailModal = ({ log, onClose }) => {
 
       {/* ALERT */}
       <Alert
+        className="fv2-activitylogdetailmodal-640812a17b"
         showIcon
         type={severityType}
         icon={<SafetyCertificateOutlined />}
         message={log.severity === 'critical' ? 'Critical Activity Detected' : log.action}
         description={log.description}
-        style={{ marginBottom: 16 }}
       />
 
       {/* SUMMARY CARDS */}
@@ -183,13 +154,7 @@ const ActivityLogDetailModal = ({ log, onClose }) => {
           <Card size="small">
             <Text type="secondary">User</Text>
 
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: 16,
-                marginTop: 4,
-              }}
-            >
+            <div className="fv2-activitylogdetailmodal-4be0867cf0">
               {log.user?.name || log.userName || 'Unknown'}
             </div>
 
@@ -201,15 +166,7 @@ const ActivityLogDetailModal = ({ log, onClose }) => {
           <Card size="small">
             <Text type="secondary">IP Address</Text>
 
-            <div
-              style={{
-                marginTop: 4,
-                fontFamily: 'monospace',
-                fontSize: 15,
-              }}
-            >
-              {log.ipAddress || '—'}
-            </div>
+            <div className="fv2-activitylogdetailmodal-455ef72218">{log.ipAddress || '—'}</div>
           </Card>
         </Col>
 
@@ -217,15 +174,7 @@ const ActivityLogDetailModal = ({ log, onClose }) => {
           <Card size="small">
             <Text type="secondary">Entity ID</Text>
 
-            <div
-              style={{
-                marginTop: 4,
-                fontFamily: 'monospace',
-                wordBreak: 'break-all',
-              }}
-            >
-              {log.entityId}
-            </div>
+            <div className="fv2-activitylogdetailmodal-80932b0011">{log.entityId}</div>
           </Card>
         </Col>
 
@@ -233,12 +182,7 @@ const ActivityLogDetailModal = ({ log, onClose }) => {
           <Card size="small">
             <Text type="secondary">Timestamp</Text>
 
-            <div
-              style={{
-                marginTop: 4,
-                fontWeight: 500,
-              }}
-            >
+            <div className="fv2-activitylogdetailmodal-1c95e39d1f">
               {new Date(log.createdAt).toLocaleString()}
             </div>
           </Card>
@@ -253,23 +197,18 @@ const ActivityLogDetailModal = ({ log, onClose }) => {
 
       {/* TECHNICAL DETAILS */}
       <Collapse
-        style={{ marginTop: 16 }}
+        className="fv2-activitylogdetailmodal-642356d98a"
+
         items={[
           {
             key: 'technical',
             label: 'Technical Details',
             children: (
-              <Space direction="vertical" style={{ width: '100%' }}>
+              <Space className="fv2-activitylogdetailmodal-917f0f9aa6" direction="vertical">
                 <div>
                   <Text strong>User Agent</Text>
 
-                  <Paragraph
-                    copyable
-                    style={{
-                      marginTop: 6,
-                      fontFamily: 'monospace',
-                    }}
-                  >
+                  <Paragraph className="fv2-activitylogdetailmodal-cb1923876f" copyable>
                     {log.userAgent || 'Unavailable'}
                   </Paragraph>
                 </div>
@@ -279,13 +218,7 @@ const ActivityLogDetailModal = ({ log, onClose }) => {
                 <div>
                   <Text strong>Raw Metadata</Text>
 
-                  <Paragraph
-                    copyable
-                    style={{
-                      marginTop: 6,
-                      fontFamily: 'monospace',
-                    }}
-                  >
+                  <Paragraph className="fv2-activitylogdetailmodal-cb1923876f" copyable>
                     {JSON.stringify(log.metadata, null, 2)}
                   </Paragraph>
                 </div>
@@ -294,7 +227,7 @@ const ActivityLogDetailModal = ({ log, onClose }) => {
           },
         ]}
       />
-    </Modal>
+    </ModalShell>
   );
 };
 

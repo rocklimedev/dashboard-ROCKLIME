@@ -1,0 +1,97 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-quotationproductsheet-0efdaa01bf) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-2e0996d2d9) {
+  font-size: var(--fv2-font-12px);
+  cursor: pointer;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-cc5cfcaf91) {
+  font-size: var(--fv2-font-12px);
+  color: var(--fv2-color-ff4d4f);
+  cursor: pointer;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-2cb7ca63f8) {
+  font-size: var(--fv2-font-11px);
+  display: block;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-df00efa5d6) {
+  width: 40px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-614b82d889) {
+  object-fit: contain;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-8e51cc71e3) {
+  font-size: var(--fv2-font-11px);
+  margin-left: 6px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-a66291620a) {
+  width: 70px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-2ed18c2afc) {
+  width: 56px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-66320b3253) {
+  margin-top: 6px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-9eff771cb8) {
+  font-size: var(--fv2-font-11px);
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-77fad1958e) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-fa9259d0b4) {
+  width: 110px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-a1ff7e3d33) {
+  font-size: var(--fv2-font-11px);
+  display: block;
+  margin-top: 2px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-e63f5dbcff) {
+  width: 72px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-3b450b0d5e) {
+  width: 130px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-66fa7bcae1) {
+  width: 90px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-17b19330ea) {
+  width: 100px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-92f3162422) {
+  width: 160px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-290858a7fd) {
+  width: 240px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-7578ce9763) {
+  padding: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-quotationproductsheet-fdc34dabd4) {
+  margin: 0 16px;
+}

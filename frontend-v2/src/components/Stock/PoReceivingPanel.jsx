@@ -1,19 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './PoReceivingPanel.styles.css';
 import { useState } from 'react';
-import {
-  Alert,
-  Button,
-  Card,
-  Empty,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Table,
-  Tag,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Card, Empty, Input, InputNumber, Select, Space, Table, Tag, Typography } from 'antd';
+import { toast } from 'sonner';
 import { InboxOutlined } from '@ant-design/icons';
 import {
   useGetPurchaseOrderReceiptsQuery,
@@ -72,7 +61,7 @@ export default function PoReceivingPanel({ po }) {
         damaged: Number(bad[r.productId]) || 0,
       }))
       .filter((i) => i.quantity + i.damaged > 0);
-    if (!items.length) return message.warning('Enter at least one quantity received');
+    if (!items.length) return toast.warning('Enter at least one quantity received');
     try {
       const r = await receive({
         id,
@@ -80,28 +69,29 @@ export default function PoReceivingPanel({ po }) {
         warehouseId: warehouseId || warehouses[0]?.id,
         notes,
       }).unwrap();
-      message.success(
+      toast.success(
         `${r.message}${r.ordersFilled ? ` · ${r.ordersFilled} waiting order(s) got stock` : ''}`,
       );
       setOpen(false);
       refetch();
     } catch (e) {
-      message.error(e?.data?.message || 'Could not record the receipt');
+      toast.error(e?.data?.message || 'Could not record the receipt');
     }
   };
   const confirm = async () => {
     try {
       await setStatus({ id, status: 'confirmed' }).unwrap();
-      message.success('PO confirmed — quantities now show as incoming stock');
+      toast.success('PO confirmed — quantities now show as incoming stock');
     } catch (e) {
-      message.error(e?.data?.message || 'Could not confirm');
+      toast.error(e?.data?.message || 'Could not confirm');
     }
   };
 
   if (!po) return null;
   return (
     <Card
-      style={{ marginBottom: 16 }}
+      className="fv2-poreceivingpanel-47f223c642"
+
       title={
         <Space>
           <InboxOutlined /> Receiving
@@ -125,7 +115,7 @@ export default function PoReceivingPanel({ po }) {
         )
       }
     >
-      <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+      <Text className="fv2-poreceivingpanel-3b15aa531c" type="secondary">
         {STATUS_HELP[po.status] || ''}
       </Text>
       <Table
@@ -149,7 +139,7 @@ export default function PoReceivingPanel({ po }) {
       />
       {(data?.receipts || []).length > 0 && (
         <>
-          <Text strong style={{ display: 'block', margin: '16px 0 8px' }}>
+          <Text className="fv2-poreceivingpanel-9c9b0a849d" strong>
             Goods receipts
           </Text>
           <Table
@@ -176,7 +166,7 @@ export default function PoReceivingPanel({ po }) {
           />
         </>
       )}
-      <Modal
+      <ModalShell
         open={open}
         title={`Receive goods · ${po.poNumber}`}
         onCancel={() => setOpen(false)}
@@ -186,9 +176,10 @@ export default function PoReceivingPanel({ po }) {
         width={720}
       >
         <Alert
+          className="fv2-poreceivingpanel-2c97f2babd"
           type="info"
           showIcon
-          style={{ marginBottom: 12 }}
+
           message="Good pieces go on hand and fill waiting orders first (oldest first). Damaged pieces are kept apart."
         />
         {due.length ? (
@@ -231,12 +222,13 @@ export default function PoReceivingPanel({ po }) {
         ) : (
           <Empty description="Nothing left to receive" />
         )}
-        <Space style={{ marginTop: 12, width: '100%' }} direction="vertical">
+        <Space className="fv2-poreceivingpanel-0fe415f423" direction="vertical">
           {warehouses.length > 1 && (
             <Select
+              className="fv2-poreceivingpanel-00c3e6ab7f"
               value={warehouseId || warehouses[0]?.id}
               onChange={setWarehouseId}
-              style={{ width: 240 }}
+
               options={warehouses.map((w) => ({ value: w.id, label: `Into: ${w.name}` }))}
             />
           )}
@@ -247,7 +239,7 @@ export default function PoReceivingPanel({ po }) {
             onChange={(e) => setNotes(e.target.value)}
           />
         </Space>
-      </Modal>
+      </ModalShell>
     </Card>
   );
 }

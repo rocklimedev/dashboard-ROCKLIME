@@ -1,3 +1,4 @@
+import './AccountsPage.styles.css';
 import { useMemo, useState } from 'react';
 import TaxInvoices from '../../components/Accounts/TaxInvoices';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -60,7 +61,7 @@ function MoneyDue({ onRecord }) {
 
   return (
     <>
-      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+      <Row className="fv2-accountspage-04a3b3a81a" gutter={[12, 12]}>
         <Col xs={12} md={6}>
           <Card size="small">
             <Statistic
@@ -68,7 +69,7 @@ function MoneyDue({ onRecord }) {
               value={inr(t.due || 0)}
               valueStyle={{ color: '#cf1322' }}
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="fv2-accountspage-a86914c4c8" type="secondary">
               {t.orders || 0} orders · {t.customers || 0} customers
             </Text>
           </Card>
@@ -80,7 +81,7 @@ function MoneyDue({ onRecord }) {
               value={inr(t.over30 || 0)}
               valueStyle={{ color: '#d48806' }}
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="fv2-accountspage-a86914c4c8" type="secondary">
               counted from the order date
             </Text>
           </Card>
@@ -88,7 +89,7 @@ function MoneyDue({ onRecord }) {
         <Col xs={12} md={6}>
           <Card size="small">
             <Statistic title="Due over 90 days" value={inr(t.over90 || 0)} />
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="fv2-accountspage-a86914c4c8" type="secondary">
               follow up first
             </Text>
           </Card>
@@ -100,26 +101,27 @@ function MoneyDue({ onRecord }) {
               value={inr(t.collectedThisMonth || 0)}
               valueStyle={{ color: '#389e0d' }}
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="fv2-accountspage-a86914c4c8" type="secondary">
               {t.paymentsThisMonth || 0} payments
             </Text>
           </Card>
         </Col>
       </Row>
-      <Space wrap style={{ marginBottom: 12, width: '100%', justifyContent: 'space-between' }}>
+      <Space className="fv2-accountspage-6a0dd3e0df" wrap>
         <Space wrap>
           <Input
+            className="fv2-accountspage-34f392f738"
             allowClear
             prefix={<SearchOutlined />}
             placeholder="Customer or phone"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 240 }}
           />
           <Select
+            className="fv2-accountspage-62335f63d8"
             value={age}
             onChange={setAge}
-            style={{ width: 170 }}
+
             options={[
               { value: 'all', label: 'Any age' },
               { value: '30', label: 'Older than 30 days' },
@@ -131,10 +133,10 @@ function MoneyDue({ onRecord }) {
       </Space>
       {error && (
         <Alert
+          className="fv2-accountspage-542dc2ab62"
           type="error"
           showIcon
           message={error?.data?.message || 'Could not load'}
-          style={{ marginBottom: 12 }}
         />
       )}
       <Table
@@ -195,7 +197,7 @@ function MoneyDue({ onRecord }) {
               c.customerId ? (
                 <Space direction="vertical" size={0}>
                   <Link to={`/customer/${c.customerId}`}>{v}</Link>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
+                  <Text className="fv2-accountspage-a86914c4c8" type="secondary">
                     {c.customerPhone}
                   </Text>
                 </Space>
@@ -291,7 +293,7 @@ function Payments() {
     .reduce((s, p) => s + p.amount, 0);
   return (
     <>
-      <Space wrap style={{ marginBottom: 12 }}>
+      <Space className="fv2-accountspage-542dc2ab62" wrap>
         <DatePicker.RangePicker
           value={range}
           onChange={(v) => {
@@ -360,11 +362,11 @@ export default function AccountsPage() {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Title level={3} style={{ marginBottom: 0 }}>
+        <Title className="fv2-accountspage-6c96ede3da" level={3}>
           Accounts
         </Title>
         <Text type="secondary">Money due, payments received and GST invoices</Text>
-        <Card style={{ marginTop: 16 }}>
+        <Card className="fv2-accountspage-3b070c7a24">
           <Tabs
             activeKey={tab}
             onChange={(k) => setParams(k === 'due' ? {} : { tab: k })}

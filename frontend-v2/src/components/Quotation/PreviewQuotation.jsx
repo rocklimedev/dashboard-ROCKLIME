@@ -1,6 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './PreviewQuotation.styles.css';
 // src/components/Quotation/PreviewQuotation.jsx
 import React, { useRef, useMemo } from 'react';
-import { Modal, Button, Typography, Tag } from 'antd';
+import { Button, Typography, Tag } from 'antd';
 import { FilePdfFilled, CloseOutlined } from '@ant-design/icons';
 
 import logo from '../../assets/img/logo-quotation.png';
@@ -234,7 +236,7 @@ const PreviewQuotation = ({
                     <td className={styles.prodNameCell}>
                       {p.name || pd.name || '—'}
                       {p.isOption && (
-                        <Tag color="orange" style={{ marginLeft: 8, fontSize: '0.8em' }}>
+                        <Tag className="fv2-previewquotation-13855fddfa" color="orange">
                           {p.optionType || 'Optional'}
                         </Tag>
                       )}
@@ -283,7 +285,9 @@ const PreviewQuotation = ({
                   {totalProductDiscount > 0 && (
                     <div className={styles.summaryRow}>
                       <span>Product Discount</span>
-                      <span style={{ color: '#cf1322' }}>-{formatINR(totalProductDiscount)}</span>
+                      <span className="fv2-previewquotation-da4c8bcde3">
+                        -{formatINR(totalProductDiscount)}
+                      </span>
                     </div>
                   )}
 
@@ -296,7 +300,9 @@ const PreviewQuotation = ({
                           ? ` (${normalizedQuotation.extraDiscount}%)`
                           : ''}
                       </span>
-                      <span style={{ color: '#cf1322' }}>-{formatINR(extraDiscountAmt)}</span>
+                      <span className="fv2-previewquotation-da4c8bcde3">
+                        -{formatINR(extraDiscountAmt)}
+                      </span>
                     </div>
                   )}
 
@@ -325,14 +331,7 @@ const PreviewQuotation = ({
 
               {/* Optional: hint if there are optional items not included */}
               {cartItems.some((item) => item.isOption) && (
-                <div
-                  style={{
-                    marginTop: 16,
-                    fontSize: 13,
-                    color: '#555',
-                    textAlign: 'center',
-                  }}
-                >
+                <div className="fv2-previewquotation-f34715d755">
                   <em>
                     Note: Optional / add-on items are listed but excluded from the final total.
                   </em>
@@ -348,16 +347,17 @@ const PreviewQuotation = ({
   };
 
   return (
-    <Modal
+    <ModalShell
+      className="fv2-previewquotation-dfdce145a5"
       title={
-        <Title level={3} style={{ margin: 0, color: '#aa0f1f' }}>
+        <Title className="fv2-previewquotation-1b8ffe6f3a" level={3}>
           Quotation Preview
         </Title>
       }
       open={visible}
       onCancel={onClose}
       width={1000}
-      style={{ top: 20 }}
+
       bodyStyle={{ padding: 0, background: '#f5f5f5' }}
       destroyOnClose
       footer={[
@@ -369,21 +369,14 @@ const PreviewQuotation = ({
         </Button>,
       ]}
     >
-      <div ref={previewRef} style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+      <div className="fv2-previewquotation-d28ba5800f" ref={previewRef}>
         <div className={styles.printArea}>{renderPages()}</div>
       </div>
 
-      <div
-        style={{
-          padding: '40px 20px',
-          background: '#f5f5f5',
-          minHeight: '80vh',
-          overflowY: 'auto',
-        }}
-      >
+      <div className="fv2-previewquotation-2054fa5493">
         <div className={styles.printArea}>{renderPages()}</div>
       </div>
-    </Modal>
+    </ModalShell>
   );
 };
 

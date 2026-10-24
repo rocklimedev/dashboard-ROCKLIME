@@ -1,3 +1,4 @@
+import './TileCalculator.styles.css';
 // Area → boxes. Uses the product's "Coverage per box" (sq ft) when it is set;
 // otherwise the coverage can be typed in. Adds a wastage allowance (default
 // 10%) and rounds up to whole boxes, then sets the cart quantity.
@@ -23,46 +24,48 @@ export default function TileCalculator({ product, onApply, disabled }) {
   const boxes = boxesFor(areaSqft, cov, wastage);
 
   const content = (
-    <Space direction="vertical" size={8} style={{ width: 240 }}>
+    <Space className="fv2-tilecalculator-5ca1f22c5b" direction="vertical" size={8}>
       <Segmented size="small" options={['sq ft', 'sq m']} value={unit} onChange={setUnit} />
       <Space>
-        <Text style={{ width: 80, display: 'inline-block' }}>Area</Text>
+        <Text className="fv2-tilecalculator-2ab2384501">Area</Text>
         <InputNumber
+          className="fv2-tilecalculator-9bebaa9c43"
           min={0}
           value={area}
           onChange={setArea}
           addonAfter={unit}
-          style={{ width: 150 }}
+
           autoFocus
         />
       </Space>
       <Space>
-        <Text style={{ width: 80, display: 'inline-block' }}>Per box</Text>
+        <Text className="fv2-tilecalculator-2ab2384501">Per box</Text>
         {saved ? (
           <Text>{saved} sq ft</Text>
         ) : (
           <InputNumber
+            className="fv2-tilecalculator-9bebaa9c43"
             min={0}
             value={coverage}
             onChange={setCoverage}
             addonAfter="sq ft"
-            style={{ width: 150 }}
+
             placeholder="not set"
           />
         )}
       </Space>
       <Space>
-        <Text style={{ width: 80, display: 'inline-block' }}>Wastage</Text>
+        <Text className="fv2-tilecalculator-2ab2384501">Wastage</Text>
         <InputNumber
+          className="fv2-tilecalculator-9bebaa9c43"
           min={0}
           max={50}
           value={wastage}
           onChange={setWastage}
           addonAfter="%"
-          style={{ width: 150 }}
         />
       </Space>
-      <Text type="secondary" style={{ fontSize: 12 }}>
+      <Text className="fv2-tilecalculator-65ee9476fb" type="secondary">
         {boxes
           ? `${boxes} box${boxes > 1 ? 'es' : ''} covers ${Math.round(boxes * cov)} sq ft`
           : cov

@@ -1,6 +1,8 @@
+import ModalShell from '../Common/ModalShell';
 // components/Brand/BrandFormModal.jsx
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, message } from 'antd';
+import { Form, Input } from 'antd';
+import { toast } from 'sonner';
 import { useCreateBrandMutation, useUpdateBrandMutation } from '../../api/brandsApi';
 
 const BrandFormModal = ({ visible, onCancel, editingBrand = null, onSuccess }) => {
@@ -28,26 +30,29 @@ const BrandFormModal = ({ visible, onCancel, editingBrand = null, onSuccess }) =
     try {
       if (editingBrand) {
         await updateBrand({ id: editingBrand.id, ...values }).unwrap();
-        message.success('Brand updated successfully');
+        toast.success('Brand updated successfully');
       } else {
         await createBrand(values).unwrap();
-        message.success('Brand created successfully');
+        toast.success('Brand created successfully');
       }
       onSuccess?.();
       onCancel();
     } catch (error) {
-      message.error(error?.data?.message || 'Something went wrong');
+      toast.error(error?.data?.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       title={editingBrand ? 'Edit Brand' : 'Add New Brand'}
       open={visible}
       onCancel={onCancel}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>{editingBrand ? 'Update Brand' : 'Create Brand'}</>}
+      onCancelButton={onCancel}
+      confirmLoading={loading}
       destroyOnClose
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
@@ -76,15 +81,8 @@ const BrandFormModal = ({ visible, onCancel, editingBrand = null, onSuccess }) =
         >
           <Input placeholder="auto-generated-slug" />
         </Form.Item>
-
-        <div className="d-flex justify-content-end gap-2 mt-4">
-          <Button onClick={onCancel}>Cancel</Button>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            {editingBrand ? 'Update Brand' : 'Create Brand'}
-          </Button>
-        </div>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

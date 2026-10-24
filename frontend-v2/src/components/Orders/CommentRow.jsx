@@ -1,3 +1,4 @@
+import './CommentRow.styles.css';
 import React from 'react';
 import { Typography, Button } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
@@ -11,36 +12,21 @@ const CommentRow = ({ comment, onDelete, currentUserId }) => {
 
   return (
     <div
-      className={`comment-row ${isCurrentUser ? 'comment-row--own' : ''}`}
-      style={{
-        display: 'flex',
-        justifyContent: isCurrentUser ? 'flex-end' : 'flex-start',
-        marginBottom: 10,
-      }}
+      className={
+        `comment-row ${isCurrentUser ? 'comment-row--own' : ''}` + ' fv2-commentrow-3dd8c6640f'
+      }
+      style={{ justifyContent: isCurrentUser ? 'flex-end' : 'flex-start' }}
     >
       <div
-        style={{
-          display: 'flex',
-          flexDirection: isCurrentUser ? 'row-reverse' : 'row',
-          alignItems: 'flex-start',
-          maxWidth: '75%',
-          gap: 10,
-        }}
+        className="fv2-commentrow-cac484b403"
+        style={{ flexDirection: isCurrentUser ? 'row-reverse' : 'row' }}
       >
         {/* Avatar */}
         <div
+          className="fv2-commentrow-44879ccb4a"
           style={{
-            width: 34,
-            height: 34,
-            borderRadius: '50%',
             background: isCurrentUser ? '#1890ff' : '#d9d9d9',
             color: isCurrentUser ? '#fff' : '#333',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 600,
-            fontSize: 13,
-            flexShrink: 0,
           }}
         >
           {userInitial}
@@ -48,65 +34,41 @@ const CommentRow = ({ comment, onDelete, currentUserId }) => {
 
         {/* Bubble */}
         <div
+          className="fv2-commentrow-4f81c181b2"
           style={{
             background: isCurrentUser ? '#1890ff' : '#f5f5f5',
             color: isCurrentUser ? '#fff' : '#111',
-            padding: '10px 12px',
-            borderRadius: 14,
-            boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
-            position: 'relative',
-            minWidth: 120,
           }}
         >
           {/* Header */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 4,
-              gap: 10,
-            }}
-          >
+          <div className="fv2-commentrow-ec5375229e">
             <Text
+              className="fv2-commentrow-9b4de349fa"
               strong
-              style={{
-                fontSize: 12,
-                color: isCurrentUser ? '#fff' : '#333',
-                opacity: 0.9,
-              }}
+              style={{ color: isCurrentUser ? '#fff' : '#333' }}
             >
               {comment.user?.name || 'Unknown User'}
             </Text>
 
             {isCurrentUser && (
               <Button
+                className="fv2-commentrow-8f8dda06f3"
                 type="text"
                 danger
                 icon={<DeleteOutlined />}
                 onClick={() => onDelete(comment._id)}
-                style={{
-                  fontSize: 12,
-                  padding: 0,
-                  height: 'auto',
-                  color: isCurrentUser ? '#fff' : '#ff4d4f',
-                  opacity: 0.85,
-                }}
+                style={{ color: isCurrentUser ? '#fff' : '#ff4d4f' }}
               />
             )}
           </div>
 
           {/* Message */}
-          <div style={{ fontSize: 14, lineHeight: '1.4' }}>{comment.comment}</div>
+          <div className="fv2-commentrow-97f4bd178e">{comment.comment}</div>
 
           {/* Timestamp */}
           <div
-            style={{
-              marginTop: 6,
-              fontSize: 11,
-              opacity: 0.7,
-              textAlign: isCurrentUser ? 'right' : 'left',
-            }}
+            className="fv2-commentrow-9cbe8b93d3"
+            style={{ textAlign: isCurrentUser ? 'right' : 'left' }}
           >
             {new Date(comment.createdAt).toLocaleTimeString([], {
               hour: '2-digit',

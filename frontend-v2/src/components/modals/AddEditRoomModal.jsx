@@ -1,5 +1,6 @@
+import ModalShell from '../Common/ModalShell';
 import React from 'react';
-import { Modal, Form, Input, Select } from 'antd';
+import { Form, Input, Select } from 'antd';
 
 const { Option } = Select;
 
@@ -20,7 +21,7 @@ export default function AddEditRoomModal({
   }, [visible, initialValues, form]);
 
   return (
-    <Modal
+    <ModalShell
       title={isEdit ? 'Edit Room' : 'Add Room'}
       open={visible}
       onOk={() => form.submit()}
@@ -47,6 +48,6 @@ export default function AddEditRoomModal({
           </Select>
         </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }

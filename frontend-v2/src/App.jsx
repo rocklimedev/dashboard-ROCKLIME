@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Common/Header';
 import Router from './router/Router';
-import { message } from 'antd';
+import RouteErrorBoundary from './router/RouteErrorBoundary';
+import { Grid } from 'antd';
+import { toast } from 'sonner';
 import { useGetProfileQuery } from './api/userApi';
 import Loader from './components/Common/Loader';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
@@ -18,7 +20,15 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
+  const { md = false, lg = false } = Grid.useBreakpoint();
+  const [sidebarState, setSidebarState] = useState({ md, open: md });
+  // Reset the manual toggle only when crossing the mobile breakpoint.
+  // Adjusting state during render avoids an effect showing the previous layout first.
+  if (sidebarState.md !== md) {
+    setSidebarState({ md, open: md });
+  }
+  const isSidebarOpen = sidebarState.md === md ? sidebarState.open : md;
+  const isTablet = md && !lg;
   const [layoutMode] = useState('vertical');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const MAINTENANCE_MODE = false;
@@ -44,32 +54,19 @@ function App() {
   const isHome = HOME_PATHS.includes(location.pathname);
 
   // Toggle sidebar
-  const toggleSidebar = (open) => setSidebarOpen(open);
-
-  // Sidebar resize handler
-  useEffect(() => {
-    const handleResize = () => setSidebarOpen(window.innerWidth >= 768);
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const toggleSidebar = (open) => setSidebarState({ md, open });
 
   // Close sidebar when clicking outside (tablet range)
   useEffect(() => {
+    if (!isSidebarOpen || !isTablet) return;
     const handleClickOutside = (e) => {
-      if (
-        isSidebarOpen &&
-        window.innerWidth >= 768 &&
-        window.innerWidth < 992 &&
-        !e.target.closest('#sidebar') &&
-        !e.target.closest('#toggle_btn')
-      ) {
-        setSidebarOpen(false);
+      if (!e.target.closest('#sidebar') && !e.target.closest('#toggle_btn')) {
+        setSidebarState({ md, open: false });
       }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [isSidebarOpen]);
+  }, [isSidebarOpen, isTablet, md]);
 
   // ────── PROFILE FETCH ──────
   const {
@@ -97,10 +94,10 @@ function App() {
       !auth?.token &&
       (location.pathname === '/no-access' || location.pathname === '/verify-account')
     ) {
-      message.warning('You must be logged in to access this page.');
+      toast.warning('You must be logged in to access this page.');
       navigate('/login', { replace: true });
     } else if (!auth?.token && !isAuthPage) {
-      message.warning('You are not authenticated. Please log in.');
+      toast.warning('You are not authenticated. Please log in.');
       navigate('/login', { replace: true });
     }
   }, [auth, isAuthPage, navigate, authChecked, location.pathname, isLoggingOut]);
@@ -111,11 +108,11 @@ function App() {
     if (profileError) {
       const status = profileError?.status;
       if (status === 401 || status === 403) {
-        message.error('Your session has expired. Please log in again.');
+        toast.error('Your session has expired. Please log in again.');
         logout(); // ← Remove optional chaining
         navigate('/login', { replace: true });
       } else {
-        message.error('Failed to load profile.');
+        toast.error('Failed to load profile.');
       }
     }
   }, [profileError, navigate, logout]);
@@ -136,7 +133,7 @@ function App() {
 
     if (!user.isEmailVerified || accessRoles.length === 0) {
       if (location.pathname !== '/no-access') {
-        message.warning('Access restricted. Please verify your email or request access.');
+        toast.warning('Access restricted. Please verify your email or request access.');
         navigate('/no-access', { replace: true });
       }
     } else if (location.pathname === '/no-access') {
@@ -177,7 +174,7 @@ function App() {
   // ────── RENDER ──────
   return (
     <>
-      <Loader loading={isProfileLoading} />
+      <Loader loading={isProfileLoading} fullscreen />
       <PwaManager />
       <div
         className={`main-wrapper cm-shell ${isHome ? 'cm-shell--home' : ''} ${isSidebarOpen && !isHome ? 'slide-nav' : ''}`}
@@ -196,7 +193,9 @@ function App() {
             layoutMode={layoutMode}
           />
         )}
-        <Router />
+        <RouteErrorBoundary area="This area" hasSidebar={!isAuthPage && !isHome}>
+          <Router hasSidebar={!isAuthPage && !isHome} />
+        </RouteErrorBoundary>
 
         {isSidebarOpen && !isHome && (
           <div className="sidebar-overlay active" onClick={() => toggleSidebar(false)} />

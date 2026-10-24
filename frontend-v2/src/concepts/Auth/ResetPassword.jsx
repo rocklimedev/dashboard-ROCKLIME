@@ -1,8 +1,10 @@
+import Loader from '../../components/Common/Loader';
+import './ResetPassword.styles.css';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useResetPasswordMutation } from '../../api/authApi';
 import logo from '../../assets/img/logo.png';
-import { Spin, message } from 'antd'; // Added Spin
+import { toast } from 'sonner'; // Shared loading indicator
 import { useValidateResetTokenQuery } from '../../api/authApi';
 
 const ResetPassword = () => {
@@ -19,7 +21,7 @@ const ResetPassword = () => {
 
   useEffect(() => {
     if (validationError) {
-      message.error(validationError?.data?.message || 'Invalid or expired reset link.');
+      toast.error(validationError?.data?.message || 'Invalid or expired reset link.');
       setTimeout(() => navigate('/login'), 2000);
     }
   }, [validationError, navigate]);
@@ -27,12 +29,12 @@ const ResetPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validationData?.email) {
-      message.error('Invalid or missing verification data.');
+      toast.error('Invalid or missing verification data.');
       setTimeout(() => navigate('/login'), 2000);
       return;
     }
     if (newPassword !== confirmPassword) {
-      message.error('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
 
@@ -42,10 +44,10 @@ const ResetPassword = () => {
         newPassword,
         email: validationData.email,
       }).unwrap();
-      message.success('Password reset successfully!');
+      toast.success('Password reset successfully!');
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {
-      message.error(error?.data?.message || 'Failed to reset password');
+      toast.error(error?.data?.message || 'Failed to reset password');
     }
   };
 
@@ -61,65 +63,20 @@ const ResetPassword = () => {
                 </div>
 
                 {isValidationLoading ? (
-                  <div
-                    className="card"
-                    style={{
-                      border: '1px solid #eee',
-                      borderRadius: '8px',
-                      backgroundColor: '#ffffff',
-                    }}
-                  >
-                    <div
-                      className="card-body p-5 text-center"
-                      style={{
-                        fontFamily: "'Lato', Arial, sans-serif",
-                        color: '#646b72',
-                        fontSize: '15px',
-                        lineHeight: '1.6',
-                      }}
-                    >
-                      <Spin size="small" />{' '}
-                      <span style={{ marginLeft: 8 }}>Validating reset link...</span>
+                  <div className="card fv2-resetpassword-18ca936fc1">
+                    <div className="card-body p-5 text-center fv2-resetpassword-60db4fca7a">
+                      <Loader size="small" />{' '}
+                      <span className="fv2-resetpassword-013827c9e3">Validating reset link...</span>
                     </div>
                   </div>
                 ) : validationError ? (
-                  <div
-                    className="card"
-                    style={{
-                      border: '1px solid #eee',
-                      borderRadius: '8px',
-                      backgroundColor: '#ffffff',
-                    }}
-                  >
-                    <div
-                      className="card-body p-5"
-                      style={{
-                        fontFamily: "'Lato', Arial, sans-serif",
-                        color: '#646b72',
-                        fontSize: '15px',
-                        lineHeight: '1.6',
-                      }}
-                    >
-                      <h3
-                        style={{
-                          color: '#212b36',
-                          fontWeight: 700,
-                          marginBottom: '20px',
-                        }}
-                      >
-                        Invalid Reset Link
-                      </h3>
-                      <p style={{ marginBottom: '20px' }}>
+                  <div className="card fv2-resetpassword-18ca936fc1">
+                    <div className="card-body p-5 fv2-resetpassword-60db4fca7a">
+                      <h3 className="fv2-resetpassword-9ce2c4eb64">Invalid Reset Link</h3>
+                      <p className="fv2-resetpassword-4e591586d9">
                         The reset link is invalid or has expired. Please request a new one.
                       </p>
-                      <a
-                        href="/forgot-password"
-                        style={{
-                          color: '#e31e24',
-                          textDecoration: 'none',
-                          fontWeight: 'bold',
-                        }}
-                      >
+                      <a className="fv2-resetpassword-2b73d951dd" href="/forgot-password">
                         Request New Link
                       </a>
                     </div>
@@ -155,25 +112,13 @@ const ResetPassword = () => {
                         <div className="form-login">
                           <button
                             type="submit"
-                            className="btn btn-login"
+                            className="btn btn-login fv2-resetpassword-e5fb449ce9"
                             disabled={isResetLoading || isValidationLoading}
-                            style={{
-                              backgroundColor: '#e31e24',
-                              color: '#ffffff',
-                              padding: '12px 20px',
-                              borderRadius: '5px',
-                              fontWeight: 'bold',
-                              width: '100%',
-                              border: 'none',
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                            }}
                           >
                             {isResetLoading ? (
                               <>
-                                <Spin size="small" style={{ color: '#fff' }} />{' '}
-                                <span style={{ marginLeft: 8 }}>Changing...</span>
+                                <Loader className="fv2-resetpassword-9496c4ae48" size="small" />{' '}
+                                <span className="fv2-resetpassword-013827c9e3">Changing...</span>
                               </>
                             ) : (
                               'Change Password'
@@ -183,14 +128,7 @@ const ResetPassword = () => {
                         <div className="signinform text-center mb-0">
                           <h4>
                             Return to{' '}
-                            <a
-                              href="/login"
-                              className="hover-a"
-                              style={{
-                                color: '#e31e24',
-                                textDecoration: 'none',
-                              }}
-                            >
+                            <a href="/login" className="hover-a fv2-resetpassword-7dcfb06297">
                               login
                             </a>
                           </h4>

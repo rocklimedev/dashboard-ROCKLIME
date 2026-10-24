@@ -1,7 +1,8 @@
+import './NoAccess.styles.css';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button, Space, Typography, Result, ConfigProvider, Card } from 'antd';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import { useResendVerificationEmailMutation } from '../../api/authApi';
 import { useGetProfileQuery } from '../../api/userApi';
 import { useAuth } from '../../context/AuthContext';
@@ -42,7 +43,7 @@ const NoAccess = () => {
 
   useEffect(() => {
     if (profileError) {
-      message.error("Couldn't load your profile. Please try again.");
+      toast.error("Couldn't load your profile. Please try again.");
     }
   }, [profileError]);
 
@@ -64,7 +65,7 @@ const NoAccess = () => {
 
   const handleResend = async () => {
     if (!user?.email) {
-      message.error('No email address found.');
+      toast.error('No email address found.');
       return;
     }
 
@@ -72,20 +73,20 @@ const NoAccess = () => {
       await resendVerificationEmail({ email: user.email }).unwrap();
       setEmailSent(true);
       setTimer(60);
-      message.success('Verification email sent! Check your inbox (and spam folder).');
+      toast.success('Verification email sent! Check your inbox (and spam folder).');
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to send email. Try again.');
+      toast.error(err?.data?.message || 'Failed to send email. Try again.');
     }
   };
 
-  const handleRetry = () => refetchProfile().catch(() => message.error('Retry failed'));
+  const handleRetry = () => refetchProfile().catch(() => toast.error('Retry failed'));
 
   const handleLogout = async () => {
     try {
       await logout();
       navigate('/login', { replace: true });
     } catch {
-      message.error('Logout failed');
+      toast.error('Logout failed');
     }
   };
 
@@ -122,44 +123,49 @@ const NoAccess = () => {
             {/* Alternative: <MailOutlined style={{ fontSize: 80, color: '#f97316' }} /> */}
           </div>
 
-          <Title level={2} style={{ marginBottom: 8 }}>
+          <Title className="fv2-noaccess-a257253ac6" level={2}>
             {needsVerification ? 'Verify Your Email' : 'Account Under Review'}
           </Title>
 
-          <Paragraph type="secondary" style={{ fontSize: 16, marginBottom: 32 }}>
+          <Paragraph className="fv2-noaccess-569aac8076" type="secondary">
             {needsVerification
               ? 'We sent a verification link to your email. Please confirm your address to activate your account.'
               : 'Your account has been created successfully, but requires administrator approval before you can access the portal.'}
           </Paragraph>
 
           {needsVerification && (
-            <div style={{ marginBottom: 24 }}>
+            <div className="fv2-noaccess-91d73523ba">
               <Text strong>Email status: </Text>
               <Text type="danger">Not verified</Text>
             </div>
           )}
 
           {hasNoAccessRole && !needsVerification && (
-            <Paragraph type="secondary" style={{ marginBottom: 32 }}>
+            <Paragraph className="fv2-noaccess-c5fa909623" type="secondary">
               Please contact your organization administrator to get the appropriate role assigned.
             </Paragraph>
           )}
 
           {emailSent && (
-            <Paragraph type="success" strong style={{ fontSize: 16, margin: '24px 0' }}>
+            <Paragraph className="fv2-noaccess-acf406f070" type="success" strong>
               Email sent successfully! Redirecting to login in {timer} seconds...
             </Paragraph>
           )}
 
-          <Space direction="vertical" size="middle" style={{ width: '100%' }} align="center">
+          <Space
+            className="fv2-noaccess-1969876a19"
+            direction="vertical"
+            size="middle"
+            align="center"
+          >
             {showResendButton && (
               <Button
+                className="fv2-noaccess-fa3af0cb0d"
                 type="primary"
                 size="large"
                 icon={<MailOutlined />}
                 onClick={handleResend}
                 loading={isResending}
-                style={{ minWidth: 240 }}
               >
                 Resend Verification Email
               </Button>

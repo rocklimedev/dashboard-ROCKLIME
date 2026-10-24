@@ -1,6 +1,6 @@
 .profile-page {
   padding: 24px;
-  background: #f8fafc;
+  background: var(--fv2-color-f8fafc);
   min-height: 100vh;
 }
 
@@ -32,40 +32,40 @@
 
 .hero-name {
   margin: 0;
-  font-size: 2.25rem;
+  font-size: var(--fv2-font-2_25rem);
   font-weight: 700;
-  color: #111827;
+  color: var(--fv2-color-111827);
 }
 
 .hero-username {
   margin: 4px 0 12px;
-  color: #6b7280;
-  font-size: 1.1rem;
+  color: var(--fv2-color-6b7280);
+  font-size: var(--fv2-font-1_1rem);
 }
 
 .role-tag {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--fv2-color-f3f4f6);
+  color: var(--fv2-color-374151);
   border: none;
   padding: 4px 12px;
-  font-size: 0.9rem;
+  font-size: var(--fv2-font-0_9rem);
 }
 
 .edit-profile-btn {
-  background: #e31e24 !important;
-  border-color: #e31e24 !important;
+  background: var(--fv2-color-e31e24) !important;
+  border-color: var(--fv2-color-e31e24) !important;
   height: 48px;
   border-radius: 10px;
   font-weight: 500;
 }
 
 .hero-stats .ant-statistic-title {
-  color: #6b7280;
-  font-size: 0.9rem;
+  color: var(--fv2-color-6b7280);
+  font-size: var(--fv2-font-0_9rem);
 }
 
 .hero-stats .ant-statistic-content {
-  font-size: 1.6rem;
+  font-size: var(--fv2-font-1_6rem);
   font-weight: 600;
 }
 
@@ -84,32 +84,32 @@
 }
 
 .info-icon {
-  font-size: 1.4rem;
-  color: #6b7280;
+  font-size: var(--fv2-font-1_4rem);
+  color: var(--fv2-color-6b7280);
   min-width: 28px;
 }
 
 .info-label {
-  color: #6b7280;
-  font-size: 0.9rem;
+  color: var(--fv2-color-6b7280);
+  font-size: var(--fv2-font-0_9rem);
   margin-bottom: 2px;
 }
 
 .info-value {
   font-weight: 500;
-  color: #111827;
+  color: var(--fv2-color-111827);
 }
 
 .address-content {
   display: flex;
   gap: 16px;
-  font-size: 1rem;
+  font-size: var(--fv2-font-1rem);
   line-height: 1.6;
 }
 
 .address-icon {
-  font-size: 1.6rem;
-  color: #3b82f6;
+  font-size: var(--fv2-font-1_6rem);
+  color: var(--fv2-color-3b82f6);
   margin-top: 4px;
 }
 
@@ -119,7 +119,7 @@
 
 .address-city,
 .address-country {
-  color: #4b5563;
+  color: var(--fv2-color-4b5563);
 }
 
 .quotation-grid {
@@ -140,20 +140,20 @@
 
 .quotation-title {
   margin: 0 0 4px;
-  font-size: 1.1rem;
+  font-size: var(--fv2-font-1_1rem);
   font-weight: 600;
 }
 
 .quotation-ref,
 .quotation-due {
-  color: #6b7280;
-  font-size: 0.9rem;
+  color: var(--fv2-color-6b7280);
+  font-size: var(--fv2-font-0_9rem);
 }
 
 .quotation-amount {
-  font-size: 1.25rem;
+  font-size: var(--fv2-font-1_25rem);
   font-weight: 700;
-  color: #15803d;
+  color: var(--fv2-color-15803d);
 }
 
 @media (max-width: 1024px) {
@@ -173,6 +173,6 @@
   }
 
   .hero-stats .ant-statistic-content {
-    font-size: 1.4rem;
+    font-size: var(--fv2-font-1_4rem);
   }
 }

@@ -1,20 +1,9 @@
+import ModalShell from '../../components/Common/ModalShell';
+import './ZohoConnector.styles.css';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Descriptions,
-  Modal,
-  Row,
-  Select,
-  Space,
-  Switch,
-  Tag,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Card, Col, Descriptions, Modal, Row, Select, Space, Switch, Tag, Typography } from 'antd';
+import { toast } from 'sonner';
 import { ApiOutlined, CloudSyncOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import {
@@ -62,8 +51,9 @@ function BiginSettings({ isAdmin }) {
   );
   return (
     <Card
+      className="fv2-zohoconnector-c5d3441e56"
       title="Bigin"
-      style={{ marginTop: 16 }}
+
       extra={
         <Tag color={status?.connected ? 'green' : 'default'}>
           {status?.connected ? 'Connected' : 'Disconnected'}
@@ -84,11 +74,11 @@ function BiginSettings({ isAdmin }) {
           onClick={async () => {
             try {
               const { result } = await sync({ full: true }).unwrap();
-              message.success(
+              toast.success(
                 `Bigin: ${result.created} new, ${result.updated} updated, ${result.pushed} sent`,
               );
             } catch (error) {
-              message.error(error?.data?.message || 'Sync failed');
+              toast.error(error?.data?.message || 'Sync failed');
             }
           }}
         >
@@ -97,19 +87,21 @@ function BiginSettings({ isAdmin }) {
       )}
       {pipelineError && (
         <Alert
-          style={{ marginTop: 12 }}
+          className="fv2-zohoconnector-c10ceb378b"
+
           type="warning"
           message={pipelineError?.data?.message || 'Could not load Bigin pipelines'}
         />
       )}
       {settingsError && <Alert type="error" message="Could not load configuration" />}
       {cfg && (
-        <Space direction="vertical" size={16} style={{ width: '100%', marginTop: 16 }}>
+        <Space className="fv2-zohoconnector-91fb9dc234" direction="vertical" size={16}>
           <Row gutter={[16, 12]}>
             <Col xs={24} md={12}>
               <Text strong>Bigin pipeline</Text>
               <Select
-                style={{ width: '100%', marginTop: 4 }}
+                className="fv2-zohoconnector-7627a40549"
+
                 disabled={!isAdmin || !status?.connected}
                 value={cfg.biginSubPipeline}
                 onChange={(value) => set({ biginSubPipeline: value })}
@@ -118,7 +110,7 @@ function BiginSettings({ isAdmin }) {
             </Col>
             <Col xs={24} md={12}>
               <Text strong>Sync every 15 minutes</Text>
-              <div style={{ marginTop: 8 }}>
+              <div className="fv2-zohoconnector-a6f4ea8507">
                 <Switch
                   disabled={!isAdmin}
                   checked={cfg.autoSync}
@@ -134,7 +126,8 @@ function BiginSettings({ isAdmin }) {
                 label={<Tag color={stage.color}>{stage.label}</Tag>}
               >
                 <Select
-                  style={{ width: '100%' }}
+                  className="fv2-zohoconnector-57732278f0"
+
                   disabled={!isAdmin || !status?.connected}
                   value={cfg.stageMap?.[stage.id]}
                   onChange={(value) => set({ stageMap: { ...cfg.stageMap, [stage.id]: value } })}
@@ -146,8 +139,9 @@ function BiginSettings({ isAdmin }) {
           <div>
             <Text strong>Lead sources</Text>
             <Select
+              className="fv2-zohoconnector-7627a40549"
               mode="tags"
-              style={{ width: '100%', marginTop: 4 }}
+
               disabled={!isAdmin}
               value={cfg.sources}
               onChange={(value) => set({ sources: value })}
@@ -173,9 +167,9 @@ function BiginSettings({ isAdmin }) {
                 try {
                   await save({ key: 'crm', ...draft }).unwrap();
                   setDraft(null);
-                  message.success('Zoho configuration saved');
+                  toast.success('Zoho configuration saved');
                 } catch (error) {
-                  message.error(error?.data?.message || 'Could not save configuration');
+                  toast.error(error?.data?.message || 'Could not save configuration');
                 }
               }}
             >
@@ -207,8 +201,8 @@ export default function ZohoConnector() {
   useEffect(() => {
     const result = params.get('zoho');
     if (!result) return;
-    if (result === 'connected') message.success('Zoho connected');
-    else message.error('Zoho could not be connected. Please try again.');
+    if (result === 'connected') toast.success('Zoho connected');
+    else toast.error('Zoho could not be connected. Please try again.');
     const next = new URLSearchParams(params);
     next.delete('zoho');
     setParams(next, { replace: true });
@@ -219,17 +213,17 @@ export default function ZohoConnector() {
       const result = await authorize(status?.connected ? status.accountsUrl : centre).unwrap();
       window.location.assign(result.url);
     } catch (error) {
-      message.error(error?.data?.message || 'Could not start Zoho sign-in');
+      toast.error(error?.data?.message || 'Could not start Zoho sign-in');
     }
   };
   return (
     <>
       <Card>
-        <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
+        <Space className="fv2-zohoconnector-390f7fb755" wrap>
           <Space size={16}>
             <ZohoIcon />
             <div>
-              <Title level={5} style={{ margin: 0 }}>
+              <Title className="fv2-zohoconnector-5ace20f70d" level={5}>
                 ZOHO
               </Title>
               <Text type="secondary">One connection for Zoho services.</Text>
@@ -243,11 +237,11 @@ export default function ZohoConnector() {
           <Space wrap>
             {!status?.connected && (
               <Select
+                className="fv2-zohoconnector-a9183d39d5"
                 aria-label="Zoho data centre"
                 value={centre}
                 onChange={setCentre}
                 options={centres}
-                style={{ width: 130 }}
               />
             )}
             <Button
@@ -275,9 +269,9 @@ export default function ZohoConnector() {
                     onOk: async () => {
                       try {
                         await disconnect().unwrap();
-                        message.success('Zoho disconnected');
+                        toast.success('Zoho disconnected');
                       } catch (error) {
-                        message.error(error?.data?.message || 'Could not disconnect Zoho');
+                        toast.error(error?.data?.message || 'Could not disconnect Zoho');
                         throw error;
                       }
                     },
@@ -291,7 +285,8 @@ export default function ZohoConnector() {
         </Space>
         {error && (
           <Alert
-            style={{ marginTop: 12 }}
+            className="fv2-zohoconnector-c10ceb378b"
+
             type="error"
             message="Could not load Zoho connection"
             action={
@@ -303,13 +298,14 @@ export default function ZohoConnector() {
         )}
         {status && !status.configured && (
           <Alert
-            style={{ marginTop: 12 }}
+            className="fv2-zohoconnector-c10ceb378b"
+
             type="info"
             message="Configure the Zoho OAuth client on the server before connecting."
           />
         )}
       </Card>
-      <Modal
+      <ModalShell
         title="Manage Zoho"
         open={manageOpen}
         onCancel={() => setManageOpen(false)}
@@ -327,8 +323,9 @@ export default function ZohoConnector() {
           </Text>
         </Card>
         <Card
+          className="fv2-zohoconnector-c5d3441e56"
           title="Cliq"
-          style={{ marginTop: 16 }}
+
           extra={
             <Tag color={status?.services?.cliq ? 'green' : 'default'}>
               {status?.services?.cliq ? 'Connected' : 'Disconnected'}
@@ -341,7 +338,7 @@ export default function ZohoConnector() {
           </Text>
         </Card>
         {can('crm', 'view') && <BiginSettings isAdmin={isAdmin} />}
-      </Modal>
+      </ModalShell>
     </>
   );
 }

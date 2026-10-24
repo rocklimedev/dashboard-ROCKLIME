@@ -1,3 +1,5 @@
+import Loader from '../../components/Common/Loader';
+import './Orderpage.styles.css';
 import React, { useState, useMemo, useEffect } from 'react';
 import { API_URL } from '../../store/config';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -23,28 +25,8 @@ import { useGetQuotationByIdQuery } from '../../api/quotationApi';
 import { useGetAllAddressesQuery } from '../../api/addressApi';
 import { useGetAllTeamsQuery } from '../../api/teamApi';
 import { useGetProfileQuery } from '../../api/userApi';
-import {
-  Button,
-  Card,
-  Table,
-  Typography,
-  Badge,
-  Space,
-  Dropdown,
-  Menu,
-  Row,
-  Col,
-  Spin,
-  Alert,
-  Input,
-  Upload,
-  message,
-  Form,
-  Timeline,
-  Tag,
-  Empty,
-  Pagination,
-} from 'antd';
+import { Button, Card, Table, Typography, Badge, Space, Dropdown, Menu, Row, Col, Alert, Input, Upload, Form, Timeline, Tag, Empty, Pagination } from 'antd';
+import { toast } from 'sonner';
 import {
   EllipsisOutlined,
   UserOutlined,
@@ -64,6 +46,7 @@ import noimg from '../../assets/img/noimg.jpg';
 import useProductsData from '../../utils/useProductdata';
 import AddAddress from '../../components/Address/AddAddressModal';
 import CommentRow from '../../components/Orders/CommentRow';
+import DeleteModal from '../../components/Common/DeleteModal';
 import DispatchModal from '../../components/modals/DispatchModal';
 import OrderStockPanel from '../../components/Stock/OrderStockPanel';
 import OrderPaymentsCard from '../../components/Accounts/OrderPaymentsCard';
@@ -96,6 +79,7 @@ const ACTIVITY_TAG_COLOR = {
 const OrderPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // ── STATE ────────────────────────────────────────
   const [newComment, setNewComment] = useState('');
@@ -125,7 +109,7 @@ const OrderPage = () => {
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch {
-      message.error('Failed to download the order summary');
+      toast.error('Failed to download the order summary');
     }
   };
 
@@ -183,7 +167,7 @@ const OrderPage = () => {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e) {
       if (win) win.close();
-      message.error(e.message);
+      toast.error(e.message);
     } finally {
       setPickBusy(false);
     }
@@ -222,9 +206,9 @@ const OrderPage = () => {
 
   const { data: customersData } = useGetCustomersQuery({ limit: 10000 });
 
-  const [deleteOrder] = useDeleteOrderMutation();
+  const [deleteOrder, { isLoading: isDeletingOrder }] = useDeleteOrderMutation();
   const [addComment] = useAddCommentMutation();
-  const [deleteComment] = useDeleteCommentMutation();
+  const [deleteComment, { isLoading: isDeletingComment }] = useDeleteCommentMutation();
   const [uploadInvoice, { isLoading: isUploading }] = useUploadInvoiceMutation();
   const [issueGatePass, { isLoading: isGatePassUploading }] = useIssueGatePassMutation();
   const [uploadReceivingDocument, { isLoading: isReceivingDocUploading }] =
@@ -353,67 +337,67 @@ const OrderPage = () => {
   // ── HANDLERS (mostly unchanged) ─────────────────
   const handleInvoiceChange = ({ file }) => {
     if (file.type === 'application/pdf') setInvoiceFile(file);
-    else message.error('Only PDF files allowed for invoice.');
+    else toast.error('Only PDF files allowed for invoice.');
   };
 
   const handleGatePassChange = ({ file }) => {
     const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
     if (allowed.includes(file.type)) setGatePassFile(file);
-    else message.error('Only PDF, PNG, JPG allowed for gate pass.');
+    else toast.error('Only PDF, PNG, JPG allowed for gate pass.');
   };
 
   // ← NEW
   const handleReceivingDocChange = ({ file }) => {
     const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
     if (allowed.includes(file.type)) setReceivingDocFile(file);
-    else message.error('Only PDF, PNG, JPG allowed for receiving document.');
+    else toast.error('Only PDF, PNG, JPG allowed for receiving document.');
   };
 
   const handleInvoiceSubmit = async () => {
-    if (!invoiceFile) return message.error('Select a PDF file.');
+    if (!invoiceFile) return toast.error('Select a PDF file.');
     const formData = new FormData();
     formData.append('invoice', invoiceFile);
     try {
       await uploadInvoice({ orderId: id, formData }).unwrap();
       setInvoiceFile(null);
       refetchOrder();
-      message.success('Invoice uploaded');
+      toast.success('Invoice uploaded');
     } catch (err) {
-      message.error(err.data?.message || 'Upload failed');
+      toast.error(err.data?.message || 'Upload failed');
     }
   };
 
   const handleGatePassSubmit = async () => {
-    if (!gatePassFile) return message.error('Select a file.');
+    if (!gatePassFile) return toast.error('Select a file.');
     const formData = new FormData();
     formData.append('gatepass', gatePassFile);
     try {
       await issueGatePass({ orderId: id, formData }).unwrap();
       setGatePassFile(null);
       refetchOrder();
-      message.success('Gate pass issued');
+      toast.success('Gate pass issued');
     } catch (err) {
-      message.error(err.data?.message || 'Upload failed');
+      toast.error(err.data?.message || 'Upload failed');
     }
   };
 
   // ← NEW
   const handleReceivingDocSubmit = async () => {
-    if (!receivingDocFile) return message.error('Select a file.');
+    if (!receivingDocFile) return toast.error('Select a file.');
     const formData = new FormData();
     formData.append('file', receivingDocFile);
     try {
       await uploadReceivingDocument({ orderId: id, formData }).unwrap();
       setReceivingDocFile(null);
       refetchOrder();
-      message.success('Receiving document uploaded');
+      toast.success('Receiving document uploaded');
     } catch (err) {
-      message.error(err.data?.message || 'Upload failed');
+      toast.error(err.data?.message || 'Upload failed');
     }
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) return message.error('Comment cannot be empty');
+    if (!newComment.trim()) return toast.error('Comment cannot be empty');
     try {
       await addComment({
         resourceId: id,
@@ -422,31 +406,35 @@ const OrderPage = () => {
         comment: newComment,
       }).unwrap();
       setNewComment('');
-      message.success('Comment added');
+      toast.success('Comment added');
     } catch (err) {
-      message.error(err.data?.message || 'Failed to add comment');
+      toast.error(err.data?.message || 'Failed to add comment');
     }
   };
 
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm('Delete this comment?')) return;
-    try {
-      await deleteComment({
-        commentId,
-        userId: String(user.userId || '').trim(),
-      }).unwrap();
-    } catch (err) {
-      message.error(err.data?.message || 'Delete failed');
-    }
+  const handleDeleteComment = (commentId) => {
+    setDeleteTarget({ type: 'Comment', id: commentId });
   };
 
-  const handleDeleteOrder = async () => {
-    if (!window.confirm('Delete this order?')) return;
+  const handleDeleteOrder = () => {
+    setDeleteTarget({ type: 'Order', id });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || isDeletingOrder || isDeletingComment) return;
     try {
-      await deleteOrder(id).unwrap();
-      navigate('/orders/list');
+      if (deleteTarget.type === 'Comment') {
+        await deleteComment({
+          commentId: deleteTarget.id,
+          userId: String(user.userId || '').trim(),
+        }).unwrap();
+      } else {
+        await deleteOrder(deleteTarget.id).unwrap();
+        navigate('/orders/list');
+      }
+      setDeleteTarget(null);
     } catch (err) {
-      message.error(err.data?.message || 'Delete failed');
+      toast.error(err.data?.message || 'Delete failed');
     }
   };
 
@@ -473,7 +461,7 @@ const OrderPage = () => {
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      message.error(err?.data?.message || 'Download failed');
+      toast.error(err?.data?.message || 'Download failed');
     }
   };
   const handleDownloadFile = async (type) => {
@@ -507,7 +495,7 @@ const OrderPage = () => {
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      message.error(err.message || 'Download failed');
+      toast.error(err.message || 'Download failed');
     }
   };
 
@@ -541,7 +529,7 @@ const OrderPage = () => {
   if (orderLoading || productsLoading) {
     return (
       <div className="page-loading">
-        <Spin size="large" />
+        <Loader size="large" />
         <Text>Loading order details...</Text>
       </div>
     );
@@ -570,16 +558,8 @@ const OrderPage = () => {
           <Col xs={24} lg={16} xl={18}>
             {/* Products Card */}
             <Card className="section-card products-card">
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: 12,
-                }}
-              >
-                <Title level={3} style={{ margin: 0 }}>
+              <div className="fv2-orderpage-64c054e2c7">
+                <Title className="fv2-orderpage-4c1b226847" level={3}>
                   Order #{order.orderNo}{' '}
                   <Badge
                     status={
@@ -777,12 +757,11 @@ const OrderPage = () => {
                   // detailed // uncomment to also print each dispatch's line items
                 />
               }
-              className="section-card"
-              style={{ marginTop: 24 }}
+              className="section-card fv2-orderpage-38fbb98077"
             >
               {dispatchesLoading ? (
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <Spin />
+                <div className="fv2-orderpage-e80842e9ac">
+                  <Loader />
                 </div>
               ) : dispatches.length === 0 ? (
                 <Empty
@@ -808,13 +787,7 @@ const OrderPage = () => {
                         });
 
                       return (
-                        <div
-                          style={{
-                            padding: '16px',
-                            background: '#fafafa',
-                            borderRadius: 6,
-                          }}
-                        >
+                        <div className="fv2-orderpage-a901d3f564">
                           <Table
                             dataSource={record.items || []}
                             rowKey={(item, index) => `${item.productId}-${index}`}
@@ -831,10 +804,10 @@ const OrderPage = () => {
                                 fixed: 'left',
                                 render: (value, item) => (
                                   <div>
-                                    <div style={{ fontWeight: 600 }}>{value || '—'}</div>
+                                    <div className="fv2-orderpage-479c3f76d7">{value || '—'}</div>
 
                                     {item.companyCode && (
-                                      <div className="text-muted small" style={{ marginTop: 2 }}>
+                                      <div className="text-muted small fv2-orderpage-a881445142">
                                         {item.companyCode}
                                       </div>
                                     )}
@@ -882,7 +855,7 @@ const OrderPage = () => {
                                           : money(discount)}
                                       </div>
 
-                                      <div className="text-muted small" style={{ marginTop: 2 }}>
+                                      <div className="text-muted small fv2-orderpage-a881445142">
                                         −{money(discountAmount)} / unit
                                       </div>
                                     </div>
@@ -946,35 +919,10 @@ const OrderPage = () => {
                           />
 
                           {/* Dispatch Financial Summary */}
-                          <div
-                            style={{
-                              marginTop: 16,
-                              padding: '14px 16px',
-                              background: '#fff',
-                              border: '1px solid #f0f0f0',
-                              borderRadius: 6,
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                              }}
-                            >
-                              <div
-                                style={{
-                                  minWidth: 320,
-                                  width: '100%',
-                                  maxWidth: 420,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    marginBottom: 6,
-                                  }}
-                                >
+                          <div className="fv2-orderpage-b51a90acc7">
+                            <div className="fv2-orderpage-99dcb807be">
+                              <div className="fv2-orderpage-353442f36d">
+                                <div className="fv2-orderpage-cd76c9452c">
                                   <span>Subtotal</span>
 
                                   <strong>
@@ -982,13 +930,7 @@ const OrderPage = () => {
                                   </strong>
                                 </div>
 
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    marginBottom: 6,
-                                  }}
-                                >
+                                <div className="fv2-orderpage-cd76c9452c">
                                   <span>Discount</span>
 
                                   <strong>
@@ -998,16 +940,7 @@ const OrderPage = () => {
                                   </strong>
                                 </div>
 
-                                <div
-                                  style={{
-                                    borderTop: '1px solid #e8e8e8',
-                                    marginTop: 8,
-                                    paddingTop: 10,
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    fontSize: 15,
-                                  }}
-                                >
+                                <div className="fv2-orderpage-be82ac8e28">
                                   <strong>Dispatch Total</strong>
 
                                   <strong>{money(record.totalAmount)}</strong>
@@ -1017,14 +950,7 @@ const OrderPage = () => {
                           </div>
 
                           {/* Dispatch Metadata */}
-                          <div
-                            style={{
-                              marginTop: 16,
-                              display: 'grid',
-                              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                              gap: 14,
-                            }}
-                          >
+                          <div className="fv2-orderpage-0480b04f82">
                             <div>
                               <div className="text-muted small">Carrier</div>
 
@@ -1126,11 +1052,7 @@ const OrderPage = () => {
                             </div>
 
                             {record.remarks && (
-                              <div
-                                style={{
-                                  gridColumn: 'span 2',
-                                }}
-                              >
+                              <div className="fv2-orderpage-3b3d07d2bb">
                                 <div className="text-muted small">Remarks</div>
 
                                 <div>{record.remarks}</div>
@@ -1282,7 +1204,7 @@ const OrderPage = () => {
                       key: 'transport',
                       width: 170,
                       render: (_, r) => (
-                        <div style={{ lineHeight: 1.3 }}>
+                        <div className="fv2-orderpage-c06ffaac1f">
                           <div>{r.vehicleNo || r.transporter || r.carrier || '—'}</div>
                           {(r.driverName || r.driverPhone) && (
                             <div className="text-muted small">
@@ -1298,7 +1220,7 @@ const OrderPage = () => {
                       key: 'lr',
                       width: 150,
                       render: (_, r) => (
-                        <div style={{ lineHeight: 1.3 }}>
+                        <div className="fv2-orderpage-c06ffaac1f">
                           <div>{r.lrNumber || r.trackingNumber || '—'}</div>
                           {r.ewayBillNo && (
                             <div className="text-muted small">EWB {r.ewayBillNo}</div>
@@ -1339,7 +1261,7 @@ const OrderPage = () => {
                             Open dispatch
                           </Button>
                         ) : r.status === 'DELIVERED' ? (
-                          <div style={{ lineHeight: 1.3 }}>
+                          <div className="fv2-orderpage-c06ffaac1f">
                             <div>
                               {r.deliveredAt
                                 ? new Date(r.deliveredAt).toLocaleDateString('en-IN', {
@@ -1376,10 +1298,10 @@ const OrderPage = () => {
                       render: (_, record) =>
                         record.invoiceLink ? (
                           <a
+                            className="fv2-orderpage-241eddd7c3"
                             href={record.invoiceLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: '#1677ff' }}
                           >
                             View
                           </a>
@@ -1395,10 +1317,10 @@ const OrderPage = () => {
                       render: (_, record) =>
                         record.gatePassLink ? (
                           <a
+                            className="fv2-orderpage-241eddd7c3"
                             href={record.gatePassLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: '#1677ff' }}
                           >
                             View
                           </a>
@@ -1417,12 +1339,11 @@ const OrderPage = () => {
                   <RollbackOutlined /> Credit Notes
                 </span>
               }
-              className="section-card"
-              style={{ marginTop: 24 }}
+              className="section-card fv2-orderpage-38fbb98077"
             >
               {creditNotesLoading ? (
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <Spin />
+                <div className="fv2-orderpage-e80842e9ac">
+                  <Loader />
                 </div>
               ) : creditNotes.length === 0 ? (
                 <Empty
@@ -1440,13 +1361,7 @@ const OrderPage = () => {
                     defaultExpandAllRows: false,
 
                     expandedRowRender: (record) => (
-                      <div
-                        style={{
-                          padding: '12px 16px',
-                          background: '#fafafa',
-                          borderRadius: 6,
-                        }}
-                      >
+                      <div className="fv2-orderpage-3b571f874c">
                         <Table
                           dataSource={record.items || []}
                           rowKey="id"
@@ -1460,16 +1375,10 @@ const OrderPage = () => {
                               key: 'name',
                               render: (value, item) => (
                                 <div>
-                                  <div style={{ fontWeight: 500 }}>{value || '—'}</div>
+                                  <div className="fv2-orderpage-8d45a95a5a">{value || '—'}</div>
 
                                   {item.productCode && (
-                                    <div
-                                      style={{
-                                        fontSize: 12,
-                                        color: '#8c8c8c',
-                                        marginTop: 2,
-                                      }}
-                                    >
+                                    <div className="fv2-orderpage-dce1c2afd6">
                                       {item.productCode}
                                     </div>
                                   )}
@@ -1536,14 +1445,7 @@ const OrderPage = () => {
                         />
 
                         {/* Credit note metadata */}
-                        <div
-                          style={{
-                            marginTop: 16,
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                            gap: 12,
-                          }}
-                        >
+                        <div className="fv2-orderpage-21b3c1d4be">
                           <div>
                             <div className="text-muted small">Credit Note Date</div>
                             <div>
@@ -1598,7 +1500,7 @@ const OrderPage = () => {
 
                           <div>
                             <div className="text-muted small">Total Amount</div>
-                            <div style={{ fontWeight: 600 }}>
+                            <div className="fv2-orderpage-479c3f76d7">
                               {Number(record.totalAmount || 0).toLocaleString('en-IN', {
                                 style: 'currency',
                                 currency: 'INR',
@@ -1736,7 +1638,7 @@ const OrderPage = () => {
             </Card>
 
             {/* Addresses */}
-            <Row gutter={16} style={{ marginTop: 24 }}>
+            <Row className="fv2-orderpage-38fbb98077" gutter={16}>
               <Col xs={24} md={12}>
                 <Card
                   title="Billing Address"
@@ -1799,7 +1701,7 @@ const OrderPage = () => {
 
           {/* ── SIDEBAR ───────────────────────────────────────────────────── */}
           <Col xs={24} lg={8} xl={6}>
-            <Space direction="vertical" size={20} style={{ width: '100%' }}>
+            <Space className="fv2-orderpage-3cef3f5740" direction="vertical" size={20}>
               {/* Customer */}
               <Card className="info-card">
                 <div className="customer-info">
@@ -1855,18 +1757,18 @@ const OrderPage = () => {
                   )}
                   {invoiceFile && (
                     <Button
+                      className="fv2-orderpage-152e04ca83"
                       type="primary"
                       size="small"
                       onClick={handleInvoiceSubmit}
                       loading={isUploading}
-                      style={{ marginTop: 8 }}
                     >
                       Confirm Upload
                     </Button>
                   )}
                 </div>
 
-                <div className="document-item" style={{ marginTop: 16 }}>
+                <div className="document-item fv2-orderpage-5bdf204e0a">
                   <div className="document-label">
                     <FilePdfOutlined /> Gate Pass
                   </div>
@@ -1897,11 +1799,11 @@ const OrderPage = () => {
                   )}
                   {gatePassFile && !isDispatched && (
                     <Button
+                      className="fv2-orderpage-152e04ca83"
                       type="primary"
                       size="small"
                       onClick={handleGatePassSubmit}
                       loading={isGatePassUploading}
-                      style={{ marginTop: 8 }}
                     >
                       Confirm Upload
                     </Button>
@@ -1909,7 +1811,7 @@ const OrderPage = () => {
                 </div>
 
                 {/* ← NEW: Receiving Document */}
-                <div className="document-item" style={{ marginTop: 16 }}>
+                <div className="document-item fv2-orderpage-5bdf204e0a">
                   <div className="document-label">
                     <FilePdfOutlined /> Receiving Document
                   </div>
@@ -1933,11 +1835,11 @@ const OrderPage = () => {
                   )}
                   {receivingDocFile && (
                     <Button
+                      className="fv2-orderpage-152e04ca83"
                       type="primary"
                       size="small"
                       onClick={handleReceivingDocSubmit}
                       loading={isReceivingDocUploading}
-                      style={{ marginTop: 8 }}
                     >
                       Confirm Upload
                     </Button>
@@ -1955,8 +1857,8 @@ const OrderPage = () => {
                 className="info-card"
               >
                 {activityLoading ? (
-                  <div style={{ textAlign: 'center', padding: '12px 0' }}>
-                    <Spin size="small" />
+                  <div className="fv2-orderpage-8c88e20768">
+                    <Loader size="small" />
                   </div>
                 ) : activities.length === 0 ? (
                   <Empty description="No activity yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -1970,8 +1872,8 @@ const OrderPage = () => {
                             <Tag color={ACTIVITY_TAG_COLOR[a.action] || 'default'}>
                               {a.action?.replace(/_/g, ' ')}
                             </Tag>
-                            <div style={{ marginTop: 4 }}>{a.description}</div>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
+                            <div className="fv2-orderpage-deec0bd174">{a.description}</div>
+                            <Text className="fv2-orderpage-f9b44163b4" type="secondary">
                               {new Date(a.createdAt).toLocaleString()}
                             </Text>
                           </div>
@@ -1979,7 +1881,7 @@ const OrderPage = () => {
                       }))}
                     />
                     {activityTotal > activityLimit && (
-                      <div style={{ textAlign: 'center', marginTop: 12 }}>
+                      <div className="fv2-orderpage-a19ba16f28">
                         <Pagination
                           size="small"
                           current={activityPage}
@@ -1999,45 +1901,27 @@ const OrderPage = () => {
 
         {/* ── COMMENTS ──────────────────────────────────────────────────── */}
         <Card
-          title={<span style={{ fontSize: 16, fontWeight: 600 }}>Comments</span>}
-          className="comments-section"
-          style={{
-            marginTop: 32,
-            borderRadius: 12,
-            boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
-          }}
+          title={<span className="fv2-orderpage-276616ef8e">Comments</span>}
+          className="comments-section fv2-orderpage-3a7e90c01f"
+
           bodyStyle={{ padding: 16 }}
         >
           {/* Input Section */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 12,
-              marginBottom: 20,
-              alignItems: 'flex-start',
-            }}
-          >
+          <div className="fv2-orderpage-9d737679a0">
             <Input.TextArea
+              className="fv2-orderpage-a280f45889"
               rows={2}
               placeholder="Write a comment..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              style={{
-                resize: 'none',
-                borderRadius: 10,
-              }}
             />
 
             <Button
+              className="fv2-orderpage-004506b66e"
               type="primary"
               icon={<SendOutlined />}
               onClick={handleAddComment}
               disabled={!newComment.trim()}
-              style={{
-                height: '100%',
-                borderRadius: 10,
-                paddingInline: 20,
-              }}
             >
               Send
             </Button>
@@ -2045,41 +1929,17 @@ const OrderPage = () => {
 
           {/* Content Section */}
           {commentLoading ? (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <Spin />
+            <div className="fv2-orderpage-e80842e9ac">
+              <Loader />
             </div>
           ) : comments.length === 0 ? (
-            <Text
-              type="secondary"
-              style={{
-                display: 'block',
-                textAlign: 'center',
-                padding: '32px 0',
-                fontSize: 14,
-              }}
-            >
+            <Text className="fv2-orderpage-012af863c2" type="secondary">
               No comments yet.
             </Text>
           ) : (
-            <div
-              className="comments-list"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                marginTop: 8,
-              }}
-            >
+            <div className="comments-list fv2-orderpage-cc5cf43db9">
               {commentData?.comments?.map((c) => (
-                <div
-                  key={c._id}
-                  style={{
-                    padding: 12,
-                    borderRadius: 10,
-                    background: '#fafafa',
-                    border: '1px solid #f0f0f0',
-                  }}
-                >
+                <div className="fv2-orderpage-add6f2e5a0" key={c._id}>
                   <CommentRow
                     comment={c}
                     onDelete={handleDeleteComment}
@@ -2091,6 +1951,16 @@ const OrderPage = () => {
           )}
         </Card>
         {/* MODALS */}
+        <DeleteModal
+          item={deleteTarget}
+          itemType={deleteTarget?.type}
+          isVisible={!!deleteTarget}
+          isLoading={isDeletingOrder || isDeletingComment}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            if (!isDeletingOrder && !isDeletingComment) setDeleteTarget(null);
+          }}
+        />
         {isBillingModalVisible && (
           <AddAddress
             visible={isBillingModalVisible}

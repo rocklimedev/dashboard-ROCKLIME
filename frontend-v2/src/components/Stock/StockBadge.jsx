@@ -1,3 +1,4 @@
+import './StockBadge.styles.css';
 import { Tag, Tooltip } from 'antd';
 
 const n = (v) => Number(v || 0).toLocaleString('en-IN');
@@ -36,7 +37,7 @@ export default function StockBadge({
     label = `Low: ${n(avail)} left`;
   }
   const tip = (
-    <div style={{ lineHeight: 1.6 }}>
+    <div className="fv2-stockbadge-b0be3b226f">
       <div>
         Available to sell: <b>{n(avail)}</b>
       </div>
@@ -49,7 +50,7 @@ export default function StockBadge({
   );
   return (
     <Tooltip title={tip}>
-      <Tag color={color} style={{ marginInlineEnd: 0, cursor: 'help' }}>
+      <Tag className="fv2-stockbadge-9197509491" color={color}>
         {label}
         {!compact && Number(incoming) > 0 ? ` · +${n(incoming)} coming` : ''}
       </Tag>

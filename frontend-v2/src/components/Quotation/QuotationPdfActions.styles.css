@@ -1,0 +1,15 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-quotationpdfactions-0c4102930f) {
+  width: 100%;
+  height: 78vh;
+  border: 0;
+}
+
+:is(#fv2-style-priority, .fv2-quotationpdfactions-c6c295ed84) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-quotationpdfactions-1e300903ab) {
+  background: var(--fv2-color-25d366);
+  border-color: var(--fv2-color-25d366);
+}

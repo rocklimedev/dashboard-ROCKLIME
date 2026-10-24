@@ -1,3 +1,5 @@
+import ModalShell from '../../components/Common/ModalShell';
+import './CreateProduct.styles.css';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -22,7 +24,7 @@ import { useGetAllProductMetaQuery } from '../../api/productMetaApi';
 import { useGetBrandParentCategoriesQuery } from '../../api/brandParentCategoryApi';
 import { useGetAllKeywordsQuery, useCreateKeywordMutation } from '../../api/keywordApi';
 
-import { message } from 'antd';
+import { toast } from 'sonner';
 import { useDropzone } from 'react-dropzone';
 
 import {
@@ -33,7 +35,6 @@ import {
   Button,
   Row,
   Col,
-  Modal,
   Collapse,
   Tag,
   Space,
@@ -221,7 +222,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
       }
       setMetaData(metaObj);
     } catch (e) {
-      message.error('Failed to load specifications');
+      toast.error('Failed to load specifications');
     }
 
     // Load Keywords
@@ -277,7 +278,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   const handleCreateKeyword = async (keywordName) => {
     const trimmed = keywordName.trim();
     if (!trimmed || !categoryId) {
-      message.warning('Please select a category first');
+      toast.warning('Please select a category first');
       return;
     }
 
@@ -298,7 +299,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
 
       setSelectedKeywords((prev) => [...prev, newKeyword]);
       setSearchKeyword('');
-      message.success(`"${trimmed}" created and added!`);
+      toast.success(`"${trimmed}" created and added!`);
 
       if (isEditMode && productId) {
         try {
@@ -309,7 +310,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
         } catch (err) {}
       }
     } catch (err) {
-      message.error('Failed to create keyword');
+      toast.error('Failed to create keyword');
     }
   };
 
@@ -341,14 +342,14 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     (accepted, rejected) => {
       if (rejected.length > 0) {
         rejected.forEach(({ file, errors }) => {
-          if (errors[0]?.code === 'file-too-large') message.warning(`${file.name} > 5MB`);
-          if (errors[0]?.code === 'file-invalid-type') message.warning(`${file.name} not image`);
+          if (errors[0]?.code === 'file-too-large') toast.warning(`${file.name} > 5MB`);
+          if (errors[0]?.code === 'file-invalid-type') toast.warning(`${file.name} not image`);
         });
         return;
       }
 
       if (existingImages.length + newImages.length + accepted.length > 5) {
-        message.warning('Maximum 5 images allowed');
+        toast.warning('Maximum 5 images allowed');
         return;
       }
 
@@ -386,7 +387,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
 
       if (pastedFiles.length > 0) {
         if (existingImages.length + newImages.length + pastedFiles.length > 5) {
-          message.warning('Maximum 5 images allowed');
+          toast.warning('Maximum 5 images allowed');
           return;
         }
 
@@ -396,7 +397,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
         }));
 
         setNewImages((prev) => [...prev, ...mapped]);
-        message.success(`${pastedFiles.length} image(s) pasted successfully!`);
+        toast.success(`${pastedFiles.length} image(s) pasted successfully!`);
       }
     };
 
@@ -420,7 +421,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   const onFinish = async (values) => {
     const required = ['name', 'quantity'];
     if (required.some((f) => !values[f])) {
-      message.warning('Please fill all required fields');
+      toast.warning('Please fill all required fields');
       return;
     }
 
@@ -428,7 +429,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     for (const [id, val] of Object.entries(metaData)) {
       const m = productMetaData.find((x) => x.id === id);
       if (m?.fieldType === 'number' && val !== '' && isNaN(val)) {
-        message.error(`${m.title} must be a number`);
+        toast.error(`${m.title} must be a number`);
         return;
       }
     }
@@ -470,7 +471,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
         const json = JSON.parse(values.variantOptions);
         formData.append('variantOptions', JSON.stringify(json));
       } catch (e) {
-        message.error('Invalid JSON in Variant Options');
+        toast.error('Invalid JSON in Variant Options');
         return;
       }
     }
@@ -508,7 +509,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
         }).unwrap();
       }
 
-      message.success(
+      toast.success(
         isEditMode ? 'Product updated successfully!' : 'Product created successfully!',
       );
 
@@ -516,7 +517,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
         navigate(-1);
       }
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save product');
+      toast.error(err?.data?.message || 'Failed to save product');
     }
   };
 
@@ -526,8 +527,8 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     <div className="page-wrapper">
       <div className="content">
         {!isBulkMode && (
-          <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-            <h4 style={{ margin: 0, fontWeight: 'bold' }}>
+          <Row className="fv2-createproduct-873b095436" justify="space-between" align="middle">
+            <h4 className="fv2-createproduct-736702a362">
               {isEditMode ? 'Edit Product' : 'Create New Product'}
             </h4>
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
@@ -553,9 +554,10 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                 <Col xs={24} md={12}>
                   <Form.Item label="Selling Price" required>
                     <InputNumber
+                      className="fv2-createproduct-c00fea3153"
                       min={0}
                       step={0.01}
-                      style={{ width: '100%' }}
+
                       value={metaData[SELLING_PRICE_META_ID] ?? ''}
                       onChange={(val) => handleMetaChange(SELLING_PRICE_META_ID, val)}
                       addonAfter="₹"
@@ -573,7 +575,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                         value={metaData[COMPANY_CODE_META_ID] ?? ''}
                         onChange={(e) => handleMetaChange(COMPANY_CODE_META_ID, e.target.value)}
                       />
-                      <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+                      <div className="fv2-createproduct-7bc4b05752">
                         Internal reference / batch identifier
                       </div>
                     </Form.Item>
@@ -655,7 +657,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
             <Panel
               header={
                 <>
-                  <InboxOutlined style={{ marginRight: 8 }} /> Variant Settings
+                  <InboxOutlined className="fv2-createproduct-87f070343e" /> Variant Settings
                 </>
               }
               key="2"
@@ -719,8 +721,9 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                               <>
                                 {fields.map(({ key, name, ...restField }) => (
                                   <Space
+                                    className="fv2-createproduct-f28800b7d4"
                                     key={key}
-                                    style={{ display: 'flex', marginBottom: 8 }}
+
                                     align="baseline"
                                   >
                                     <Form.Item
@@ -761,11 +764,11 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                                 ))}
 
                                 <Button
+                                  className="fv2-createproduct-cf58f3a45e"
                                   type="dashed"
                                   onClick={() => add()}
                                   block
                                   icon={<PlusCircleOutlined />}
-                                  style={{ marginTop: 8 }}
                                 >
                                   Add Variant Attribute
                                 </Button>
@@ -789,17 +792,22 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
               <Row gutter={16}>
                 <Col xs={8}>
                   <Form.Item name="quantity" label="Quantity" rules={[{ required: true }]}>
-                    <InputNumber min={0} style={{ width: '100%' }} />
+                    <InputNumber className="fv2-createproduct-c00fea3153" min={0} />
                   </Form.Item>
                 </Col>
                 <Col xs={8}>
                   <Form.Item name="alert_quantity" label="Low Stock Alert">
-                    <InputNumber min={0} style={{ width: '100%' }} />
+                    <InputNumber className="fv2-createproduct-c00fea3153" min={0} />
                   </Form.Item>
                 </Col>
                 <Col xs={8}>
                   <Form.Item name="tax" label="Tax (%)">
-                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
+                    <InputNumber
+                      className="fv2-createproduct-c00fea3153"
+                      min={0}
+                      max={100}
+                      step={0.01}
+                    />
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={12}>
@@ -835,37 +843,34 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                 }}
               >
                 <input {...getInputProps()} />
-                <PictureOutlined size={48} color="#999" style={{ marginBottom: 16 }} />
-                <p style={{ margin: 0, color: '#666', fontSize: 16 }}>
+                <PictureOutlined className="fv2-createproduct-873b095436" size={48} color="#999" />
+                <p className="fv2-createproduct-9e51b98a84">
                   <strong>Click to upload</strong> or drag & drop
                 </p>
-                <p style={{ margin: '8px 0 0', color: '#999', fontSize: 14 }}>
+                <p className="fv2-createproduct-4ef63ef74c">
                   You can also <strong>paste images</strong> from clipboard (Ctrl+V)
                 </p>
-                <p style={{ marginTop: 8, color: '#aaa', fontSize: 12 }}>
+                <p className="fv2-createproduct-6ecc7c3c2a">
                   Max 5 images • Up to 5MB each • JPG, PNG, WEBP
                 </p>
               </div>
 
-              <Row gutter={[12, 12]} style={{ marginTop: 16 }}>
+              <Row className="fv2-createproduct-8cb224dbf6" gutter={[12, 12]}>
                 {existingImages.map((url) => (
                   <Col key={url}>
-                    <div style={{ position: 'relative' }}>
+                    <div className="fv2-createproduct-7810b5012a">
                       <img
+                        className="fv2-createproduct-4b07984eac"
                         src={url}
                         alt=""
-                        style={{
-                          width: 100,
-                          height: 100,
-                          objectFit: 'cover',
-                          borderRadius: 8,
-                        }}
+
                         onClick={() => setSelectedImage(url)}
                       />
                       <Button
+                        className="fv2-createproduct-345a3215c6"
                         danger
                         size="small"
-                        style={{ position: 'absolute', top: 4, right: 4 }}
+
                         onClick={() => removeExistingImage(url)}
                       >
                         ×
@@ -876,22 +881,19 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
 
                 {newImages.map((img) => (
                   <Col key={img.preview}>
-                    <div style={{ position: 'relative' }}>
+                    <div className="fv2-createproduct-7810b5012a">
                       <img
+                        className="fv2-createproduct-4b07984eac"
                         src={img.preview}
                         alt=""
-                        style={{
-                          width: 100,
-                          height: 100,
-                          objectFit: 'cover',
-                          borderRadius: 8,
-                        }}
+
                         onClick={() => setSelectedImage(img.preview)}
                       />
                       <Button
+                        className="fv2-createproduct-345a3215c6"
                         danger
                         size="small"
-                        style={{ position: 'absolute', top: 4, right: 4 }}
+
                         onClick={() => removeNewImage(img.preview)}
                       >
                         ×
@@ -904,13 +906,14 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
 
             {/* Keywords */}
             <Panel header={<>Keywords & Tags ({selectedKeywords.length})</>} key="7">
-              <Space direction="vertical" style={{ width: '100%' }}>
+              <Space className="fv2-createproduct-c00fea3153" direction="vertical">
                 <Select
+                  className="fv2-createproduct-c00fea3153"
                   mode="multiple"
                   allowClear
                   showSearch
                   filterOption={false} // ← THIS IS THE KEY FIX
-                  style={{ width: '100%' }}
+
                   placeholder="Search or add new keywords..."
                   value={selectedKeywords.map((k) => k.id)}
                   onSearch={setSearchKeyword}
@@ -935,30 +938,18 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                         !allKeywords.some(
                           (kw) => kw.keyword.toLowerCase() === searchKeyword.trim().toLowerCase(),
                         ) && (
-                          <div
-                            style={{
-                              padding: '10px 12px',
-                              borderTop: '1px solid #f0f0f0',
-                              background: '#fafafa',
-                            }}
-                          >
+                          <div className="fv2-createproduct-145290582a">
                             <Button
+                              className="fv2-createproduct-02f2bdbda4"
                               type="text"
                               size="small"
                               icon={<PlusCircleOutlined />}
                               onMouseDown={(e) => e.preventDefault()} // Important!
                               onClick={() => handleCreateKeyword(searchKeyword.trim())}
-                              style={{ width: '100%', textAlign: 'left' }}
                             >
                               <div>
                                 <strong>Add new:</strong> "{searchKeyword.trim()}"
-                                <div
-                                  style={{
-                                    fontSize: 12,
-                                    color: '#888',
-                                    marginTop: 2,
-                                  }}
-                                >
+                                <div className="fv2-createproduct-1c8fd882c5">
                                   Category:{' '}
                                   <strong>
                                     {categoryId
@@ -981,7 +972,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                         <Space>
                           <span>{kw.keyword}</span>
                           {kw.categories && (
-                            <Tag color="blue" style={{ fontSize: 10 }}>
+                            <Tag className="fv2-createproduct-f6367538d2" color="blue">
                               {kw.categories.name}
                             </Tag>
                           )}
@@ -1009,7 +1000,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
 
             {/* Specifications */}
             <Panel header={<>Product Specifications ({Object.keys(metaData).length})</>} key="6">
-              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              <Space className="fv2-createproduct-c00fea3153" direction="vertical" size="middle">
                 {Object.entries(metaData)
                   .filter(([id]) => id !== COMPANY_CODE_META_ID)
                   .map(([id, value]) => {
@@ -1024,14 +1015,15 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                           <Text strong>
                             {meta.title}{' '}
                             {meta.unit && (
-                              <span style={{ fontWeight: 'normal' }}>({meta.unit})</span>
+                              <span className="fv2-createproduct-3212741c8f">({meta.unit})</span>
                             )}
                           </Text>
                         </Col>
                         <Col flex="1">
                           {isNumber ? (
                             <InputNumber
-                              style={{ width: '100%' }}
+                              className="fv2-createproduct-c00fea3153"
+
                               value={value || null}
                               onChange={(val) => handleMetaChange(id, val)}
                               placeholder={`Enter ${meta.title.toLowerCase()}`}
@@ -1069,8 +1061,9 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                 {productMetaData.filter((m) => m.id !== COMPANY_CODE_META_ID && !(m.id in metaData))
                   .length > 0 && (
                   <Select
+                    className="fv2-createproduct-a8d103ee42"
                     placeholder="Add another specification..."
-                    style={{ width: '100%', marginTop: 16 }}
+
                     onChange={(id) => setMetaData((prev) => ({ ...prev, [id]: '' }))}
                     allowClear
                     dropdownMatchSelectWidth={false}
@@ -1094,40 +1087,27 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
 
           {!isBulkMode && (
             <Button
+              className="fv2-createproduct-6b010f626b"
               type="primary"
               htmlType="submit"
               size="large"
               block
               loading={isCreating || isUpdating}
-              style={{ marginTop: 24 }}
             >
               {isEditMode ? 'Update Product' : 'Create Product'}
             </Button>
           )}
         </Form>
 
-        <Modal
+        <ModalShell
           open={!!selectedImage}
           footer={null}
           onCancel={() => setSelectedImage(null)}
           width={800}
         >
-          <img
-            src={selectedImage}
-            alt="Zoom"
-            style={{ width: '100%', marginTop: 16, borderRadius: 8 }}
-          />
-        </Modal>
+          <img className="fv2-createproduct-e1f3595ecc" src={selectedImage} alt="Zoom" />
+        </ModalShell>
       </div>
-
-      <style jsx>{`
-        .compact-accordion .ant-collapse-header {
-          padding: 8px 16px !important;
-        }
-        .compact-accordion .ant-collapse-content-box {
-          padding: 16px !important;
-        }
-      `}</style>
     </div>
   );
 };

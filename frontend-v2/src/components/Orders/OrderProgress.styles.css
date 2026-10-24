@@ -1,0 +1,12 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-orderprogress-ce29adacf1) {
+  margin: 12px 0;
+}
+
+:is(#fv2-style-priority, .fv2-orderprogress-3019255e0e) {
+  margin: 12px 0 16px;
+}
+
+:is(#fv2-style-priority, .fv2-orderprogress-65d00de9d7) {
+  margin-top: 10px;
+}

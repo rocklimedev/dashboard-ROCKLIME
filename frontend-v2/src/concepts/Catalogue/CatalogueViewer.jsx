@@ -1,6 +1,8 @@
+import Loader from '../../components/Common/Loader';
+import './CatalogueViewer.styles.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Input, InputNumber, Space, Spin, Tag, Tooltip, Typography } from 'antd';
+import { Button, Input, InputNumber, Space, Tag, Tooltip, Typography } from 'antd';
 import {
   ArrowLeftOutlined,
   DownloadOutlined,
@@ -70,7 +72,7 @@ function LazyPage({ number, width, ratio, query, onVisible, registerRef }) {
           width={width}
           customTextRenderer={renderText}
           renderAnnotationLayer={false}
-          loading={<Spin />}
+          loading={<Loader />}
         />
       ) : null}
       <span className="cat-page__no">{number}</span>
@@ -213,17 +215,18 @@ export default function CatalogueViewer() {
       <div className="cat-toolbar">
         <Space size={8} wrap>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/catalogues')} />
-          <div style={{ minWidth: 0 }}>
-            <Text strong ellipsis style={{ maxWidth: 320, display: 'block' }}>
+          <div className="fv2-catalogueviewer-ef98a0d4e8">
+            <Text className="fv2-catalogueviewer-466d7a7963" strong ellipsis>
               {cat?.title || 'Catalogue'}
             </Text>
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="fv2-catalogueviewer-aeb4e46eb3" type="secondary">
               {[cat?.brandName, numPages ? `${numPages} pages` : null].filter(Boolean).join(' · ')}
             </Text>
           </div>
         </Space>
         <Space size={6} wrap>
           <Input
+            className="fv2-catalogueviewer-978ce53dd7"
             allowClear
             prefix={<SearchOutlined />}
             placeholder="Search in this catalogue"
@@ -239,10 +242,9 @@ export default function CatalogueViewer() {
             onPressEnter={() =>
               activeQuery === query && hits?.length ? step(1) : runSearch(query)
             }
-            style={{ width: 260 }}
           />
           {searching ? (
-            <Spin size="small" />
+            <Loader size="small" />
           ) : hits ? (
             <Space size={2}>
               <Tag color={hits.length ? 'red' : 'default'}>
@@ -267,12 +269,13 @@ export default function CatalogueViewer() {
           <span className="cat-sep" />
           <Tooltip title="Go to page">
             <InputNumber
+              className="fv2-catalogueviewer-dd4bf41b5d"
               size="middle"
               min={1}
               max={numPages || 1}
               value={current}
               onChange={(v) => v && goTo(v)}
-              style={{ width: 76 }}
+
               addonAfter={`/ ${numPages || '…'}`}
             />
           </Tooltip>
@@ -330,7 +333,9 @@ export default function CatalogueViewer() {
             file={file}
             options={options}
             onLoadSuccess={onLoad}
-            loading={<Spin tip="Opening the catalogue…" style={{ marginTop: 80 }} />}
+            loading={
+              <Loader className="fv2-catalogueviewer-84b758855c" tip="Opening the catalogue…" />
+            }
             error={<Text type="danger">The catalogue could not be opened.</Text>}
           >
             {Array.from({ length: numPages }, (_, i) => (

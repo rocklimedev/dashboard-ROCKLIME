@@ -1,18 +1,9 @@
-import ProductDeleteModal from './ProductDeleteModal';
+import ModalShell from '../Common/ModalShell';
+import './InventoryBulkActions.styles.css';
+import DeleteModal from '../Common/DeleteModal';
 import { useState } from 'react';
-import {
-  Alert,
-  Button,
-  Card,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Table,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Card, Input, InputNumber, Select, Space, Table, Typography } from 'antd';
+import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import {
   useUpdateSelectedInventoryMutation,
@@ -52,7 +43,7 @@ export default function InventoryBulkActions({
   const [note, setNote] = useState('');
   const busy = updating || deleting || exporting || writing;
   const errorMessage = (error) =>
-    message.error(error?.data?.message || error?.message || 'Bulk action failed.');
+    toast.error(error?.data?.message || error?.message || 'Bulk action failed.');
   const openEditor = (type) => {
     setDrafts(
       products.map((product) => ({
@@ -78,11 +69,11 @@ export default function InventoryBulkActions({
     );
   const applyAll = () => {
     const value = mode === 'stock' ? stockValue : priceValue;
-    if (value == null || !Number.isFinite(value)) return message.warning('Enter a value to apply.');
+    if (value == null || !Number.isFinite(value)) return toast.warning('Enter a value to apply.');
     if (mode === 'stock' && (!Number.isSafeInteger(value) || value < 0))
-      return message.warning('Stock must be a nonnegative whole number.');
+      return toast.warning('Stock must be a nonnegative whole number.');
     if (mode === 'price' && (priceMode === 'set' ? value < 0 : value < -100))
-      return message.warning('Enter a nonnegative price or a percentage of at least -100%.');
+      return toast.warning('Enter a nonnegative price or a percentage of at least -100%.');
     const next = drafts.map((row) =>
       mode === 'stock'
         ? {
@@ -111,7 +102,7 @@ export default function InventoryBulkActions({
           : row.sellingPrice == null || row.sellingPrice < 0,
       )
     )
-      return message.warning(
+      return toast.warning(
         mode === 'stock'
           ? 'Some products have insufficient stock or exceed the stock limit.'
           : 'Some selected products have no existing selling price. Enter their prices individually.',
@@ -128,11 +119,11 @@ export default function InventoryBulkActions({
             row.sellingPrice < 0,
       )
     )
-      return message.warning('Enter a valid value for every selected product.');
+      return toast.warning('Enter a valid value for every selected product.');
     const changed = drafts.filter((row) =>
       mode === 'stock' ? row.quantity !== row.oldQuantity : row.sellingPrice !== row.oldPrice,
     );
-    if (!changed.length) return message.info('No values have changed.');
+    if (!changed.length) return toast.info('No values have changed.');
     try {
       const response = await update({
         updates: changed.map((row) =>
@@ -150,7 +141,7 @@ export default function InventoryBulkActions({
         ),
         message: note,
       }).unwrap();
-      message.success(response.message);
+      toast.success(response.message);
       setMode(null);
       clearSelection();
       onComplete('update');
@@ -161,7 +152,7 @@ export default function InventoryBulkActions({
   const deleteSelected = async () => {
     try {
       const response = await remove(products.map((product) => product.productId)).unwrap();
-      message.success(response.message);
+      toast.success(response.message);
       setMode(null);
       clearSelection();
       onComplete('delete');
@@ -189,7 +180,7 @@ export default function InventoryBulkActions({
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       }
-      message.success('Selected products exported.');
+      toast.success('Selected products exported.');
     } catch (error) {
       errorMessage(error);
     } finally {
@@ -199,7 +190,7 @@ export default function InventoryBulkActions({
   if (!products.length) return null;
   return (
     <>
-      <Card style={{ marginTop: 20 }} size="small">
+      <Card className="fv2-inventorybulkactions-4518f5a986" size="small">
         <Space wrap>
           <Typography.Text strong>
             {products.length} selected across pages (maximum 500)
@@ -258,14 +249,15 @@ export default function InventoryBulkActions({
         />
       )}
       {mode === 'delete' && (
-        <ProductDeleteModal
+        <DeleteModal
+          isVisible
           products={products}
           onCancel={() => !busy && setMode(null)}
           onConfirm={deleteSelected}
           isLoading={deleting}
         />
       )}
-      <Modal
+      <ModalShell
         title={mode === 'stock' ? 'Update selected stock' : 'Update selected selling prices'}
         open={mode === 'stock' || mode === 'price'}
         width={900}
@@ -278,17 +270,18 @@ export default function InventoryBulkActions({
         maskClosable={!updating}
       >
         <Alert
+          className="fv2-inventorybulkactions-b403eebdf0"
           type="info"
           showIcon
           message="Review the new values for each product. If stock or prices have changed since selection, the whole update is rejected so you can refresh and try again."
-          style={{ marginBottom: 16 }}
         />
-        <Space wrap style={{ marginBottom: 16 }}>
+        <Space className="fv2-inventorybulkactions-b403eebdf0" wrap>
           <Select
+            className="fv2-inventorybulkactions-0f0a5d2631"
             disabled={updating}
             value={mode === 'stock' ? stockMode : priceMode}
             onChange={mode === 'stock' ? setStockMode : setPriceMode}
-            style={{ width: 190 }}
+
             options={
               mode === 'stock'
                 ? [
@@ -357,15 +350,15 @@ export default function InventoryBulkActions({
         />
         {mode === 'stock' && (
           <Input.TextArea
+            className="fv2-inventorybulkactions-19fdb2d79f"
             disabled={updating}
             value={note}
             onChange={(event) => setNote(event.target.value)}
             maxLength={2000}
             placeholder="Note for inventory history (optional)"
-            style={{ marginTop: 16 }}
           />
         )}
-      </Modal>
+      </ModalShell>
     </>
   );
 }

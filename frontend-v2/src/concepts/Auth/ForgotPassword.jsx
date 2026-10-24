@@ -1,9 +1,10 @@
+import './ForgotPassword.styles.css';
 // src/pages/auth/ForgotPassword.jsx
 import React, { useState, useEffect } from 'react';
 import { useForgotPasswordMutation } from '../../api/authApi';
 import logo from '../../assets/img/logo.png';
 import { MailOutlined } from '@ant-design/icons';
-import { message } from 'antd';
+import { toast } from 'sonner';
 
 const ForgotPassword = () => {
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
@@ -47,17 +48,17 @@ const ForgotPassword = () => {
     const err = validateEmail(email);
     if (err) {
       setEmailError(err);
-      message.error(err);
+      toast.error(err);
       return;
     }
 
     try {
       await forgotPassword({ email: email.trim() }).unwrap();
       setEmailSent(true);
-      message.success('Reset link sent! Check your inbox (and spam folder).');
+      toast.success('Reset link sent! Check your inbox (and spam folder).');
     } catch (error) {
       const errMsg = error?.data?.message || 'Failed to send reset link. Please try again.';
-      message.error(errMsg);
+      toast.error(errMsg);
     }
   };
 
@@ -74,53 +75,23 @@ const ForgotPassword = () => {
 
                 {/* SUCCESS STATE */}
                 {emailSent ? (
-                  <div
-                    className="card"
-                    style={{
-                      border: '1px solid #eee',
-                      borderRadius: '8px',
-                      backgroundColor: '#fff',
-                    }}
-                  >
-                    <div
-                      className="card-body p-5 text-center"
-                      style={{
-                        fontFamily: "'Lato', Arial, sans-serif",
-                        color: '#646b72',
-                        fontSize: '15px',
-                        lineHeight: '1.6',
-                      }}
-                    >
+                  <div className="card fv2-forgotpassword-2cc24d827c">
+                    <div className="card-body p-5 text-center fv2-forgotpassword-b0f5ed2d23">
                       <div className="mb-4">
-                        <MailOutlined style={{ fontSize: 48, color: '#52c41a' }} />
+                        <MailOutlined className="fv2-forgotpassword-50f40d53e8" />
                       </div>
-                      <h3
-                        style={{
-                          color: '#212b36',
-                          fontWeight: 700,
-                          marginBottom: '16px',
-                        }}
-                      >
-                        Check Your Email
-                      </h3>
-                      <p style={{ marginBottom: '16px' }}>
+                      <h3 className="fv2-forgotpassword-564dfa3cc0">Check Your Email</h3>
+                      <p className="fv2-forgotpassword-f18e953e3a">
                         A password reset link has been sent to:
                       </p>
-                      <p
-                        style={{
-                          fontWeight: '600',
-                          color: '#1890ff',
-                          marginBottom: '20px',
-                        }}
-                      >
-                        {email}
-                      </p>
-                      <p style={{ marginBottom: '20px', color: '#8c8c8c' }}>
+                      <p className="fv2-forgotpassword-6ad0aebc89">{email}</p>
+                      <p className="fv2-forgotpassword-5c923ad792">
                         Please check your inbox (and spam/junk folder).
                       </p>
-                      <p style={{ color: '#595959' }}>
+                      <p className="fv2-forgotpassword-dfd1c83ade">
                         This tab will close in{' '}
-                        <strong style={{ color: '#e31e24' }}>{countdown}</strong> seconds.
+                        <strong className="fv2-forgotpassword-7462b32344">{countdown}</strong>{' '}
+                        seconds.
                       </p>
                     </div>
                   </div>
@@ -131,7 +102,7 @@ const ForgotPassword = () => {
                       <div className="card-body p-5">
                         <div className="login-userheading text-center mb-4">
                           <h3>Forgot Password?</h3>
-                          <h4 style={{ color: '#8c8c8c', fontSize: '15px' }}>
+                          <h4 className="fv2-forgotpassword-e8a3164870">
                             Enter your email and we'll send you a reset link
                           </h4>
                         </div>

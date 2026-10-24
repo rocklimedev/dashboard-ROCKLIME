@@ -1,0 +1,38 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-previewquotation-13855fddfa) {
+  margin-left: 8px;
+  font-size: var(--fv2-font-0_8em);
+}
+
+:is(#fv2-style-priority, .fv2-previewquotation-da4c8bcde3) {
+  color: var(--fv2-color-cf1322);
+}
+
+:is(#fv2-style-priority, .fv2-previewquotation-f34715d755) {
+  margin-top: 16px;
+  font-size: var(--fv2-font-13px);
+  color: var(--fv2-color-555);
+  text-align: center;
+}
+
+:is(#fv2-style-priority, .fv2-previewquotation-dfdce145a5) {
+  top: 20px;
+}
+
+:is(#fv2-style-priority, .fv2-previewquotation-1b8ffe6f3a) {
+  margin: 0;
+  color: var(--fv2-color-aa0f1f);
+}
+
+:is(#fv2-style-priority, .fv2-previewquotation-d28ba5800f) {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+}
+
+:is(#fv2-style-priority, .fv2-previewquotation-2054fa5493) {
+  padding: 40px 20px;
+  background: var(--fv2-color-f5f5f5);
+  min-height: 80vh;
+  overflow-y: auto;
+}

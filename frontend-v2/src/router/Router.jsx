@@ -1,24 +1,27 @@
+import Loader from '../components/Common/Loader';
+import './Router.styles.css';
 import React, { Suspense } from 'react';
-import { Spin } from 'antd';
+
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 
 import masterRoutes from './routes'; // Assuming this combines all routes
 import PrivateRoute from './PrivateRoute';
+import RouteErrorBoundary from './RouteErrorBoundary';
 import { appPermission, pagePermission } from './pagePermissions';
 
-const RouteWithHelmet = ({ element, name }) => (
-  <>
+const RouteWithHelmet = ({ element, name, hasSidebar }) => (
+  <RouteErrorBoundary area={name || 'This screen'} hasSidebar={hasSidebar}>
     {name && (
       <Helmet>
         <title>{`CM Trading Co - ${name}`}</title>
       </Helmet>
     )}
     {element}
-  </>
+  </RouteErrorBoundary>
 );
 
-const generateRoutes = (routes) =>
+const generateRoutes = (routes, hasSidebar) =>
   routes.flatMap(({ path, name, element, requiredPermission, submenu, children }) => {
     const routesArray = [];
 
@@ -31,10 +34,10 @@ const generateRoutes = (routes) =>
             requiredPermission={requiredPermission}
             requiredAppPermission={requiredAppPermission}
           >
-            <RouteWithHelmet element={element} name={name} />
+            <RouteWithHelmet element={element} name={name} hasSidebar={hasSidebar} />
           </PrivateRoute>
         ) : (
-          <RouteWithHelmet element={element} name={name} />
+          <RouteWithHelmet element={element} name={name} hasSidebar={hasSidebar} />
         );
 
       if (children && children.length > 0) {
@@ -46,7 +49,13 @@ const generateRoutes = (routes) =>
                 key={index}
                 index={child.index}
                 path={child.path}
-                element={<RouteWithHelmet element={child.element} name={child.name || name} />}
+                element={
+                  <RouteWithHelmet
+                    element={child.element}
+                    name={child.name || name}
+                    hasSidebar={hasSidebar}
+                  />
+                }
               />
             ))}
           </Route>,
@@ -59,7 +68,7 @@ const generateRoutes = (routes) =>
 
     // Handle submenu recursively (if any)
     if (submenu && submenu.length > 0) {
-      routesArray.push(...generateRoutes(submenu));
+      routesArray.push(...generateRoutes(submenu, hasSidebar));
     }
 
     return routesArray;
@@ -68,16 +77,16 @@ const generateRoutes = (routes) =>
 // Each screen is loaded on first use (smaller first download).
 const PageLoading = () => (
   <div className="page-wrapper">
-    <div className="content" style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
-      <Spin size="large" />
+    <div className="content fv2-router-1c102d3d00">
+      <Loader size="large" />
     </div>
   </div>
 );
 
-const Router = () => (
+const Router = ({ hasSidebar = true }) => (
   <Suspense fallback={<PageLoading />}>
     <Routes>
-      {generateRoutes(masterRoutes)}
+      {generateRoutes(masterRoutes, hasSidebar)}
       <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
   </Suspense>

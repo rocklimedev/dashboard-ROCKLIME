@@ -14,36 +14,36 @@
 
 .fgs-table th,
 .fgs-table td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--fv2-color-ddd);
   padding: 8px;
   text-align: left;
 }
 
 .fgs-table th {
-  background-color: #f2f2f2;
+  background-color: var(--fv2-color-f2f2f2);
   font-weight: bold;
 }
 
 .fgs-table .label-cell {
   font-weight: bold;
-  background-color: #f9f9f9;
+  background-color: var(--fv2-color-f9f9f9);
 }
 
 .fgs-table .title-cell {
-  font-size: 18px;
+  font-size: var(--fv2-font-18px);
   font-weight: bold;
   text-align: center;
 }
 
 .fgs-table .brand-cell {
-  font-size: 14px;
+  font-size: var(--fv2-font-14px);
   font-weight: bold;
   text-align: center;
 }
 
 .fgs-table.bordered td,
 .fgs-table.bordered th {
-  border: 1px solid #000;
+  border: 1px solid var(--fv2-color-000);
 }
 
 .fgs-table .text-right {
@@ -69,7 +69,7 @@
 }
 
 .back-icon {
-  color: #007bff;
+  color: var(--fv2-color-007bff);
   text-decoration: none;
 }
 

@@ -1,3 +1,4 @@
+import './DispatchHistory.styles.css';
 import React, { useEffect, useState } from 'react';
 import { Button, DatePicker, Empty, Input, Select, Space, Tag, Tooltip } from 'antd';
 import { ClearOutlined, EyeOutlined, SearchOutlined, TruckOutlined } from '@ant-design/icons';
@@ -348,11 +349,7 @@ const DispatchHistory = () => {
                               )}
                             </td>
 
-                            <td
-                              style={{
-                                minWidth: 240,
-                              }}
-                            >
+                            <td className="fv2-dispatchhistory-b28e9695d9">
                               {renderItems(dispatch.items)}
                             </td>
 

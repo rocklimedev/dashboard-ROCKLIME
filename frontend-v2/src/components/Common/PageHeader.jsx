@@ -1,9 +1,7 @@
+import './PageHeader.styles.css';
 import React from 'react';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import { FilePdfFilled, FileExcelFilled } from '@ant-design/icons';
-import { Tooltip, Switch, message } from 'antd';
+import { Tooltip, Switch } from 'antd';
+import ListExportActions from './ListExportActions';
 import { AppstoreOutlined, UnorderedListOutlined } from '@ant-design/icons';
 const PageHeader = ({
   title,
@@ -15,41 +13,6 @@ const PageHeader = ({
   extra, // ← Accepts any JSX (buttons, toggles, etc.)
   viewToggle, // ← Optional: For card/list toggle
 }) => {
-  const handleDownloadPDF = () => {
-    if (!tableData?.length) {
-      message.info('Nothing to export yet');
-      return;
-    }
-
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`${title} Report`, 14, 20);
-
-    const headers = Object.keys(tableData[0] || {});
-    const rows = tableData.map((row) => headers.map((h) => String(row[h] ?? '—')));
-
-    doc.autoTable({
-      head: [headers],
-      body: rows,
-      startY: 30,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [60, 141, 188] },
-    });
-
-    doc.save(`${title.toLowerCase().replace(/\s+/g, '_')}.pdf`);
-  };
-
-  const handleDownloadExcel = () => {
-    if (!tableData?.length) {
-      message.info('Nothing to export yet');
-      return;
-    }
-    const worksheet = XLSX.utils.json_to_sheet(tableData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-    XLSX.writeFile(workbook, `${title.toLowerCase().replace(/\s+/g, '_')}.xlsx`);
-  };
-
   return (
     <div className="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
       {/* Left Side - Title & Subtitle */}
@@ -63,43 +26,7 @@ const PageHeader = ({
       {/* Right Side - Actions */}
       <div className="d-flex align-items-center gap-3">
         {/* Export Buttons */}
-        {Array.isArray(tableData) && (
-          <ul className="table-top-head d-flex align-items-center gap-2 mb-0">
-            {exportOptions.pdf && (
-              <li>
-                <Tooltip title="Download PDF">
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDownloadPDF();
-                    }}
-                    style={{ fontSize: 24, color: '#e74c3c', cursor: 'pointer' }}
-                  >
-                    <FilePdfFilled />
-                  </a>
-                </Tooltip>
-              </li>
-            )}
-
-            {exportOptions.excel && (
-              <li>
-                <Tooltip title="Download Excel">
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDownloadExcel();
-                    }}
-                    style={{ fontSize: 24, color: '#27ae60', cursor: 'pointer' }}
-                  >
-                    <FileExcelFilled />
-                  </a>
-                </Tooltip>
-              </li>
-            )}
-          </ul>
-        )}
+        <ListExportActions data={tableData} title={title} options={exportOptions} />
 
         {/* View Toggle (Card/List) - Optional */}
         {viewToggle && (

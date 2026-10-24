@@ -1,0 +1,49 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-productcard-aa5b93fe03) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 12px;
+  margin: 8px 0 12px;
+}
+
+:is(#fv2-style-priority, .fv2-productcard-f274415696) {
+  font-size: var(--fv2-font-0_9rem);
+}
+
+:is(#fv2-style-priority, .fv2-productcard-9cc8683a79) {
+  color: var(--fv2-color-1a1a1a);
+  font-weight: 600;
+}
+
+:is(#fv2-style-priority, .fv2-productcard-ba015cdbb6) {
+  font-size: var(--fv2-font-1_1rem);
+}
+
+:is(#fv2-style-priority, .fv2-productcard-5f502ece36) {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: var(--fv2-color-f7f7f7);
+  padding: 8px;
+  border-radius: 8px;
+  border: 11px solid var(--fv2-color-ddd);
+  gap: 10px;
+}
+
+:is(#fv2-style-priority, .fv2-productcard-e6cb5e9082) {
+  width: 35px;
+  height: 35px;
+  border-radius: 6px;
+  background: var(--fv2-color-fff);
+  border: 1px solid var(--fv2-color-ccc);
+}
+
+:is(#fv2-style-priority, .fv2-productcard-2e454afbc5) {
+  width: 60px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 6px;
+}

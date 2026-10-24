@@ -1,3 +1,6 @@
+import ListToolbar from '../../components/Common/ListToolbar';
+import ListPagination from '../../components/Common/ListPagination';
+import './QuotationList.styles.css';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
@@ -8,7 +11,6 @@ import {
 } from '../../api/quotationApi';
 import { useGetCustomersQuery } from '../../api/customerApi';
 import {
-  SearchOutlined,
   EyeOutlined,
   DeleteFilled,
   FileAddOutlined,
@@ -22,21 +24,8 @@ import {
 } from '@ant-design/icons';
 import QuotationProductModal from '../../components/Quotation/QuotationProductModal';
 import DeleteModal from '../../components/Common/DeleteModal';
-import {
-  message,
-  Input,
-  Button,
-  Select,
-  Dropdown,
-  DatePicker,
-  Table,
-  Tabs,
-  Tooltip,
-  Space,
-  Badge,
-  Typography,
-  Checkbox,
-} from 'antd';
+import { Button, Dropdown, Table, Tabs, Tooltip, Space, Badge, Typography, Checkbox } from 'antd';
+import { toast } from 'sonner';
 import PageHeader from '../../components/Common/PageHeader';
 import dayjs from 'dayjs';
 import useCan from '../../utils/useCan';
@@ -51,7 +40,6 @@ import {
   FollowUpModal,
 } from '../../components/Quotation/QuotationPipeline';
 
-const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -164,9 +152,9 @@ const QuotationList = () => {
   const handleClone = async (q) => {
     try {
       await cloneQuotation(q.quotationId).unwrap();
-      message.success(`Copy of ${q.reference_number} created as a draft`);
+      toast.success(`Copy of ${q.reference_number} created as a draft`);
     } catch (err) {
-      message.error(err?.data?.message || 'Could not duplicate the quotation');
+      toast.error(err?.data?.message || 'Could not duplicate the quotation');
     }
   };
 
@@ -174,9 +162,9 @@ const QuotationList = () => {
     if (!quotationToDelete?.quotationId) return;
     try {
       await deleteQuotation(quotationToDelete.quotationId).unwrap();
-      message.success('Quotation deleted');
+      toast.success('Quotation deleted');
     } catch (e) {
-      message.error(e?.data?.message || 'Delete failed');
+      toast.error(e?.data?.message || 'Delete failed');
     } finally {
       setQuotationToDelete(null);
     }
@@ -187,7 +175,7 @@ const QuotationList = () => {
     try {
       await downloadQuotationPdf(q.quotationId, { style: 'detailed' });
     } catch (e) {
-      message.error(e.message);
+      toast.error(e.message);
     } finally {
       setPdfBusy(null);
     }
@@ -195,7 +183,7 @@ const QuotationList = () => {
 
   const handleGenerateSiteMap = (q) => {
     const rawItems = q.items || [];
-    if (!rawItems.length) return message.warning('No products to generate a site map');
+    if (!rawItems.length) return toast.warning('No products to generate a site map');
     navigate('/site-map/add', {
       state: {
         fromQuotation: true,
@@ -217,7 +205,7 @@ const QuotationList = () => {
   };
 
   const handleConvert = (q) => {
-    if (!itemCount(q.items)) return message.error('This quotation has no items to convert');
+    if (!itemCount(q.items)) return toast.error('This quotation has no items to convert');
     navigate('/order/add', { state: orderStateFromQuotation(q) });
   };
 
@@ -241,7 +229,7 @@ const QuotationList = () => {
             {rec.reference_number || '—'}
           </Link>
           <div>
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="fv2-quotationlist-574d2ce3a9" type="secondary">
               {rec.document_title || 'Untitled'} ·{' '}
               {rec.quotation_date ? dayjs(rec.quotation_date).format('D MMM YYYY') : '—'}
             </Text>
@@ -273,9 +261,10 @@ const QuotationList = () => {
         <div>
           <div>{inr(amt)}</div>
           <Button
+            className="fv2-quotationlist-5802823038"
             type="link"
             size="small"
-            style={{ padding: 0, height: 'auto' }}
+
             onClick={() => {
               setSelectedQuotationId(rec.quotationId);
               setShowProductModal(true);
@@ -376,7 +365,7 @@ const QuotationList = () => {
               <Button
                 size="small"
                 type="text"
-                icon={<FilePdfOutlined style={{ color: '#d32f2f' }} />}
+                icon={<FilePdfOutlined className="fv2-quotationlist-8b772a7ce3" />}
                 loading={pdfBusy === rec.quotationId}
                 onClick={() => handlePdf(rec)}
               />
@@ -447,73 +436,97 @@ const QuotationList = () => {
             </Text>
           )}
 
-          <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
-            <Input
-              prefix={<SearchOutlined />}
-              placeholder="Search ref no., title or customer"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              allowClear
-              style={{ width: 280 }}
-            />
-            <Select
-              placeholder="Customer"
-              value={customerFilter || undefined}
-              onChange={(val) => {
-                setCustomerFilter(val || '');
-                setCurrentPage(1);
-              }}
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              style={{ width: 220 }}
-              options={customers.map((c) => ({ value: c.customerId, label: c.name }))}
-            />
-            <RangePicker
-              value={dateRange}
-              onChange={(d) => {
-                setDateRange(d || [null, null]);
-                setCurrentPage(1);
-              }}
-              format="D MMM YYYY"
-            />
-            <Checkbox checked={mine} onChange={(e) => setMine(e.target.checked)}>
-              Only mine
-            </Checkbox>
-            <Button onClick={clearFilters}>Clear</Button>
-          </div>
+          <ListToolbar
+            exportTitle={'Quotations'}
+            exportData={quotations.map((q) => ({
+              Reference: q.reference_number,
+              Title: q.document_title,
+              Customer: q.customerName,
+              Status: q.status,
+              Amount: q.finalAmount,
+              Date: q.quotation_date,
+            }))}
+            search={{
+              placeholder: 'Search ref no., title or customer',
+              value: searchTerm,
+              onChange: (e) => setSearchTerm(e.target.value),
+              allowClear: true,
+            }}
+            filters={[
+              {
+                key: 'customer',
+                type: 'select',
+                props: {
+                  placeholder: 'Customer',
+                  value: customerFilter || undefined,
+                  onChange: (val) => {
+                    setCustomerFilter(val || '');
+                    setCurrentPage(1);
+                  },
+                  allowClear: true,
+                  showSearch: true,
+                  optionFilterProp: 'label',
+                  options: customers.map((c) => ({ value: c.customerId, label: c.name })),
+                },
+              },
+              {
+                key: 'dates',
+                type: 'dateRange',
+                props: {
+                  value: dateRange,
+                  onChange: (d) => {
+                    setDateRange(d || [null, null]);
+                    setCurrentPage(1);
+                  },
+                  format: 'D MMM YYYY',
+                },
+              },
+              {
+                key: 'only-mine',
+                type: 'custom',
+                content: (
+                  <Checkbox checked={mine} onChange={(e) => setMine(e.target.checked)}>
+                    Only mine
+                  </Checkbox>
+                ),
+              },
+            ]}
+            onClear={clearFilters}
+          />
 
           {isError ? (
             <div className="alert alert-danger">
               Error: {error?.data?.message || 'Failed to load quotations'}
             </div>
           ) : (
-            <Table
-              columns={columns}
-              dataSource={quotations}
-              rowKey="quotationId"
-              loading={isLoading || isFetching}
-              size="middle"
-              scroll={{ x: 'max-content' }}
-              locale={{
-                emptyText:
-                  tab === 'FOLLOWUP'
-                    ? "No follow-ups due — you're up to date"
-                    : 'No quotations match these filters',
-              }}
-              pagination={{
-                current: currentPage,
-                pageSize,
-                total: pagination.total,
-                showSizeChanger: true,
-                pageSizeOptions: ['10', '20', '50', '100'],
-                showTotal: (t, r) => `${r[0]}–${r[1]} of ${t}`,
-                onChange: (p, s) => {
-                  setCurrentPage(s !== pageSize ? 1 : p);
-                  setPageSize(s);
-                },
-              }}
-            />
+            <>
+              <Table
+                columns={columns}
+                dataSource={quotations}
+                rowKey="quotationId"
+                loading={isLoading || isFetching}
+                size="middle"
+                scroll={{ x: 'max-content' }}
+                locale={{
+                  emptyText:
+                    tab === 'FOLLOWUP'
+                      ? "No follow-ups due — you're up to date"
+                      : 'No quotations match these filters',
+                }}
+                pagination={false}
+              />
+              <ListPagination
+                itemLabel="quotations"
+                current={currentPage}
+                pageSize={pageSize}
+                total={pagination.total}
+                showSizeChanger
+                onChange={(page, size) => {
+                  setCurrentPage(page);
+                  setPageSize(size);
+                }}
+              />
+            </>
           )}
         </div>
 

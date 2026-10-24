@@ -1,0 +1,27 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-poreceivingpanel-47f223c642) {
+  margin-bottom: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-poreceivingpanel-3b15aa531c) {
+  display: block;
+  margin-bottom: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-poreceivingpanel-9c9b0a849d) {
+  display: block;
+  margin: 16px 0 8px;
+}
+
+:is(#fv2-style-priority, .fv2-poreceivingpanel-2c97f2babd) {
+  margin-bottom: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-poreceivingpanel-0fe415f423) {
+  margin-top: 12px;
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-poreceivingpanel-00c3e6ab7f) {
+  width: 240px;
+}

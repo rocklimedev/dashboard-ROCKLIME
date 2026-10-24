@@ -1,5 +1,7 @@
+import ModalShell from '../Common/ModalShell';
+import './DateModal.styles.css';
 import React from 'react';
-import { Modal, Typography, Empty, List } from 'antd';
+import { Typography, Empty, List } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -11,11 +13,11 @@ const DatesModal = ({ open, onClose, dueDate, followupDates = [] }) => {
   ].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   return (
-    <Modal
+    <ModalShell
       open={open}
       onCancel={onClose}
       title={
-        <Title level={4} style={{ margin: 0 }}>
+        <Title className="fv2-datemodal-8d0c6203a7" level={4}>
           Order Dates
         </Title>
       }
@@ -39,7 +41,7 @@ const DatesModal = ({ open, onClose, dueDate, followupDates = [] }) => {
       ) : (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No dates available." />
       )}
-    </Modal>
+    </ModalShell>
   );
 };
 

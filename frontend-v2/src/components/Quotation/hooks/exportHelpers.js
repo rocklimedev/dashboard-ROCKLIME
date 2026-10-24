@@ -5,7 +5,7 @@ import { PDFDocument } from 'pdf-lib';
 import termsAndConditionsPdf from '../../../assets/Terms.pdf';
 import { fetchImg, placeholder } from './imageHelpers';
 import { calcTotals, amountInWords } from './calcHelpers';
-import { message } from 'antd';
+import { toast } from 'sonner';
 /* ------------------------------------------------------------------ */
 /*                          UTILITY: Safe Filename Title              */
 /* ------------------------------------------------------------------ */
@@ -53,7 +53,7 @@ export const exportToPDF = async (
     ref.current;
 
   if (!printArea) {
-    message.error('Print area not found');
+    toast.error('Print area not found');
     return;
   }
 
@@ -164,9 +164,9 @@ export const exportToPDF = async (
 
     URL.revokeObjectURL(url);
 
-    message.success('PDF exported successfully!');
+    toast.success('PDF exported successfully!');
   } catch (err) {
-    message.error('PDF export failed: ' + err.message);
+    toast.error('PDF export failed: ' + err.message);
   } finally {
     document.body.removeChild(container);
   }
@@ -237,7 +237,7 @@ export const exportToExcel = async ({
   documentTotals = null,
 } = {}) => {
   if (!products || products.length === 0) {
-    message.warning('No products found to export.');
+    toast.warning('No products found to export.');
   }
 
   const hidden = new Set(exportOptions.hidden || []);
@@ -535,5 +535,5 @@ export const exportToExcel = async ({
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
-  message.success('Excel exported successfully!');
+  toast.success('Excel exported successfully!');
 };

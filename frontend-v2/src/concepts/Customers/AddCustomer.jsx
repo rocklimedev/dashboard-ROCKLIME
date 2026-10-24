@@ -1,3 +1,5 @@
+import Loader from '../../components/Common/Loader';
+import './AddCustomer.styles.css';
 // src/components/Customers/AddCustomer.jsx   (or wherever your page is)
 
 import React, { useEffect } from 'react';
@@ -8,8 +10,8 @@ import {
   useGetCustomersQuery,
 } from '../../api/customerApi';
 import { useGetVendorsQuery } from '../../api/vendorApi';
-import { message } from 'antd';
-import { Form, Input, InputNumber, Select, Button, Tabs, Row, Col, Spin, Alert } from 'antd';
+import { toast } from 'sonner';
+import { Form, Input, InputNumber, Select, Button, Tabs, Row, Col, Alert } from 'antd';
 import { LeftOutlined } from '@ant-design/icons';
 
 const { TabPane } = Tabs;
@@ -151,7 +153,7 @@ const AddCustomer = () => {
         });
 
         if (isDuplicate) {
-          message.error('Customer with same email or mobile number already exists.');
+          toast.error('Customer with same email or mobile number already exists.');
           return;
         }
       }
@@ -179,15 +181,15 @@ const AddCustomer = () => {
           id: existingCustomer.customerId,
           ...payload,
         }).unwrap();
-        message.success('Customer updated successfully');
+        toast.success('Customer updated successfully');
       } else {
         await createCustomer(payload).unwrap();
-        message.success('Customer created successfully');
+        toast.success('Customer created successfully');
       }
 
       navigate('/customers/list');
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save customer');
+      toast.error(err?.data?.message || 'Failed to save customer');
     }
   };
 
@@ -212,7 +214,7 @@ const AddCustomer = () => {
 
           <div className="card-body">
             {(isCustomersLoading || isVendorsLoading) && (
-              <Spin tip="Loading..." className="mb-3 d-block" />
+              <Loader tip="Loading..." className="mb-3 d-block" />
             )}
 
             <Form
@@ -360,9 +362,10 @@ const AddCustomer = () => {
                         tooltip="Order forms warn when what this customer owes would go over this. Leave blank for no limit."
                       >
                         <InputNumber
+                          className="fv2-addcustomer-b65d0e7202"
                           min={0}
                           step={10000}
-                          style={{ width: '100%' }}
+
                           placeholder="No limit"
                         />
                       </Form.Item>
@@ -373,7 +376,12 @@ const AddCustomer = () => {
                         name="creditDays"
                         tooltip="Unpaid amounts older than this count as overdue. Default 30."
                       >
-                        <InputNumber min={0} max={365} style={{ width: '100%' }} placeholder="30" />
+                        <InputNumber
+                          className="fv2-addcustomer-b65d0e7202"
+                          min={0}
+                          max={365}
+                          placeholder="30"
+                        />
                       </Form.Item>
                     </Col>
                     <Col lg={12} xs={24}>
@@ -471,10 +479,11 @@ const AddCustomer = () => {
                 </TabPane>
               </Tabs>
 
-              <div style={{ textAlign: 'right', marginTop: 32 }}>
+              <div className="fv2-addcustomer-699e1edae3">
                 <Button
+                  className="fv2-addcustomer-90fbf683e2"
                   onClick={() => navigate('/customers/list')}
-                  style={{ marginRight: 12 }}
+
                   disabled={isCreating || isEditing}
                 >
                   Cancel
@@ -495,13 +504,13 @@ const AddCustomer = () => {
 
               {(createError || editError) && (
                 <Alert
+                  className="fv2-addcustomer-44bed30d33"
                   message="Error"
                   description={
                     createError?.data?.message || editError?.data?.message || 'Something went wrong'
                   }
                   type="error"
                   showIcon
-                  style={{ marginTop: 16 }}
                 />
               )}
             </Form>

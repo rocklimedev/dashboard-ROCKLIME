@@ -1,3 +1,5 @@
+import Loader from '../../components/Common/Loader';
+import './ProductReferencesPage.styles.css';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -8,7 +10,6 @@ import {
   Image,
   Input,
   Space,
-  Spin,
   Table,
   Tabs,
   Tag,
@@ -74,7 +75,7 @@ export default function ProductReferencesPage() {
     <div className="page-wrapper">
       <PageHeader title="References" subtitle="Where this product is used across your documents" />
       <div className="content">
-        <Space wrap style={{ marginBottom: 20 }}>
+        <Space className="fv2-productreferencespage-ca44629c70" wrap>
           <Link to="/inventory/list">
             <Button icon={<ArrowLeftOutlined />}>Inventory</Button>
           </Link>
@@ -88,29 +89,29 @@ export default function ProductReferencesPage() {
             Refresh references
           </Button>
         </Space>
-        {loadingProduct && <Spin />}
+        {loadingProduct && <Loader />}
         {productError && (
           <Alert
+            className="fv2-productreferencespage-37ea7fee10"
             type="error"
             showIcon
             message="Could not load product details"
-            style={{ marginBottom: 16 }}
           />
         )}
         {product && (
-          <Card style={{ marginBottom: 20 }}>
+          <Card className="fv2-productreferencespage-ca44629c70">
             <Space align="start" size="large" wrap>
               {productImage(product) && (
                 <Image
+                  className="fv2-productreferencespage-f4ae513038"
                   src={productImage(product)}
                   alt={product.name}
                   width={88}
                   height={88}
-                  style={{ objectFit: 'contain' }}
                 />
               )}
               <div>
-                <Typography.Title level={4} style={{ marginTop: 0 }}>
+                <Typography.Title className="fv2-productreferencespage-e3b9ea0364" level={4}>
                   {product.name}
                 </Typography.Title>
                 <Descriptions
@@ -138,18 +139,19 @@ export default function ProductReferencesPage() {
         <Card>
           {error && (
             <Alert
+              className="fv2-productreferencespage-37ea7fee10"
               type="error"
               showIcon
               message="Could not load references. Use Refresh references to retry."
-              style={{ marginBottom: 16 }}
             />
           )}
           <Input
+            className="fv2-productreferencespage-c224b12cf1"
             prefix={<SearchOutlined />}
             placeholder="Search document number, customer/vendor, or status"
             allowClear
             value={search}
-            style={{ maxWidth: 520, marginBottom: 16 }}
+
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);

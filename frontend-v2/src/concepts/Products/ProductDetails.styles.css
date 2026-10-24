@@ -1,0 +1,125 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-productdetails-fe1eff22de) {
+  cursor: zoom-in;
+  position: relative;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-39bb780eeb) {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--fv2-color-fff);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-bee6010100) {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-8ab571a07a) {
+  border-color: var(--fv2-color-1890ff);
+  color: var(--fv2-color-1890ff);
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-14567f87dd) {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 12px;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-5a2f72b20c) {
+  background-color: var(--fv2-color-e31e24);
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-d8feae884f) {
+  width: 100%;
+  height: 80px;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-149f5c81ab) {
+  list-style: none;
+  padding: 0;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-bf6baf9219) {
+  margin-bottom: 0.5rem;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-0cad270001) {
+  text-align: center;
+  color: var(--fv2-color-6b7280);
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-9c552c9a17) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  background: var(--fv2-color-000);
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-a2694342e5) {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-9dbfdbcabd) {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-0168b05a08) {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-11a2571618) {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-1c8b861c7e) {
+  position: absolute;
+  bottom: 12px;
+  color: var(--fv2-color-fff);
+  font-size: var(--fv2-font-14px);
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-64b839e15f) {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  background: var(--fv2-color-111);
+}
+
+:is(#fv2-style-priority, .fv2-productdetails-e59475a32a) {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  cursor: pointer;
+  flex-shrink: 0;
+}

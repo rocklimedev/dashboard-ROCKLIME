@@ -1,0 +1,72 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-dealdrawer-fff94b34e7) {
+  margin-bottom: 10px;
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-8dc350e844) {
+  min-width: 0;
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-77afeae61c) {
+  margin: 0;
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-81c0bcec28) {
+  margin-top: 4px;
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-92af5aba04) {
+  font-size: var(--fv2-font-16px);
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-4f17684b92) {
+  margin-bottom: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-36c67568f6) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-f817b01634) {
+  font-size: var(--fv2-font-13px);
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-f95bb9174a) {
+  color: var(--fv2-color-25d366);
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-2a7c89e222) {
+  color: var(--fv2-color-389e0d);
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-f1d706d9b8) {
+  min-width: 200px;
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-eadcb28e4b) {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-79e8313501) {
+  width: 120px;
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-eea539ec6c) {
+  margin-bottom: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-2619739552) {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-6340fe60e7) {
+  margin-bottom: 6px;
+}
+
+:is(#fv2-style-priority, .fv2-dealdrawer-c9333c3c8f) {
+  text-align: right;
+  margin: 6px 0 12px;
+}

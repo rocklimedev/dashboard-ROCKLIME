@@ -1,24 +1,25 @@
+import Loader from '../../components/Common/Loader';
+import ModalShell from '../../components/Common/ModalShell';
+import './AddQuntation.styles.css';
 // src/components/Quotation/AddQuotation.jsx
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { normalizeCharges, lineAmounts, quotationTotals } from '../../utils/quotationMath';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
-  message,
   Input,
   Select,
   InputNumber,
   Space,
   Button,
-  Modal,
   Typography,
   Form,
   Card,
   Row,
   Col,
-  Spin,
   Statistic,
   Alert,
 } from 'antd';
+import { toast } from 'sonner';
 import {
   ArrowLeftOutlined,
   PlusOutlined,
@@ -195,6 +196,7 @@ const AddQuotation = () => {
     quotation_date: null,
     due_date: null,
     gst: 0,
+    gstInclusive: false,
     shippingAmount: 0,
     miscellaneousChargeItems: [],
     additionalDiscount: 0,
@@ -312,6 +314,7 @@ const AddQuotation = () => {
       flatPrice: existingQuotation.flatPrice == null ? null : safeNum(existingQuotation.flatPrice),
       shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
       gst: safeNum(existingQuotation.gst, 0),
+      gstInclusive: existingQuotation.gstInclusive === true,
       extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
       extraDiscountType: existingQuotation.extraDiscountType || 'fixed',
       signature_name: existingQuotation.signature_name || '',
@@ -393,7 +396,7 @@ const AddQuotation = () => {
       rooms: [],
     };
     setFormData((prev) => ({ ...prev, floors: [...prev.floors, newFloor] }));
-    message.success('Floor added');
+    toast.success('Floor added');
     setShowAddFloorModal(false);
     floorForm.resetFields();
   };
@@ -415,7 +418,7 @@ const AddQuotation = () => {
         remapProductLocations(p, (l) => (l.floorId === floorId ? { ...l, floorName: name } : l)),
       ),
     }));
-    message.success('Floor updated');
+    toast.success('Floor updated');
     setShowEditFloorModal(false);
     setEditingFloor(null);
     floorEditForm.resetFields();
@@ -437,7 +440,7 @@ const AddQuotation = () => {
         f.floorId === selectedFloorId ? { ...f, rooms: [...(f.rooms || []), newRoom] } : f,
       ),
     }));
-    message.success('Room added');
+    toast.success('Room added');
     setShowAddRoomModal(false);
     roomForm.resetFields();
   };
@@ -474,7 +477,7 @@ const AddQuotation = () => {
         ),
       ),
     }));
-    message.success('Room updated');
+    toast.success('Room updated');
     setShowEditRoomModal(false);
     setEditingRoom(null);
   };
@@ -496,7 +499,7 @@ const AddQuotation = () => {
           remapProductLocations(p, (l) => (l.floorId === floor.floorId ? { ...l, ...CLEARED } : l)),
         ),
       }));
-      message.success('Floor deleted');
+      toast.success('Floor deleted');
     } else {
       const { floorId, room } = deleteTarget;
       setFormData((prev) => ({
@@ -515,7 +518,7 @@ const AddQuotation = () => {
           ),
         ),
       }));
-      message.success('Room deleted');
+      toast.success('Room deleted');
     }
 
     setDeleteTarget(null);
@@ -551,14 +554,14 @@ const AddQuotation = () => {
   // ── Assign Location ───────────────────────────────────────────────
   const handleAssignLocation = (productId, assignments) => {
     if (!productId) {
-      message.error('Could not match this item — try again');
+      toast.error('Could not match this item — try again');
       setShowAssignModal(false);
       return;
     }
 
     const validAssignments = (assignments || []).filter((a) => a.floorId);
     if (validAssignments.length === 0) {
-      message.warning('No location selected');
+      toast.warning('No location selected');
       setShowAssignModal(false);
       return;
     }
@@ -587,22 +590,22 @@ const AddQuotation = () => {
         ? `${validAssignments.length} locations`
         : [primary.floorName, primary.roomName, primary.areaName].filter(Boolean).join(' → ');
 
-    message.success(`Assigned to ${label}`);
+    toast.success(`Assigned to ${label}`);
     setShowAssignModal(false);
     setItemToAssign(null);
   };
 
   // ── Product Handlers ──────────────────────────────────────────────
   const addOption = (productId) => {
-    if (!selectedParentId) return message.error('Please select a parent product');
+    if (!selectedParentId) return toast.error('Please select a parent product');
 
     const prod = searchResult.find((p) => (p.id || p.productId) === productId);
-    if (!prod) return message.warning('Product not found');
+    if (!prod) return toast.warning('Product not found');
 
     const parent = formData.products.find(
       (p) => p.productId === selectedParentId && !p.isOptionFor,
     );
-    if (!parent) return message.error('Parent product not found');
+    if (!parent) return toast.error('Parent product not found');
 
     const price = safeNum(prod.meta?.['9ba862ef-f993-4873-95ef-1fef10036aa5'], 0);
 
@@ -629,7 +632,7 @@ const AddQuotation = () => {
 
     setShowAddOptionModal(false);
     setSearchTerm('');
-    message.success(`Added ${optionType}`);
+    toast.success(`Added ${optionType}`);
   };
 
   const removeProduct = (productId) => {
@@ -735,7 +738,7 @@ const AddQuotation = () => {
       shipping: safeNum(formData.shippingAmount),
       extraDiscount: safeNum(formData.extraDiscount),
       extraDiscountType: formData.extraDiscountType || 'percent',
-      gstRate: safeNum(formData.gst),
+      gstRate: formData.gstInclusive ? 0 : safeNum(formData.gst),
     });
     return {
       mainSubtotal: t.goodsValue,
@@ -754,6 +757,7 @@ const AddQuotation = () => {
     formData.flatPrice,
     formData.shippingAmount,
     formData.gst,
+    formData.gstInclusive,
     formData.extraDiscount,
     formData.extraDiscountType,
   ]);
@@ -761,9 +765,9 @@ const AddQuotation = () => {
   // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if ((formData.miscellaneousChargeItems || []).some((charge) => !charge.name?.trim()))
-      return message.error('Please enter a name for each miscellaneous charge');
-    if (!formData.customerId) return message.error('Please select a customer');
-    if (formData.products.length === 0) return message.error('Please add at least one product');
+      return toast.error('Please enter a name for each miscellaneous charge');
+    if (!formData.customerId) return toast.error('Please select a customer');
+    if (formData.products.length === 0) return toast.error('Please add at least one product');
 
     const formatDateSafe = (date) => {
       if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
@@ -850,7 +854,8 @@ const AddQuotation = () => {
       additionalDiscount: safeNum(formData.additionalDiscount),
       flatPrice: formData.flatPrice == null ? null : safeNum(formData.flatPrice),
       shippingAmount: safeNum(formData.shippingAmount),
-      gst: safeNum(formData.gst),
+      gstInclusive: formData.gstInclusive,
+      gst: formData.gstInclusive ? 0 : safeNum(formData.gst),
       extraDiscount: safeNum(formData.extraDiscount),
       extraDiscountType: formData.extraDiscountType || 'fixed',
       signature_name: formData.signature_name || '',
@@ -868,24 +873,20 @@ const AddQuotation = () => {
     try {
       if (isEditMode) {
         await updateQuotation({ id, updatedQuotation: payload }).unwrap();
-        message.success('Quotation updated successfully');
+        toast.success('Quotation updated successfully');
       } else {
         await createQuotation(payload).unwrap();
-        message.success('Quotation created successfully');
+        toast.success('Quotation created successfully');
       }
       navigate('/quotations/list');
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save quotation');
+      toast.error(err?.data?.message || 'Failed to save quotation');
     }
   };
 
   if (loadingQuotation || (isEditMode && fetchingQuotation)) {
     return (
-      <Spin
-        tip="Loading quotation..."
-        size="large"
-        style={{ margin: '120px auto', display: 'block' }}
-      />
+      <Loader className="fv2-addquntation-47183b8b0d" tip="Loading quotation..." size="large" />
     );
   }
 
@@ -907,7 +908,7 @@ const AddQuotation = () => {
           subtitle="Fill in all quotation details"
         />
 
-        <Space style={{ marginBottom: 24 }}>
+        <Space className="fv2-addquntation-1f25345416">
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/quotations/list')}>
             Back
           </Button>
@@ -923,12 +924,13 @@ const AddQuotation = () => {
 
         <Form layout="vertical">
           {/* Customer & Shipping Card */}
-          <Card title="Customer & Shipping" style={{ marginBottom: 24 }}>
+          <Card className="fv2-addquntation-1f25345416" title="Customer & Shipping">
             <Row gutter={16}>
               <Col xs={24} md={12}>
                 <Form.Item label="Customer *" required>
-                  <Space.Compact style={{ width: '100%' }}>
+                  <Space.Compact className="fv2-addquntation-30e0040604">
                     <Select
+                      className="fv2-addquntation-0855f99a21"
                       showSearch
                       value={formData.customerId}
                       onChange={(v) =>
@@ -942,7 +944,6 @@ const AddQuotation = () => {
                       filterOption={(input, option) =>
                         (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                       }
-                      style={{ flex: 1 }}
                     >
                       {(customersData?.data || []).map((c) => {
                         const displayName =
@@ -966,8 +967,9 @@ const AddQuotation = () => {
 
               <Col xs={24} md={12}>
                 <Form.Item label="Shipping Address (Optional)">
-                  <Space.Compact style={{ width: '100%' }}>
+                  <Space.Compact className="fv2-addquntation-30e0040604">
                     <Select
+                      className="fv2-addquntation-0855f99a21"
                       placeholder="Select shipping address (optional)"
                       value={formData.shipTo || undefined}
                       onChange={(v) =>
@@ -977,7 +979,7 @@ const AddQuotation = () => {
                         })
                       }
                       disabled={!formData.customerId}
-                      style={{ flex: 1 }}
+
                       allowClear
                     >
                       {(addressesData || [])
@@ -1002,13 +1004,14 @@ const AddQuotation = () => {
 
           {/* Quotation Details */}
           <Card
+            className="fv2-addquntation-1f25345416"
             title="Quotation Details"
-            style={{ marginBottom: 24 }}
+
             styles={{ body: { paddingTop: 16 } }}
           >
             <Row gutter={[24, 16]}>
               <Col xs={24} md={12}>
-                <Form.Item label="Quotation Title" required style={{ marginBottom: 8 }}>
+                <Form.Item className="fv2-addquntation-0434bc7d7a" label="Quotation Title" required>
                   <Input
                     value={formData.document_title}
                     placeholder="e.g. Bathroom Fittings Quotation"
@@ -1023,22 +1026,20 @@ const AddQuotation = () => {
               </Col>
 
               <Col xs={24} md={12}>
-                <Form.Item label="Quotation Number" style={{ marginBottom: 8 }}>
+                <Form.Item className="fv2-addquntation-0434bc7d7a" label="Quotation Number">
                   <Input value="Auto-generated" disabled />
                 </Form.Item>
               </Col>
 
               <Col xs={24}>
-                <Card
-                  size="small"
-                  style={{
-                    background: '#fafafa',
-                    borderRadius: 10,
-                  }}
-                >
+                <Card className="fv2-addquntation-e0ef3fd3db" size="small">
                   <Row gutter={[16, 16]}>
                     <Col xs={24} md={12}>
-                      <Form.Item label="Quotation Date" required style={{ marginBottom: 0 }}>
+                      <Form.Item
+                        className="fv2-addquntation-61426fe4ee"
+                        label="Quotation Date"
+                        required
+                      >
                         <DatePicker
                           selected={formData.quotation_date}
                           onChange={(d) => setFormData({ ...formData, quotation_date: d })}
@@ -1052,7 +1053,7 @@ const AddQuotation = () => {
                     </Col>
 
                     <Col xs={24} md={12}>
-                      <Form.Item label="Due Date" style={{ marginBottom: 0 }}>
+                      <Form.Item className="fv2-addquntation-61426fe4ee" label="Due Date">
                         <DatePicker
                           selected={formData.due_date}
                           onChange={(d) => setFormData({ ...formData, due_date: d })}
@@ -1070,21 +1071,10 @@ const AddQuotation = () => {
               </Col>
 
               <Col xs={24}>
-                <Form.Item label="Follow-up Schedule" style={{ marginBottom: 8 }}>
+                <Form.Item className="fv2-addquntation-0434bc7d7a" label="Follow-up Schedule">
                   <Space wrap>
                     {formData.followupDates.map((date, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          padding: '4px 8px',
-                          border: '1px solid #e5e5e5',
-                          borderRadius: 20,
-                          background: '#fff',
-                        }}
-                      >
+                      <div className="fv2-addquntation-5e53744cdc" key={i}>
                         <DatePicker
                           selected={date}
                           onChange={(d) => changeFollowup(i, d)}
@@ -1117,7 +1107,11 @@ const AddQuotation = () => {
             Products & Options — floors and rooms are created, renamed and
             deleted directly from the sheet's tabs.
           */}
-          <Card title="Products & Options" style={{ borderRadius: 12 }} bodyStyle={{ padding: 12 }}>
+          <Card
+            className="fv2-addquntation-0ad1b53eb0"
+            title="Products & Options"
+            bodyStyle={{ padding: 12 }}
+          >
             <QuotationProductSheet
               formData={formData}
               setFormData={setFormData}
@@ -1146,11 +1140,9 @@ const AddQuotation = () => {
 
           {/* Financial Summary */}
           <Card
+            className="fv2-addquntation-355919982d"
             title="Financial Summary"
-            style={{
-              marginBottom: 32,
-              borderRadius: 12,
-            }}
+
             bodyStyle={{ padding: 16 }}
           >
             <p>
@@ -1161,7 +1153,7 @@ const AddQuotation = () => {
             </p>
             <Form.Item label="Miscellaneous charges">
               {(formData.miscellaneousChargeItems || []).map((charge, index) => (
-                <Space key={index} style={{ display: 'flex', marginBottom: 8 }}>
+                <Space className="fv2-addquntation-1867c1767e" key={index}>
                   <Input
                     placeholder="Charge name (e.g. Packing)"
                     aria-label="Charge name"
@@ -1228,10 +1220,11 @@ const AddQuotation = () => {
                 <Col xs={24} sm={8} key={field}>
                   <Form.Item label={label}>
                     <InputNumber
+                      className="fv2-addquntation-30e0040604"
                       min={0}
                       precision={2}
                       value={formData[field]}
-                      style={{ width: '100%' }}
+
                       onChange={(value) =>
                         setFormData((prev) => ({
                           ...prev,
@@ -1243,7 +1236,7 @@ const AddQuotation = () => {
                 </Col>
               ))}
               <Col xs={24} sm={8}>
-                <Card size="small" style={{ borderRadius: 10, background: '#fafafa' }}>
+                <Card className="fv2-addquntation-9843215e0d" size="small">
                   <Statistic
                     title="Goods value (after line discounts)"
                     value={calculations.mainSubtotal}
@@ -1254,7 +1247,7 @@ const AddQuotation = () => {
               </Col>
 
               <Col xs={24} sm={8}>
-                <Card size="small" style={{ borderRadius: 10, background: '#fff1f0' }}>
+                <Card className="fv2-addquntation-936ed52504" size="small">
                   <Statistic
                     title="Line Discounts"
                     value={-calculations.mainLineDiscount}
@@ -1266,7 +1259,7 @@ const AddQuotation = () => {
               </Col>
 
               <Col xs={24} sm={8}>
-                <Card size="small" style={{ borderRadius: 10, background: '#fff7e6' }}>
+                <Card className="fv2-addquntation-1c268ff557" size="small">
                   <Statistic
                     title="Extra Discount"
                     value={-calculations.extraDiscAmt}
@@ -1278,13 +1271,14 @@ const AddQuotation = () => {
               </Col>
 
               <Col xs={24} sm={12}>
-                <Card size="small" style={{ borderRadius: 10 }}>
+                <Card className="fv2-addquntation-904354e8f8" size="small">
                   <Form.Item label="Shipping Charges">
                     <InputNumber
+                      className="fv2-addquntation-0159f17c20"
                       min={0}
                       value={formData.shippingAmount}
                       onChange={(v) => setFormData({ ...formData, shippingAmount: v })}
-                      style={{ width: '100%', borderRadius: 8 }}
+
                       addonBefore="₹"
                     />
                   </Form.Item>
@@ -1292,34 +1286,52 @@ const AddQuotation = () => {
               </Col>
 
               <Col xs={24} sm={12}>
-                <Card size="small" style={{ borderRadius: 10 }}>
+                <Card className="fv2-addquntation-904354e8f8" size="small">
                   <Form.Item label="Round Off">
                     <InputNumber
+                      className="fv2-addquntation-0159f17c20"
                       disabled
                       value={calculations.roundOff}
-                      style={{ width: '100%', borderRadius: 8 }}
                     />
                   </Form.Item>
                 </Card>
               </Col>
 
               <Col xs={24} sm={12}>
-                <Card size="small" style={{ borderRadius: 10 }}>
-                  <Form.Item label="Global GST (%)">
-                    <InputNumber
-                      min={0}
-                      max={100}
-                      precision={2}
-                      value={formData.gst}
-                      addonAfter="%"
-                      onChange={(v) => setFormData((prev) => ({ ...prev, gst: v ?? 0 }))}
-                      style={{ width: '100%', borderRadius: 8 }}
+                <Card className="fv2-addquntation-904354e8f8" size="small">
+                  <Form.Item label="GST inclusive in product prices">
+                    <Select
+                      value={formData.gstInclusive}
+                      onChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          gstInclusive: value,
+                          gst: value ? 0 : prev.gst,
+                        }))
+                      }
+                      options={[
+                        { value: true, label: 'True' },
+                        { value: false, label: 'False' },
+                      ]}
                     />
                   </Form.Item>
+                  {!formData.gstInclusive && (
+                    <Form.Item label="Global GST (%)">
+                      <InputNumber
+                        className="fv2-addquntation-0159f17c20"
+                        min={0}
+                        max={100}
+                        precision={2}
+                        value={formData.gst}
+                        addonAfter="%"
+                        onChange={(v) => setFormData((prev) => ({ ...prev, gst: v ?? 0 }))}
+                      />
+                    </Form.Item>
+                  )}
                 </Card>
               </Col>
               <Col xs={24} sm={12}>
-                <Card size="small" style={{ borderRadius: 10 }}>
+                <Card className="fv2-addquntation-904354e8f8" size="small">
                   <Statistic
                     title="GST Amount"
                     value={calculations.gstAmount}
@@ -1330,36 +1342,20 @@ const AddQuotation = () => {
               </Col>
 
               <Col xs={24}>
-                <Card
-                  style={{
-                    borderRadius: 14,
-                    background: 'linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%)',
-                    border: '1px solid #d6e4ff',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
+                <Card className="fv2-addquntation-2f8b506090">
+                  <div className="fv2-addquntation-bd36d6c7fe">
                     <div>
                       <Text type="secondary">Grand Total</Text>
-                      <div
-                        style={{
-                          fontSize: 32,
-                          fontWeight: 700,
-                          color: '#1677ff',
-                        }}
-                      >
+                      <div className="fv2-addquntation-224248bc4e">
                         ₹{calculations.finalAmount.toFixed(2)}
                       </div>
                     </div>
 
-                    <div style={{ textAlign: 'right' }}>
+                    <div className="fv2-addquntation-4ab8a4d054">
                       <Text type="secondary">Taxable value (before GST)</Text>
-                      <div style={{ fontSize: 16 }}>₹{calculations.taxableValue.toFixed(2)}</div>
+                      <div className="fv2-addquntation-56bebc8945">
+                        ₹{calculations.taxableValue.toFixed(2)}
+                      </div>
                     </div>
                   </div>
                 </Card>
@@ -1367,20 +1363,13 @@ const AddQuotation = () => {
 
               {calculations.optionalPotential > 0 && (
                 <Col xs={24}>
-                  <Card
-                    size="small"
-                    style={{
-                      borderRadius: 10,
-                      border: '1px dashed #722ed1',
-                      background: '#faf5ff',
-                    }}
-                  >
+                  <Card className="fv2-addquntation-d3339c9e51" size="small">
                     <div>
-                      <Text strong style={{ color: '#722ed1' }}>
+                      <Text className="fv2-addquntation-236cd17d91" strong>
                         Optional Items Potential
                       </Text>
 
-                      <div style={{ fontSize: 18, marginTop: 4 }}>
+                      <div className="fv2-addquntation-052cd930a9">
                         ₹{calculations.optionalPotential}
                       </div>
 
@@ -1393,7 +1382,7 @@ const AddQuotation = () => {
           </Card>
 
           {/* Actions */}
-          <div style={{ textAlign: 'right', marginTop: 40 }}>
+          <div className="fv2-addquntation-84d1664c8b">
             <Space size="large">
               <Button size="large" onClick={() => navigate('/quotations/list')}>
                 Cancel
@@ -1459,7 +1448,7 @@ const AddQuotation = () => {
           />
 
           {/* Delete Floor / Room confirmation */}
-          <Modal
+          <ModalShell
             open={Boolean(deleteTarget)}
             title={deleteInfo?.title}
             okText="Delete"
@@ -1469,7 +1458,7 @@ const AddQuotation = () => {
             destroyOnClose
           >
             {deleteInfo?.body}
-          </Modal>
+          </ModalShell>
 
           {/* Add Option Modal */}
           {showResyncModal && (
@@ -1488,7 +1477,7 @@ const AddQuotation = () => {
               }}
             />
           )}
-          <Modal
+          <ModalShell
             title="Add Option / Variant / Upgrade"
             open={showAddOptionModal}
             onCancel={() => {
@@ -1498,13 +1487,14 @@ const AddQuotation = () => {
             footer={null}
             width={600}
           >
-            <Space direction="vertical" style={{ width: '100%' }} size="large">
+            <Space className="fv2-addquntation-30e0040604" direction="vertical" size="large">
               <div>
-                <label style={{ display: 'block', marginBottom: 8 }}>Select parent product:</label>
+                <label className="fv2-addquntation-f1990a45ec">Select parent product:</label>
                 <Select
+                  className="fv2-addquntation-30e0040604"
                   value={selectedParentId}
                   onChange={setSelectedParentId}
-                  style={{ width: '100%' }}
+
                   placeholder="Choose main product"
                 >
                   {mainProducts.map((p) => (
@@ -1516,8 +1506,12 @@ const AddQuotation = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: 8 }}>Option type:</label>
-                <Select value={optionType} onChange={setOptionType} style={{ width: '100%' }}>
+                <label className="fv2-addquntation-f1990a45ec">Option type:</label>
+                <Select
+                  className="fv2-addquntation-30e0040604"
+                  value={optionType}
+                  onChange={setOptionType}
+                >
                   <Option value="addon">Add-on</Option>
                   <Option value="upgrade">Upgrade</Option>
                   <Option value="variant">Variant</Option>
@@ -1525,8 +1519,9 @@ const AddQuotation = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: 8 }}>Search product:</label>
+                <label className="fv2-addquntation-f1990a45ec">Search product:</label>
                 <Select
+                  className="fv2-addquntation-30e0040604"
                   showSearch
                   prefix={<SearchOutlined />}
                   placeholder={`Search ${optionType}...`}
@@ -1535,14 +1530,13 @@ const AddQuotation = () => {
                   filterOption={false}
                   notFoundContent={
                     isSearching ? (
-                      <Spin size="small" />
+                      <Loader size="small" />
                     ) : searchTerm ? (
                       'No results'
                     ) : (
                       'Type to search'
                     )
                   }
-                  style={{ width: '100%' }}
                 >
                   {searchResult.map((p) => {
                     const price = safeNum(p.meta?.['9ba862ef-f993-4873-95ef-1fef10036aa5'], 0);
@@ -1555,7 +1549,7 @@ const AddQuotation = () => {
                 </Select>
               </div>
             </Space>
-          </Modal>
+          </ModalShell>
 
           {/* Add Customer Modal */}
           <AddCustomerModal

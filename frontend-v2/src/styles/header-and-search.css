@@ -1,0 +1,281 @@
+.avatar-container {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+} /* 2. Force react-avatar itself to never exceed the wrapper */
+.circular-avatar {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  /* This is the key line → prevents huge SVGs */
+  max-width: 40px !important;
+  max-height: 40px !important;
+  object-fit: cover;
+} /* 3. Make sure the inner <img> and <svg> behave */
+.circular-avatar img,
+.circular-avatar svg {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  object-fit: cover;
+  display: block;
+} /* Optional: tiny border so it never looks cut-off */
+.avatar-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  pointer-events: none;
+} /* In your global CSS or component CSS */
+.ant-input:focus,
+.ant-input-focused {
+  box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1) !important;
+}
+.ant-btn:hover {
+  transform: translateY(-1px);
+  transition: all 0.2s;
+} /* ===================================
+   Global Search Input (YouTube Style)
+   =================================== */
+.global-search-input .ant-input {
+  padding: 0 20px 0 50px !important;
+}
+.global-search-input .ant-input:focus,
+.global-search-input .ant-input-focused {
+  border-color: var(--fv2-color-40a9ff);
+  box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+  outline: none;
+}
+.global-search-input .ant-input::placeholder {
+  color: var(--fv2-color-999);
+  font-size: var(--fv2-font-16px);
+}
+.global-search-input .search-icon {
+  color: var(--fv2-color-8c8c8c);
+  font-size: var(--fv2-font-20px);
+  margin-left: 8px;
+} /* Mobile search open - full header takeover */
+.mobile-search-container.open.position-fixed {
+  height: 70px;
+  display: flex;
+  align-items: center;
+} /* Better spacing for icons */
+.nav-item-box {
+  padding: 0 8px;
+} /* Ensure vertical centering */
+.user-menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  height: 100%;
+} /* ===================================
+   Search Overlay Backdrop & Content
+   =================================== */
+.search-overlay-backdrop {
+  position: fixed;
+  top: 80px; /* Below header on desktop */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 700px;
+  bottom: auto;
+  background: transparent; /* Clean look, no dark overlay */
+  pointer-events: none; /* Click through empty areas */
+  z-index: 1050;
+  padding: 8px 20px;
+  animation: none;
+}
+.search-overlay-content {
+  width: 100%;
+  max-width: 700px;
+  max-height: 70vh;
+  background: var(--background-color, var(--fv2-color-ffffff));
+  border: 1px solid var(--fv2-color-e0e0e0);
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+} /* Results scrollable area */
+.search-results-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+} /* Custom scrollbar */
+.search-results-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+.search-results-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+.search-results-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+.search-results-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+} /* Header inside overlay (optional if you have one) */
+.search-overlay-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--fv2-color-eee);
+  font-size: var(--fv2-font-16px);
+  font-weight: 600;
+  color: var(--text-color, var(--fv2-color-333));
+}
+.search-query-text {
+  color: var(--fv2-color-1890ff);
+} /* ===================================
+   Search Result Groups & Items
+   =================================== */
+.search-result-group {
+  border-bottom: 1px solid var(--fv2-color-f0f0f0);
+}
+.search-group-title {
+  padding: 12px 20px;
+  background: var(--fv2-color-f8f9fa);
+  font-size: var(--fv2-font-14px);
+  font-weight: 600;
+  color: var(--fv2-color-666);
+  text-transform: capitalize;
+}
+.search-group-title .result-count {
+  font-weight: normal;
+  color: var(--fv2-color-999);
+  margin-left: 4px;
+}
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  color: var(--text-color, var(--fv2-color-333));
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.search-result-item:hover,
+.search-result-item:focus {
+  background: var(--fv2-color-f0f7ff);
+  outline: none;
+}
+.result-avatar {
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+.result-content {
+  min-width: 0;
+  flex: 1;
+}
+.result-title {
+  font-weight: 500;
+  font-size: var(--fv2-font-15px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.result-title mark {
+  background: var(--fv2-color-fffb8f);
+  color: var(--fv2-color-000);
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+.result-meta {
+  font-size: var(--fv2-font-13px);
+  color: var(--fv2-color-666);
+  margin-top: 2px;
+} /* Loading state */
+.search-loading.py-6 {
+  padding: 48px 0;
+} /* ===================================
+   Dark Mode Support
+   =================================== */
+[data-theme='dark'] .search-overlay-content {
+  background: var(--fv2-color-1e1e1e);
+  border-color: var(--fv2-color-333);
+}
+[data-theme='dark'] .search-group-title {
+  background: var(--fv2-color-2a2a2a);
+  color: var(--fv2-color-ccc);
+}
+[data-theme='dark'] .search-result-item:hover,
+[data-theme='dark'] .search-result-item:focus {
+  background: var(--fv2-color-2d3748);
+}
+[data-theme='dark'] .result-meta {
+  color: var(--fv2-color-aaa);
+}
+[data-theme='dark'] .search-results-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+[data-theme='dark'] .search-results-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+} /* ===================================
+   Mobile-Specific Overrides
+   =================================== */
+@media (max-width: 767px) {
+  .search-overlay-backdrop {
+    top: 85px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    max-width: none;
+    background: rgba(0, 0, 0, 0.45); /* Dark backdrop on mobile for focus */
+    padding: 10px 10px 80px 10px; /* Leave space for bottom search bar */
+    pointer-events: none;
+  }
+
+  .search-overlay-content {
+    max-height: calc(100vh - 140px); /* Account for header + mobile search input */
+    border-radius: 16px 16px 0 0;
+    margin-top: 10px;
+  }
+} /* ===================================
+   Mobile Bottom Bar Enhancements
+   =================================== */
+.mobile-header-actions {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+.mobile-header-actions .ant-dropdown-menu {
+  max-height: 70vh;
+  overflow-y: auto;
+} /* Dark mode for mobile bar */
+[data-theme='dark'] .mobile-header-actions {
+  background: rgba(30, 30, 30, 0.9) !important;
+  border-top-color: var(--fv2-color-333);
+}
+.mobile-search-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--background-color);
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transform: translateY(-100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+.mobile-search-container.open {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+@media (max-width: 991.98px) {
+  .header .nav-searchinputs {
+    position: static;
+  }
+}

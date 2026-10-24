@@ -1,0 +1,53 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-header-a69c3f8efe) {
+  z-index: 1100;
+}
+
+:is(#fv2-style-priority, .fv2-header-6c9de3ae60) {
+  font-size: var(--fv2-font-24px);
+}
+
+:is(#fv2-style-priority, .fv2-header-3bde8b0bc9) {
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--background-color, white);
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+:is(#fv2-style-priority, .fv2-header-8bb5f62121) {
+  color: var(--fv2-color-bfbfbf);
+  font-size: var(--fv2-font-12px);
+  border: 1px solid var(--fv2-color-e8e8e8);
+  border-radius: 4px;
+  padding: 0 5px;
+}
+
+:is(#fv2-style-priority, .fv2-header-b5b215d54b) {
+  font-size: var(--fv2-font-21px);
+}
+
+:is(#fv2-style-priority, .fv2-header-2024ce2514) {
+  font-size: var(--fv2-font-18px);
+}
+
+:is(#fv2-style-priority, .fv2-header-d18c372548) {
+  font-size: var(--fv2-font-20px);
+}
+
+:is(#fv2-style-priority, .fv2-header-93cbf68ba8) {
+  width: 40px;
+  height: 40px;
+}
+
+:is(#fv2-style-priority, .fv2-header-d9db2f99af) {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--fv2-color-f0f0f0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

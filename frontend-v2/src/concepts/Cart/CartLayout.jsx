@@ -1,7 +1,10 @@
+import ModalShell from '../../components/Common/ModalShell';
+import './CartLayout.styles.css';
 // src/pages/quotations/CartLayout.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Tabs, Modal, Typography, Segmented, Button, message } from 'antd';
+import { Tabs, Typography, Segmented, Button } from 'antd';
+import { toast } from 'sonner';
 import { ShoppingCartOutlined, CheckCircleOutlined, FileTextOutlined } from '@ant-design/icons';
 import NewOrderModal from '../../components/Orders/QuotationPicker';
 import { useDispatch } from 'react-redux';
@@ -224,7 +227,7 @@ const CartLayout = ({
           discountType: itemDiscountTypes[item.productId] || 'percent',
         })),
         shipping,
-        gstRate: gst,
+        gstRate: documentType === 'quotation' && quotationData.gstInclusive ? 0 : gst,
         ...(documentType === 'quotation'
           ? {
               extraDiscount: Number(quotationData.discountAmount) || 0,
@@ -277,7 +280,7 @@ const CartLayout = ({
             { documentType: newType },
           )
           .catch((error) =>
-            message.error(
+            toast.error(
               error?.data?.message || 'Could not switch carts. Your current cart is still open.',
             ),
           );
@@ -339,7 +342,7 @@ const CartLayout = ({
           quantity: Number(newQty),
         }).unwrap();
       } catch (err) {
-        message.error(err?.data?.message || 'Failed to update quantity');
+        toast.error(err?.data?.message || 'Failed to update quantity');
       } finally {
         setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
       }
@@ -351,7 +354,7 @@ const CartLayout = ({
     async (e, productId) => {
       e?.preventDefault?.();
       e?.stopPropagation?.();
-      if (!userId) return message.error('User not logged in');
+      if (!userId) return toast.error('User not logged in');
 
       dispatch(
         cartApi.util.updateQueryData('getCart', userId, (draft) => {
@@ -375,7 +378,7 @@ const CartLayout = ({
       try {
         await removeFromCart({ userId, productId }).unwrap();
       } catch (err) {
-        message.error(err?.data?.message || 'Failed to remove item');
+        toast.error(err?.data?.message || 'Failed to remove item');
       }
     },
     [userId, dispatch, removeFromCart],
@@ -466,13 +469,13 @@ const CartLayout = ({
       );
 
       if (floorId) {
-        message.success(
+        toast.success(
           floorName
             ? `Assigned to ${floorName}${roomName ? ` › ${roomName}` : ''}`
             : `Assigned to ${roomName || 'room'}`,
         );
       } else {
-        message.info('Location cleared');
+        toast.info('Location cleared');
       }
     },
     [],
@@ -506,7 +509,7 @@ const CartLayout = ({
       const assignedSum = normalized.reduce((s, l) => s + (Number(l.assignedQuantity) || 0), 0);
 
       if (assignedSum > totalQty) {
-        message.error(`Assigned qty (${assignedSum}) exceeds item quantity (${totalQty})`);
+        toast.error(`Assigned qty (${assignedSum}) exceeds item quantity (${totalQty})`);
         return prev;
       }
 
@@ -532,12 +535,12 @@ const CartLayout = ({
     // Use a microtask-friendly message: callers already toast in Cart for multi-assign;
     // keep a light confirmation here for split.
     // one location is a plain assignment (the cart already says where); only real splits get a note
-    if (locations?.length > 1) message.success(`Split across ${locations.length} rooms`);
+    if (locations?.length > 1) toast.success(`Split across ${locations.length} rooms`);
   }, []);
 
   const handleMakeOption = useCallback(
     (productId, optionType, parentProductId = null) => {
-      if (!userId) return message.error('User not logged in');
+      if (!userId) return toast.error('User not logged in');
 
       dispatch(
         cartApi.util.updateQueryData('getCart', userId, (draft) => {
@@ -581,7 +584,7 @@ const CartLayout = ({
         }),
       );
 
-      message.info(optionType ? `Item marked as ${optionType}` : 'Item reset to main product');
+      toast.info(optionType ? `Item marked as ${optionType}` : 'Item reset to main product');
     },
     [userId, dispatch],
   );
@@ -626,7 +629,7 @@ const CartLayout = ({
         }),
       );
 
-      message.success('Optional item attached to main product');
+      toast.success('Optional item attached to main product');
     },
     [userId, dispatch],
   );
@@ -672,7 +675,7 @@ const CartLayout = ({
   );
 
   const handleClearCart = useCallback(async () => {
-    if (!userId) return message.error('User not logged in!');
+    if (!userId) return toast.error('User not logged in!');
     try {
       await clearCart({ userId }).unwrap();
       setLocalCartItems([]);
@@ -683,9 +686,9 @@ const CartLayout = ({
       setGst(0);
       if (documentType !== 'quotation') clearDraft();
       setShowClearCartModal(false);
-      message.success('Cart cleared successfully');
+      toast.success('Cart cleared successfully');
     } catch (e) {
-      message.error(e?.data?.message || 'Failed to clear cart');
+      toast.error(e?.data?.message || 'Failed to clear cart');
     }
   }, [userId, clearCart, clearDraft, documentType]);
 
@@ -739,7 +742,7 @@ const CartLayout = ({
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div style={{ marginBottom: 24 }}>
+        <div className="fv2-cartlayout-9471e2758d">
           <Segmented
             disabled={
               !!draftWorkspace &&
@@ -818,7 +821,7 @@ const CartLayout = ({
           )}
         </Tabs>
 
-        <Modal
+        <ModalShell
           title="Confirm Clear Cart"
           open={showClearCartModal}
           onOk={handleClearCart}
@@ -827,7 +830,7 @@ const CartLayout = ({
           okButtonProps={{ danger: true }}
         >
           <Text>Are you sure you want to clear all items from your cart?</Text>
-        </Modal>
+        </ModalShell>
       </div>
     </div>
   );

@@ -1,0 +1,76 @@
+/* Importing CSS dependencies */ /* Remove default asterisk */ /**/
+.ant-form-item-required::before {
+  display: none !important;
+} /* Custom asterisk */
+.ant-form-item-required::after {
+  content: ' *';
+  color: var(--fv2-color-ff4d4f);
+  margin-left: 4px;
+} /* ===================================================== */ /* --------------------- BUTTONS ----------------------- */ /* ===================================================== */
+.ant-btn:hover,
+.ant-btn:focus {
+  border-color: var(--fv2-color-e31e24) !important;
+  color: var(--fv2-color-e31e24) !important;
+}
+.ant-btn-primary {
+  background-color: var(--fv2-color-e31e24) !important;
+  border-color: var(--fv2-color-e31e24) !important;
+  color: var(--fv2-color-fff) !important;
+}
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background-color: var(--fv2-color-e31e24) !important;
+  border-color: var(--fv2-color-e31e24) !important;
+  color: var(--fv2-color-fff) !important;
+} /* ===================================================== */ /* -------- INPUTS/TEXTAREAS/NORMAL FIELDS (FOCUS) ----- */ /* ===================================================== */ /* Default state (no red border) */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-number,
+.ant-picker,
+.ant-select-selector,
+.ant-input-search .ant-input {
+  border-color: var(--fv2-color-d9d9d9) !important; /* normal grey */
+} /* Focus (clicked) = red */
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-affix-wrapper-focused,
+.ant-input-affix-wrapper:focus,
+.ant-input-number:focus,
+.ant-picker-focused,
+.ant-picker:focus,
+.ant-select-focused .ant-select-selector,
+.ant-select-selector:focus,
+.ant-input-search .ant-input:focus {
+  border-color: var(--fv2-color-e31e24) !important;
+  box-shadow: 0 0 0 2px rgba(227, 30, 36, 0.2) !important;
+} /* Remove hover border color — keep default grey */
+.ant-input:hover,
+.ant-input-affix-wrapper:hover,
+.ant-picker:hover,
+.ant-select-selector:hover,
+.ant-input-number:hover {
+  border-color: var(--fv2-color-d9d9d9) !important;
+} /* ===================================================== */ /* ----------------- SEARCH BAR CLICK ------------------ */ /* ===================================================== */ /* Only when clicked */
+.ant-input-search:focus-within .ant-input {
+  border-color: var(--fv2-color-e31e24) !important;
+  box-shadow: 0 0 0 2px rgba(227, 30, 36, 0.2) !important;
+} /* Search button same color rule */
+.ant-input-search-button:focus {
+  border-color: var(--fv2-color-e31e24) !important;
+  color: var(--fv2-color-e31e24) !important;
+} /* ===================================================== */ /* -------------------- SELECT DROPDOWN ---------------- */ /* ===================================================== */
+.ant-select-selector:hover {
+  border-color: var(--fv2-color-d9d9d9) !important; /* keep default */
+}
+.ant-select-open .ant-select-selector,
+.ant-select-focused .ant-select-selector {
+  border-color: var(--fv2-color-e31e24) !important;
+  box-shadow: 0 0 0 2px rgba(227, 30, 36, 0.2) !important;
+} /* ===================================================== */ /* ---------------------- DATE PICKER ------------------ */ /* ===================================================== */
+.ant-picker:hover {
+  border-color: var(--fv2-color-d9d9d9) !important;
+}
+.ant-picker-focused {
+  border-color: var(--fv2-color-e31e24) !important;
+  box-shadow: 0 0 0 2px rgba(227, 30, 36, 0.2) !important;
+} /* Use variables */

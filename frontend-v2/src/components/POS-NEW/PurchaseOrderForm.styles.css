@@ -1,0 +1,113 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-purchaseorderform-86de34ae5a) {
+  object-fit: contain;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-292c9c8547) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-3aa58f28a5) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-54036d2b87) {
+  width: 70px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-2e1c3e3af3) {
+  width: 62px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-6443a3ef5a) {
+  border-radius: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-7e333f9bc5) {
+  margin-top: 0;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-0c948f41a6) {
+  width: 100%;
+  margin-top: 4px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-d8008f948c) {
+  flex: 1;
+  min-width: 0;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-045eb70690) {
+  margin-top: 10px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-1686e3ee75) {
+  margin-top: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-48a7023b1e) {
+  margin-top: 4px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-9f8da327e4) {
+  cursor: pointer;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-2c2d2bbfc7) {
+  margin: 16px 0 10px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-adc2398184) {
+  width: 100%;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-b10776d8af) {
+  border-radius: 12px;
+  position: sticky;
+  top: 80px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-72940fe5c2) {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--fv2-color-f3f3f3);
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-06b0b6932b) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: var(--fv2-color-d7232f);
+  border-radius: 10px;
+  color: var(--fv2-color-fff);
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-b07967cb30) {
+  letter-spacing: 0.08em;
+  font-size: var(--fv2-font-12px);
+  text-transform: uppercase;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-3747da228f) {
+  font-size: var(--fv2-font-20px);
+  font-weight: 600;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-c76482624a) {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-20d32eac44) {
+  margin-top: 14px;
+}
+
+:is(#fv2-style-priority, .fv2-purchaseorderform-20399d70c5) {
+  margin-top: 8px;
+}

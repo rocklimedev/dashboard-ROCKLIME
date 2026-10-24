@@ -1,23 +1,9 @@
+import Loader from '../../components/Common/Loader';
+import ModalShell from '../../components/Common/ModalShell';
+import './Profile.styles.css';
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Form,
-  Input,
-  Button,
-  DatePicker,
-  Select,
-  Row,
-  Col,
-  Space,
-  Typography,
-  Upload,
-  Avatar,
-  message,
-  Divider,
-  Modal,
-  Slider,
-  Card,
-  Spin,
-} from 'antd';
+import { Form, Input, Button, DatePicker, Select, Row, Col, Space, Typography, Upload, Avatar, Divider, Slider, Card } from 'antd';
+import { toast } from 'sonner';
 import {
   UploadOutlined,
   UserOutlined,
@@ -115,11 +101,11 @@ const Profile = ({ onSuccess, onCancel }) => {
     const isLt5M = file.size / 1024 / 1024 < 5;
 
     if (!isValidType) {
-      message.error('Only JPG, PNG, WebP allowed');
+      toast.error('Only JPG, PNG, WebP allowed');
       return Upload.LIST_IGNORE;
     }
     if (!isLt5M) {
-      message.error('Image must be < 5MB');
+      toast.error('Image must be < 5MB');
       return Upload.LIST_IGNORE;
     }
 
@@ -146,11 +132,11 @@ const Profile = ({ onSuccess, onCancel }) => {
       const result = await uploadPhoto(croppedBlob).unwrap();
 
       setAvatarUrl(result.photo_thumbnail);
-      message.success('Photo updated successfully');
+      toast.success('Photo updated successfully');
       setCropModalVisible(false);
       setCropImage(null);
     } catch (err) {
-      message.error('Failed to upload photo');
+      toast.error('Failed to upload photo');
     }
   };
 
@@ -173,15 +159,14 @@ const Profile = ({ onSuccess, onCancel }) => {
 
     try {
       await updateProfile(payload).unwrap();
-      message.success('Profile updated successfully');
+      toast.success('Profile updated successfully');
       onSuccess?.();
     } catch (err) {
-      message.error(err?.data?.message || 'Update failed');
+      toast.error(err?.data?.message || 'Update failed');
     }
   };
 
-  if (profileLoading)
-    return <Spin size="large" style={{ display: 'block', margin: '50px auto' }} />;
+  if (profileLoading) return <Loader className="fv2-profile-505fb4b59e" size="large" />;
 
   return (
     <div className="page-wrapper">
@@ -191,26 +176,23 @@ const Profile = ({ onSuccess, onCancel }) => {
             <Row gutter={[32, 32]}>
               {/* Avatar Section */}
               <Col xs={24} md={8}>
-                <Card className="avatar-card" style={{ textAlign: 'center' }}>
+                <Card className="avatar-card fv2-profile-ee7957bbd9">
                   <Avatar size={180} src={avatarUrl} icon={<UserOutlined />} />
 
                   <Upload showUploadList={false} beforeUpload={beforeUpload}>
                     <Button
+                      className="fv2-profile-3c19b3a22e"
                       type="primary"
                       icon={<UploadOutlined />}
                       loading={isUploading}
                       block
                       size="large"
-                      style={{ marginTop: 16 }}
                     >
                       Change Photo
                     </Button>
                   </Upload>
 
-                  <Text
-                    type="secondary"
-                    style={{ fontSize: '12px', marginTop: 8, display: 'block' }}
-                  >
+                  <Text className="fv2-profile-e83ec7f3a0" type="secondary">
                     JPG, PNG, WebP • Max 5MB
                   </Text>
                 </Card>
@@ -257,7 +239,7 @@ const Profile = ({ onSuccess, onCancel }) => {
 
                     <Col xs={24} sm={12}>
                       <Form.Item label="Date of Birth" name="dateOfBirth">
-                        <DatePicker size="large" style={{ width: '100%' }} />
+                        <DatePicker className="fv2-profile-bf2e35e377" size="large" />
                       </Form.Item>
                     </Col>
 
@@ -314,7 +296,7 @@ const Profile = ({ onSuccess, onCancel }) => {
                     </Col>
                   </Row>
 
-                  <div style={{ marginTop: 24, textAlign: 'right' }}>
+                  <div className="fv2-profile-66011b2b16">
                     <Space>
                       <Button size="large" onClick={onCancel}>
                         Cancel
@@ -330,7 +312,7 @@ const Profile = ({ onSuccess, onCancel }) => {
           </Card>
 
           {/* Crop Modal */}
-          <Modal
+          <ModalShell
             title="Crop Avatar"
             open={cropModalVisible}
             onCancel={() => {
@@ -341,13 +323,7 @@ const Profile = ({ onSuccess, onCancel }) => {
             width={600}
             destroyOnClose
           >
-            <div
-              style={{
-                position: 'relative',
-                height: 400,
-                background: '#f0f0f0',
-              }}
-            >
+            <div className="fv2-profile-c86c4f3757">
               <Cropper
                 image={cropImage}
                 crop={crop}
@@ -361,12 +337,12 @@ const Profile = ({ onSuccess, onCancel }) => {
               />
             </div>
 
-            <div style={{ margin: '16px 0' }}>
+            <div className="fv2-profile-8817d30c9d">
               <Text strong>Zoom</Text>
               <Slider min={1} max={3} step={0.05} value={zoom} onChange={setZoom} />
             </div>
 
-            <div style={{ textAlign: 'right' }}>
+            <div className="fv2-profile-d7c0dbe245">
               <Space>
                 <Button onClick={() => setCropModalVisible(false)}>Cancel</Button>
                 <Button type="primary" loading={isUploading} onClick={handleCropSave}>
@@ -374,7 +350,7 @@ const Profile = ({ onSuccess, onCancel }) => {
                 </Button>
               </Space>
             </div>
-          </Modal>
+          </ModalShell>
         </div>
       </div>
     </div>

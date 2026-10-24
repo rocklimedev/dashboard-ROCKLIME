@@ -1,0 +1,16 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-orderinvoicescard-366b9de23d) {
+  margin-top: 24px;
+}
+
+:is(#fv2-style-priority, .fv2-orderinvoicescard-ccf8b37aab) {
+  color: var(--fv2-color-d32f2f);
+}
+
+:is(#fv2-style-priority, .fv2-orderinvoicescard-c2fddcd24f) {
+  line-height: 1.8;
+}
+
+:is(#fv2-style-priority, .fv2-orderinvoicescard-c792f5a149) {
+  font-size: var(--fv2-font-16px);
+}

@@ -1,0 +1,9 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-stockbadge-b0be3b226f) {
+  line-height: 1.6;
+}
+
+:is(#fv2-style-priority, .fv2-stockbadge-9197509491) {
+  margin-inline-end: 0;
+  cursor: help;
+}

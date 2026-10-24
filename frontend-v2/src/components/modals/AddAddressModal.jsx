@@ -1,6 +1,9 @@
+import ModalShell from '../Common/ModalShell';
+import './AddAddressModal.styles.css';
 // src/components/AddressModal.jsx  (or wherever you prefer to put modals/forms)
 import React from 'react';
-import { Modal, Form, Input, Button, Row, Col, message } from 'antd';
+import { Form, Input, Row, Col } from 'antd';
+import { toast } from 'sonner';
 
 const AddressModal = ({
   open,
@@ -21,16 +24,19 @@ const AddressModal = ({
       await onFinish(values);
       form.resetFields();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save address');
+      toast.error(err?.data?.message || 'Failed to save address');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       title={title}
       open={open}
       onCancel={onCancel}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>{initialValues.addressId ? 'Update Address' : 'Add Address'}</>}
+      onCancelButton={onCancel}
+      cancelButtonProps={{ className: 'fv2-addaddressmodal-998d823b99' }}
       width={640}
       destroyOnClose
       afterClose={() => form.resetFields()}
@@ -77,17 +83,8 @@ const AddressModal = ({
             </Form.Item>
           </Col>
         </Row>
-
-        <Form.Item style={{ marginTop: 24, textAlign: 'right' }}>
-          <Button onClick={onCancel} style={{ marginRight: 12 }}>
-            Cancel
-          </Button>
-          <Button type="primary" htmlType="submit">
-            {initialValues.addressId ? 'Update Address' : 'Add Address'}
-          </Button>
-        </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

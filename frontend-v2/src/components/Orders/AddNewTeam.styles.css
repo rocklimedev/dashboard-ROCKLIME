@@ -1,0 +1,10 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-addnewteam-eb43a47b92) {
+  flex: 1;
+}
+
+:is(#fv2-style-priority, .fv2-addnewteam-1a398c2ae4) {
+  margin-bottom: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}

@@ -1,17 +1,8 @@
+import Loader from '../Common/Loader';
+import ModalShell from '../Common/ModalShell';
+import './QuotationProductModal.styles.css';
 import React, { useMemo } from 'react';
-import {
-  Modal,
-  Table,
-  Image,
-  Spin,
-  Empty,
-  Typography,
-  Card,
-  Tag,
-  Divider,
-  Alert,
-  Collapse,
-} from 'antd';
+import { Table, Image, Empty, Typography, Card, Tag, Divider, Alert, Collapse } from 'antd';
 import { ExclamationCircleOutlined, HomeOutlined, ApartmentOutlined } from '@ant-design/icons';
 import { useGetQuotationByIdQuery } from '../../api/quotationApi';
 
@@ -129,29 +120,16 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
         const url = record.imageUrl;
         return url ? (
           <Image
+            className="fv2-quotationproductmodal-3e0f72bcaf"
             src={url}
             width={56}
             height={56}
-            style={{ objectFit: 'cover', borderRadius: 4 }}
+
             preview={{ mask: 'View' }}
             fallback="https://via.placeholder.com/56?text=No+Img"
           />
         ) : (
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              background: '#f5f5f5',
-              borderRadius: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#aaa',
-              fontSize: '0.75rem',
-            }}
-          >
-            No Img
-          </div>
+          <div className="fv2-quotationproductmodal-225d492e40">No Img</div>
         );
       },
     },
@@ -162,12 +140,12 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
         <div>
           <Text strong>{name || 'Unnamed'}</Text>
           {record.productCode && (
-            <Text type="secondary" style={{ marginLeft: 8, fontSize: '0.9em' }}>
+            <Text className="fv2-quotationproductmodal-2e48c98497" type="secondary">
               {record.productCode}
             </Text>
           )}
           {record.companyCode && record.companyCode !== record.productCode && (
-            <Text type="secondary" style={{ marginLeft: 8, fontSize: '0.85em' }}>
+            <Text className="fv2-quotationproductmodal-e6b7fa1a4c" type="secondary">
               ({record.companyCode})
             </Text>
           )}
@@ -266,14 +244,14 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
         </Table.Summary.Row>
       )}
 
-      <Table.Summary.Row style={{ background: '#f0f9ff' }}>
+      <Table.Summary.Row className="fv2-quotationproductmodal-0978d7e42f">
         <Table.Summary.Cell colSpan={6} align="right">
-          <Text strong style={{ fontSize: '1.1em' }}>
+          <Text className="fv2-quotationproductmodal-5abfb2e13b" strong>
             Final Amount
           </Text>
         </Table.Summary.Cell>
         <Table.Summary.Cell align="right">
-          <Text strong style={{ fontSize: '1.4em', color: '#3f8600' }}>
+          <Text className="fv2-quotationproductmodal-4c7cf0a4bf" strong>
             ₹{finalAmount.toLocaleString('en-IN')}
           </Text>
         </Table.Summary.Cell>
@@ -293,33 +271,33 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
 
   if (isLoading) {
     return (
-      <Modal open={show} onCancel={onHide} footer={null} centered width={600}>
-        <div style={{ textAlign: 'center', padding: '100px 0' }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 24 }}>
+      <ModalShell open={show} onCancel={onHide} footer={null} centered width={600}>
+        <div className="fv2-quotationproductmodal-d98072594e">
+          <Loader size="large" />
+          <div className="fv2-quotationproductmodal-0963a4c52d">
             <Text type="secondary">Loading quotation details…</Text>
           </div>
         </div>
-      </Modal>
+      </ModalShell>
     );
   }
 
   if (isError || !q.quotationId) {
     return (
-      <Modal open={show} onCancel={onHide} footer={null} centered width={500}>
-        <div style={{ textAlign: 'center', padding: '80px 0' }}>
-          <ExclamationCircleOutlined style={{ fontSize: 64, color: '#ff4d4f' }} />
-          <Title level={4} style={{ margin: '24px 0 8px' }}>
+      <ModalShell open={show} onCancel={onHide} footer={null} centered width={500}>
+        <div className="fv2-quotationproductmodal-65d661d5b6">
+          <ExclamationCircleOutlined className="fv2-quotationproductmodal-70117cb76b" />
+          <Title className="fv2-quotationproductmodal-711340df7f" level={4}>
             Failed to load quotation
           </Title>
           <Text type="secondary">Please try again or contact support.</Text>
         </div>
-      </Modal>
+      </ModalShell>
     );
   }
 
   return (
-    <Modal
+    <ModalShell
       open={show}
       onCancel={onHide}
       footer={null}
@@ -327,7 +305,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       centered
       title={
         <div>
-          <Title level={4} style={{ margin: 0 }}>
+          <Title className="fv2-quotationproductmodal-29d886754e" level={4}>
             #{q.reference_number} {q.document_title}
           </Title>
           <Text type="secondary">
@@ -337,7 +315,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
         </div>
       }
     >
-      <div style={{ padding: '16px 0' }}>
+      <div className="fv2-quotationproductmodal-3d2c821450">
         {!hasItems ? (
           <Card>
             <Empty description="No products found in this quotation." />
@@ -350,9 +328,9 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                   key={floorGroup.floorId}
                   header={
                     <span>
-                      <HomeOutlined style={{ marginRight: 8 }} />
+                      <HomeOutlined className="fv2-quotationproductmodal-c02157898c" />
                       {floorGroup.floorName}
-                      <Text type="secondary" style={{ marginLeft: 12 }}>
+                      <Text className="fv2-quotationproductmodal-1514e8e9a7" type="secondary">
                         (
                         {Object.values(floorGroup.itemsByRoom).reduce(
                           (sum, r) => sum + r.items.length,
@@ -364,11 +342,11 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                   }
                 >
                   {Object.values(floorGroup.itemsByRoom).map((roomGroup) => (
-                    <div key={roomGroup.roomId} style={{ marginBottom: 24 }}>
-                      <div style={{ marginBottom: 12 }}>
-                        <ApartmentOutlined style={{ marginRight: 8 }} />
+                    <div className="fv2-quotationproductmodal-c85df88c8f" key={roomGroup.roomId}>
+                      <div className="fv2-quotationproductmodal-49ca37eff2">
+                        <ApartmentOutlined className="fv2-quotationproductmodal-c02157898c" />
                         <Text strong>{roomGroup.roomName}</Text>
-                        <Text type="secondary" style={{ marginLeft: 8 }}>
+                        <Text className="fv2-quotationproductmodal-4c9c944e67" type="secondary">
                           ({roomGroup.items.length} items)
                         </Text>
                       </div>
@@ -385,14 +363,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                       />
 
                       {roomGroup.roomId === 'unassigned' && optionalPotential > 0 && (
-                        <div
-                          style={{
-                            marginTop: 16,
-                            padding: '12px 16px',
-                            background: '#f9f9f9',
-                            borderRadius: 4,
-                          }}
-                        >
+                        <div className="fv2-quotationproductmodal-489a57ce09">
                           <Text type="secondary">
                             Optional items potential (not included): ₹
                             {optionalPotential.toLocaleString('en-IN')}
@@ -407,7 +378,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
 
             {/* Global Financial Summary (shown if no unassigned items or as fallback) */}
             {groupedItems.every((g) => g.floorId !== 'unassigned') && (
-              <Card title="Financial Summary" style={{ marginTop: 24 }}>
+              <Card className="fv2-quotationproductmodal-0963a4c52d" title="Financial Summary">
                 <Table
                   columns={[
                     { title: 'Description', dataIndex: 'desc' },
@@ -445,7 +416,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                     {
                       desc: 'Final Amount',
                       amount: (
-                        <Text strong style={{ fontSize: '1.3em', color: '#3f8600' }}>
+                        <Text className="fv2-quotationproductmodal-3730a5ccfc" strong>
                           ₹{finalAmount.toLocaleString('en-IN')}
                         </Text>
                       ),
@@ -466,7 +437,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
           </>
         )}
       </div>
-    </Modal>
+    </ModalShell>
   );
 };
 

@@ -1,6 +1,7 @@
+import './ProductCard.styles.css';
 // src/components/ProductCard.jsx
 import React, { useState } from 'react';
-import { Button, Dropdown, Input, message } from 'antd';
+import { Button, Dropdown, Input } from 'antd';
 import { ShoppingCartOutlined, MoreOutlined, PlusOutlined, MinusOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import pos from '../../assets/img/default.png';
@@ -109,31 +110,19 @@ const ProductCard = ({ product, stock, handleAddToCart, cartLoadingStates, menu 
       </h6>
 
       {/* COMPANY CODE + PRICE */}
-      <div
-        className="meta-row"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '0 12px',
-          margin: '8px 0 12px',
-        }}
-      >
+      <div className="meta-row fv2-productcard-aa5b93fe03">
         {/* Left: Company Code */}
         <div className="company-code">
-          <span className="text-muted" style={{ fontSize: '0.9rem' }}>
-            <strong style={{ color: '#1a1a1a', fontWeight: 600 }}>{companyCode}</strong>
+          <span className="text-muted fv2-productcard-f274415696">
+            <strong className="fv2-productcard-9cc8683a79">{companyCode}</strong>
           </span>
         </div>
 
         {/* Right: Price */}
         <div className="price">
           <p
-            className="mb-0 fw-bold"
-            style={{
-              fontSize: '1.1rem',
-              color: isNaN(priceValue) ? '#999' : '#d32f2f',
-            }}
+            className="mb-0 fw-bold fv2-productcard-ba015cdbb6"
+            style={{ color: isNaN(priceValue) ? '#999' : '#d32f2f' }}
           >
             {displayPrice}
           </p>
@@ -158,31 +147,11 @@ const ProductCard = ({ product, stock, handleAddToCart, cartLoadingStates, menu 
               Add to Cart
             </Button>
           ) : (
-            <div
-              className="amazon-qty-bar"
-              style={{
-                marginTop: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-                background: '#f7f7f7',
-                padding: '8px',
-                borderRadius: '8px',
-                border: '11px solid #ddd',
-                gap: '10px',
-              }}
-            >
+            <div className="amazon-qty-bar fv2-productcard-5f502ece36">
               {/* - BUTTON */}
               <button
-                className="dec"
-                style={{
-                  width: '35px',
-                  height: '35px',
-                  borderRadius: '6px',
-                  background: '#fff',
-                  border: '1px solid #ccc',
-                }}
+                className="dec fv2-productcard-e6cb5e9082"
+
                 onClick={handleDecrement}
                 disabled={quantity <= 1}
               >
@@ -191,27 +160,16 @@ const ProductCard = ({ product, stock, handleAddToCart, cartLoadingStates, menu 
 
               {/* QUANTITY INPUT */}
               <Input
+                className="fv2-productcard-2e454afbc5"
                 type="text"
                 value={quantity}
                 onChange={handleQuantityChange}
-                style={{
-                  width: '60px',
-                  textAlign: 'center',
-                  fontWeight: 'bold',
-                  borderRadius: '6px',
-                }}
               />
 
               {/* + BUTTON */}
               <button
-                className="inc"
-                style={{
-                  width: '35px',
-                  height: '35px',
-                  borderRadius: '6px',
-                  background: '#fff',
-                  border: '1px solid #ccc',
-                }}
+                className="inc fv2-productcard-e6cb5e9082"
+
                 onClick={handleIncrement}
               >
                 <PlusOutlined />

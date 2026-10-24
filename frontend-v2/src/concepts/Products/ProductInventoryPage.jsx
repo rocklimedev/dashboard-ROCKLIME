@@ -1,3 +1,4 @@
+import './ProductInventoryPage.styles.css';
 import React, { useMemo } from 'react';
 import {
   Alert,
@@ -38,562 +39,6 @@ import { useGetHistoryByProductIdQuery, useGetProductByIdQuery } from '../../api
 import { useGetAllUsersQuery } from '../../api/userApi';
 
 const { Title, Text } = Typography;
-
-const PAGE_CSS = `
-  .product-inventory-page {
-    min-height: 100vh;
-    background:
-      radial-gradient(circle at 90% 0%, rgba(22,119,255,.055), transparent 28%),
-      #f5f7fa;
-    padding: 24px 0 48px;
-  }
-
-  /* ---------------------------------------------------------
-     PAGE HEADER
-  --------------------------------------------------------- */
-
-  .inventory-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 22px;
-  }
-
-  .inventory-header-left {
-    min-width: 0;
-  }
-
-  .back-button {
-    height: 32px;
-    padding: 0;
-    margin-bottom: 10px;
-    color: #64748b;
-    font-weight: 600;
-  }
-
-  .back-button:hover {
-    color: #1677ff !important;
-    background: transparent !important;
-  }
-
-  .inventory-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 7px;
-    color: #94a3b8;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-  }
-
-  .inventory-title {
-    margin: 0 !important;
-    color: #0f172a !important;
-    font-size: clamp(24px, 3vw, 32px) !important;
-    line-height: 1.15 !important;
-    letter-spacing: -.025em;
-  }
-
-  .inventory-subtitle {
-    display: block;
-    max-width: 720px;
-    margin-top: 7px;
-    color: #64748b;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  .header-meta {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    flex-wrap: wrap;
-    padding-top: 35px;
-  }
-
-  .product-code-tag {
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 11px;
-    border: 1px solid #dbeafe;
-    background: #eff6ff;
-    color: #1d4ed8;
-    border-radius: 8px;
-    font-weight: 600;
-  }
-
-  .status-pill {
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    padding: 0 11px;
-    border: 1px solid #dcfce7;
-    background: #f0fdf4;
-    border-radius: 8px;
-  }
-
-  /* ---------------------------------------------------------
-     MAIN PRODUCT CARD
-  --------------------------------------------------------- */
-
-  .overview-card {
-    border: 1px solid #e7ebf0 !important;
-    border-radius: 16px !important;
-    box-shadow: 0 5px 20px rgba(15, 23, 42, .045) !important;
-    overflow: hidden;
-  }
-
-  .overview-card .ant-card-body {
-    padding: 0;
-  }
-
-  .product-overview {
-    display: grid;
-    grid-template-columns: 280px minmax(0, 1fr) 245px;
-    min-height: 270px;
-  }
-
-  .product-visual {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 270px;
-    padding: 24px;
-    background:
-      radial-gradient(circle at center, #ffffff 0%, #f8fafc 72%);
-    border-right: 1px solid #eef1f5;
-  }
-
-  .product-image {
-    max-width: 100%;
-    max-height: 215px;
-    object-fit: contain;
-  }
-
-  .product-image-empty {
-    width: 100%;
-    height: 215px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px dashed #dbe2ea;
-    border-radius: 12px;
-    background: #fafbfc;
-  }
-
-  .product-details {
-    padding: 28px 30px;
-    min-width: 0;
-  }
-
-  .product-details-title {
-    margin: 0 0 7px !important;
-    color: #0f172a !important;
-    font-size: 22px !important;
-  }
-
-  .product-description {
-    display: block;
-    max-width: 680px;
-    color: #64748b;
-    line-height: 1.65;
-    margin-bottom: 24px;
-  }
-
-  .detail-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .detail-item {
-    padding: 12px 14px;
-    border: 1px solid #edf0f4;
-    background: #fafbfc;
-    border-radius: 10px;
-  }
-
-  .detail-label {
-    display: block;
-    margin-bottom: 4px;
-    color: #94a3b8;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .045em;
-  }
-
-  .detail-value {
-    color: #334155;
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  /* ---------------------------------------------------------
-     STOCK PANEL
-  --------------------------------------------------------- */
-
-  .stock-overview {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 25px 22px;
-    background: #f8fafc;
-    border-left: 1px solid #eef1f5;
-  }
-
-  .stock-overview.low-stock {
-    background: #fff8f7;
-  }
-
-  .stock-label {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: #64748b;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-  }
-
-  .stock-value {
-    margin: 14px 0 2px;
-    color: #0f172a;
-    font-size: 46px;
-    line-height: 1;
-    font-weight: 750;
-    letter-spacing: -.04em;
-  }
-
-  .stock-unit {
-    color: #64748b;
-    font-size: 13px;
-  }
-
-  .stock-alert-line {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #e8edf2;
-  }
-
-  .stock-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 10px;
-    padding: 6px 9px;
-    border-radius: 7px;
-    background: #ecfdf3;
-    color: #15803d;
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  .stock-status.low {
-    background: #fff1f0;
-    color: #cf1322;
-  }
-
-  /* ---------------------------------------------------------
-     METRICS
-  --------------------------------------------------------- */
-
-  .metrics-grid {
-    margin-top: 18px;
-  }
-
-  .metric {
-    height: 100%;
-    min-height: 108px;
-    padding: 17px 18px;
-    border: 1px solid #e7ebf0;
-    border-radius: 14px;
-    background: #ffffff;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, .035);
-  }
-
-  .metric-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 9px;
-  }
-
-  .metric-icon {
-    width: 32px;
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 9px;
-    background: #f1f5f9;
-    color: #475569;
-  }
-
-  .metric-label {
-    color: #64748b;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .metric .ant-statistic {
-    line-height: 1;
-  }
-
-  .metric .ant-statistic-content {
-    color: #0f172a;
-    font-size: 23px;
-    font-weight: 700;
-  }
-
-  .metric .ant-statistic-content-prefix {
-    font-size: 16px;
-    margin-right: 3px;
-  }
-
-  /* ---------------------------------------------------------
-     HISTORY
-  --------------------------------------------------------- */
-
-  .history-card {
-    margin-top: 18px;
-    border: 1px solid #e7ebf0 !important;
-    border-radius: 16px !important;
-    box-shadow: 0 5px 20px rgba(15, 23, 42, .045) !important;
-    overflow: hidden;
-  }
-
-  .history-card .ant-card-head {
-    min-height: 68px;
-    padding: 0 20px;
-    border-bottom: 1px solid #edf0f4;
-  }
-
-  .history-card .ant-card-body {
-    padding: 0;
-  }
-
-  .history-heading {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .history-heading-icon {
-    width: 34px;
-    height: 34px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 9px;
-    background: #eff6ff;
-    color: #1677ff;
-  }
-
-  .history-title {
-    color: #0f172a;
-    font-size: 15px;
-    font-weight: 700;
-  }
-
-  .history-subtitle {
-    display: block;
-    margin-top: 2px;
-    color: #94a3b8;
-    font-size: 11px;
-    font-weight: 500;
-  }
-
-  .latest-movement {
-    color: #94a3b8;
-    font-size: 12px;
-  }
-
-  .inventory-table .ant-table {
-    font-size: 13px;
-  }
-
-  .inventory-table .ant-table-container {
-    border-inline: 0 !important;
-  }
-
-  .inventory-table .ant-table-thead > tr > th {
-    padding: 13px 16px;
-    background: #fafbfc !important;
-    border-bottom: 1px solid #e8edf2;
-    color: #64748b;
-    font-size: 11px;
-    font-weight: 750;
-    text-transform: uppercase;
-    letter-spacing: .045em;
-  }
-
-  .inventory-table .ant-table-tbody > tr > td {
-    padding: 14px 16px;
-    border-bottom: 1px solid #f1f4f7;
-    color: #334155;
-    vertical-align: middle;
-  }
-
-  .inventory-table .ant-table-tbody > tr:hover > td {
-    background: #f8fbff !important;
-  }
-
-  .movement-cell {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 5px 9px;
-    border-radius: 7px;
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  .movement-cell.in {
-    background: #ecfdf3;
-    color: #15803d;
-  }
-
-  .movement-cell.out {
-    background: #fff1f0;
-    color: #cf1322;
-  }
-
-  .movement-cell.neutral {
-    background: #f1f5f9;
-    color: #475569;
-  }
-
-  .change-value {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 58px;
-    padding: 5px 8px;
-    border-radius: 7px;
-    font-size: 12px;
-    font-weight: 750;
-  }
-
-  .change-value.positive {
-    background: #ecfdf3;
-    color: #15803d;
-  }
-
-  .change-value.negative {
-    background: #fff1f0;
-    color: #cf1322;
-  }
-
-  .quantity-value {
-    color: #0f172a;
-    font-size: 14px;
-    font-weight: 750;
-  }
-
-  .order-code {
-    padding: 4px 7px;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    background: #f8fafc;
-    color: #475569;
-    font-size: 12px;
-  }
-
-  .user-cell {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .user-avatar {
-    background: #eef2ff !important;
-    color: #4f46e5 !important;
-    font-size: 11px;
-    font-weight: 700;
-  }
-
-  .user-name {
-    max-width: 135px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .message-cell {
-    max-width: 250px;
-  }
-
-  /* ---------------------------------------------------------
-     RESPONSIVE
-  --------------------------------------------------------- */
-
-  @media (max-width: 1100px) {
-    .product-overview {
-      grid-template-columns: 240px minmax(0, 1fr);
-    }
-
-    .stock-overview {
-      grid-column: 1 / -1;
-      border-left: 0;
-      border-top: 1px solid #eef1f5;
-      min-height: 170px;
-    }
-
-    .stock-value {
-      font-size: 38px;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .product-inventory-page {
-      padding-top: 16px;
-    }
-
-    .inventory-header {
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .header-meta {
-      justify-content: flex-start;
-      padding-top: 0;
-    }
-
-    .product-overview {
-      display: block;
-    }
-
-    .product-visual {
-      min-height: 220px;
-      border-right: 0;
-      border-bottom: 1px solid #eef1f5;
-    }
-
-    .product-details {
-      padding: 22px;
-    }
-
-    .stock-overview {
-      border-top: 1px solid #eef1f5;
-    }
-
-    .detail-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .history-card .ant-card-extra {
-      display: none;
-    }
-  }
-`;
 
 const actionMap = {
   'add-stock': {
@@ -697,19 +142,11 @@ const ProductInventoryPage = () => {
       sorter: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
       render: (date) => (
         <Space direction="vertical" size={1}>
-          <Text strong style={{ color: '#334155' }}>
+          <Text className="fv2-productinventorypage-9c473fb33e" strong>
             {formatDate(date)}
           </Text>
 
-          <Text
-            type="secondary"
-            style={{
-              fontSize: 11,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
+          <Text className="fv2-productinventorypage-78c2544b46" type="secondary">
             <ClockCircleOutlined />
             {date && dayjs(date).isValid() ? dayjs(date).format('hh:mm A') : '—'}
           </Text>
@@ -824,8 +261,6 @@ const ProductInventoryPage = () => {
     return (
       <div className="page-wrapper">
         <div className="content">
-          <style>{PAGE_CSS}</style>
-
           <div className="product-inventory-page">
             <Skeleton active paragraph={{ rows: 12 }} />
           </div>
@@ -838,9 +273,7 @@ const ProductInventoryPage = () => {
     return (
       <div className="page-wrapper">
         <div className="content">
-          <style>{PAGE_CSS}</style>
-
-          <div className="product-inventory-page" style={{ paddingTop: 20 }}>
+          <div className="product-inventory-page fv2-productinventorypage-820db72459">
             <Alert
               type="error"
               showIcon
@@ -856,8 +289,6 @@ const ProductInventoryPage = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <style>{PAGE_CSS}</style>
-
         <div className="product-inventory-page">
           {/* =====================================================
               HEADER
@@ -896,16 +327,7 @@ const ProductInventoryPage = () => {
               </span>
 
               {product?.isFeatured && (
-                <Tag
-                  color="gold"
-                  style={{
-                    height: 32,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    borderRadius: 8,
-                    margin: 0,
-                  }}
-                >
+                <Tag className="fv2-productinventorypage-6ae1d79a8f" color="gold">
                   Featured
                 </Tag>
               )}
@@ -963,7 +385,7 @@ const ProductInventoryPage = () => {
                     <span className="detail-label">Created On</span>
 
                     <span className="detail-value">
-                      <CalendarOutlined style={{ marginRight: 6 }} />
+                      <CalendarOutlined className="fv2-productinventorypage-9566ed26c9" />
                       {formatDate(product?.createdAt)}
                     </span>
                   </div>
@@ -972,7 +394,7 @@ const ProductInventoryPage = () => {
                     <span className="detail-label">Last Updated</span>
 
                     <span className="detail-value">
-                      <CalendarOutlined style={{ marginRight: 6 }} />
+                      <CalendarOutlined className="fv2-productinventorypage-9566ed26c9" />
                       {formatDate(product?.updatedAt)}
                     </span>
                   </div>
@@ -985,9 +407,9 @@ const ProductInventoryPage = () => {
                 <div>
                   <div className="stock-label">
                     {isLowStock ? (
-                      <WarningOutlined style={{ color: '#cf1322' }} />
+                      <WarningOutlined className="fv2-productinventorypage-ff3270399f" />
                     ) : (
-                      <InboxOutlined style={{ color: '#1677ff' }} />
+                      <InboxOutlined className="fv2-productinventorypage-679d1d342b" />
                     )}
                     Current Stock
                   </div>
@@ -998,7 +420,7 @@ const ProductInventoryPage = () => {
                 </div>
 
                 <div className="stock-alert-line">
-                  <Text type="secondary" style={{ fontSize: 12 }}>
+                  <Text className="fv2-productinventorypage-1edec17a8e" type="secondary">
                     Reorder alert at <Text strong>{alertQuantity}</Text> units
                   </Text>
 
@@ -1127,9 +549,9 @@ const ProductInventoryPage = () => {
               locale={{
                 emptyText: (
                   <Empty
+                    className="fv2-productinventorypage-f1b92c0e7e"
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                     description="No inventory movements recorded"
-                    style={{ padding: '36px 0' }}
                   />
                 ),
               }}

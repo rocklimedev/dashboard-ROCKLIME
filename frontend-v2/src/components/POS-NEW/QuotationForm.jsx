@@ -1,3 +1,4 @@
+import './QuotationForm.styles.css';
 // src/components/Quotation/QuotationForm.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -12,8 +13,8 @@ import {
   Space,
   Divider,
   Collapse,
-  message,
 } from 'antd';
+import { toast } from 'sonner';
 import {
   CheckCircleOutlined,
   ArrowLeftOutlined,
@@ -30,50 +31,15 @@ const { Text, Title } = Typography;
 const { Panel } = Collapse;
 const { Option } = Select;
 
-const CompactCard = styled(Card)`
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  .ant-card-body {
-    padding: 12px 16px;
-  }
-`;
+const CompactCard = styled(Card).attrs({ className: 'fv2-quotationform-compact-card' })``;
 
-const TightRow = styled(Row)`
-  margin-bottom: 8px;
-  .ant-col {
-    padding: 0 6px;
-  }
-`;
+const TightRow = styled(Row).attrs({ className: 'fv2-quotationform-tight-row' })``;
 
-const MiniSelect = styled(Select)`
-  width: 100%;
-  .ant-select-selector {
-    padding: 0 8px;
-    height: 30px;
-  }
-`;
+const MiniSelect = styled(Select).attrs({ className: 'fv2-quotationform-mini-select' })``;
 
-const MiniDate = styled(DatePicker)`
-  width: 100%;
-  height: 30px;
-  .react-datepicker-wrapper,
-  input {
-    height: 30px;
-    padding: 4px 8px;
-  }
-`;
+const MiniDate = styled(DatePicker).attrs({ className: 'fv2-quotationform-mini-date' })``;
 
-const CheckoutBtn = styled(Button)`
-  height: 40px;
-  font-weight: 600;
-  background: #e31e24;
-  border-color: #e31e24;
-  color: white;
-  &:hover {
-    background: #ff4d4f;
-    border-color: #ff4d4f;
-  }
-`;
+const CheckoutBtn = styled(Button).attrs({ className: 'fv2-quotationform-checkout-btn' })``;
 
 // Helpers
 const momentToDate = (m) => (m ? m.toDate() : null);
@@ -137,13 +103,13 @@ const QuotationForm = ({
     return customers.map((cust) => ({
       value: cust.customerId,
       label: (
-        <div style={{ lineHeight: 1.3 }}>
+        <div className="fv2-quotationform-c01074c60c">
           <strong>{cust.name || 'Unnamed Customer'}</strong>
           {cust.mobileNumber && (
-            <span style={{ marginLeft: 8, color: '#555' }}>{cust.mobileNumber}</span>
+            <span className="fv2-quotationform-effae430c4">{cust.mobileNumber}</span>
           )}
           {cust.companyName && (
-            <div style={{ fontSize: '0.85em', color: '#777' }}>{cust.companyName}</div>
+            <div className="fv2-quotationform-f139c54703">{cust.companyName}</div>
           )}
         </div>
       ),
@@ -203,7 +169,10 @@ const QuotationForm = ({
   if (!effectiveCartItems.length) {
     return (
       <CompactCard>
-        <Empty description="Cart is empty" image={<DeleteOutlined style={{ fontSize: 48 }} />} />
+        <Empty
+          description="Cart is empty"
+          image={<DeleteOutlined className="fv2-quotationform-a49b5c65b4" />}
+        />
         <Button
           type="primary"
           icon={<ArrowLeftOutlined />}
@@ -226,12 +195,13 @@ const QuotationForm = ({
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
-                    Customer <span style={{ color: 'red' }}>*</span>
+                    Customer <span className="fv2-quotationform-3a5dde9a96">*</span>
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <Space.Compact style={{ width: '100%' }}>
+                  <Space.Compact className="fv2-quotationform-546b26e06d">
                     <Select
+                      className="fv2-quotationform-66f3d31af2"
                       showSearch
                       placeholder="Search by name, phone, company..."
                       value={selectedCustomer}
@@ -240,14 +210,14 @@ const QuotationForm = ({
                       filterOption={(input, option) =>
                         option?.searchText?.includes(input.toLowerCase())
                       }
-                      style={{ flex: 1 }}
+
                       allowClear
                     />
                     <Button
+                      className="fv2-quotationform-a3ab9af0ea"
                       type="primary"
                       icon={<PlusOutlined />}
                       onClick={handleAddCustomer}
-                      style={{ minWidth: 40 }}
                     />
                   </Space.Compact>
                 </Col>
@@ -258,7 +228,7 @@ const QuotationForm = ({
                   <Text strong>Shipping Address</Text>
                 </Col>
                 <Col span={16}>
-                  <Space.Compact style={{ width: '100%' }}>
+                  <Space.Compact className="fv2-quotationform-546b26e06d">
                     <MiniSelect
                       value={dropdownValue}
                       onChange={(v) => {
@@ -285,10 +255,10 @@ const QuotationForm = ({
                       ))}
                     </MiniSelect>
                     <Button
+                      className="fv2-quotationform-a3ab9af0ea"
                       type="primary"
                       onClick={handleAddAddress}
                       disabled={!selectedCustomer}
-                      style={{ minWidth: 40 }}
                     >
                       +
                     </Button>
@@ -324,7 +294,7 @@ const QuotationForm = ({
                 </Col>
                 <Col span={16}>
                   {(quotationData.followupDates || []).map((d, i) => (
-                    <Space key={i} style={{ width: '100%', marginBottom: 8 }}>
+                    <Space className="fv2-quotationform-835610a8f1" key={i}>
                       <MiniDate
                         selected={momentToDate(d ? moment(d) : null)}
                         onChange={(date) => handleFollowup(i, date)}
@@ -351,7 +321,7 @@ const QuotationForm = ({
 
       {/* Summary Sidebar */}
       <Col xs={24} md={8}>
-        <CompactCard title="Order Summary" style={{ position: 'sticky', top: 16 }}>
+        <CompactCard className="fv2-quotationform-6cf7b44543" title="Order Summary">
           <OrderTotal
             items={localCartItems.map((item) => ({
               ...item,
@@ -369,6 +339,11 @@ const QuotationForm = ({
             extraDiscountType={quotationData.discountType || 'fixed'}
             itemCount={mainCartItems.length || null}
             optionalTotal={optionalTotal}
+            gstInclusive={quotationData.gstInclusive === true}
+            onGstInclusiveChange={(value) => {
+              handleQuotationChange('gstInclusive', value);
+              if (value) setGst(0);
+            }}
             onGstChange={setGst}
             onShippingChange={setShipping}
           />
@@ -383,7 +358,7 @@ const QuotationForm = ({
             icon={<CheckCircleOutlined />}
             onClick={() => {
               if (!selectedCustomer) {
-                return message.error('Please select a customer');
+                return toast.error('Please select a customer');
               }
 
               // Pass the correct key: payloadCartItems

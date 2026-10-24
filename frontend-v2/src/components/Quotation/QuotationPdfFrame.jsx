@@ -1,5 +1,7 @@
+import Loader from '../Common/Loader';
+import './QuotationPdfFrame.styles.css';
 import { useEffect, useState } from 'react';
-import { Alert, Spin } from 'antd';
+import { Alert } from 'antd';
 import { fetchPdf } from './quotationPdf';
 
 /**
@@ -72,35 +74,17 @@ export default function QuotationPdfFrame({
       />
     );
   return (
-    <div
-      style={{
-        position: 'relative',
-        height,
-        minHeight: 520,
-        background: '#525659',
-        borderRadius: 10,
-        overflow: 'hidden',
-      }}
-    >
+    <div className="fv2-quotationpdfframe-5ab9cb4472" style={{ height }}>
       {state.url && (
         <iframe
+          className="fv2-quotationpdfframe-1f0875abd5"
           title={documentLabel}
           src={`${state.url}#view=FitH`}
-          style={{ width: '100%', height: '100%', border: 0 }}
         />
       )}
       {state.loading && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(255,255,255,0.6)',
-          }}
-        >
-          <Spin tip={`Making the ${documentLabel.toLowerCase()}…`} />
+        <div className="fv2-quotationpdfframe-c75dd52973">
+          <Loader tip={`Making the ${documentLabel.toLowerCase()}…`} />
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Button, message, notification } from 'antd';
+import { toast } from 'sonner';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 // How often to look for a new service worker while the app stays open.
@@ -31,40 +31,30 @@ export default function PwaManager() {
 
   useEffect(() => {
     if (offlineReady) {
-      message.success('CM Trading is ready to open offline.');
+      toast.success('CM Trading is ready to open offline.');
       setOfflineReady(false);
     }
   }, [offlineReady, setOfflineReady]);
 
   useEffect(() => {
     if (!needRefresh) return;
-    notification.open({
-      key: 'pwa-update',
-      message: 'Update available',
+    toast('Update available', {
+      id: 'pwa-update',
       description: 'A newer version of CM Trading is ready. Reload when you have saved your work.',
-      duration: 0,
-      btn: (
-        <Button type="primary" size="small" onClick={() => updateServiceWorker(true)}>
-          Reload
-        </Button>
-      ),
-      onClose: () => setNeedRefresh(false),
+      duration: Infinity,
+      action: { label: 'Reload', onClick: () => updateServiceWorker(true) },
+      onDismiss: () => setNeedRefresh(false),
     });
   }, [needRefresh, setNeedRefresh, updateServiceWorker]);
 
   useEffect(() => {
     const handleOffline = () =>
-      message.warning({
-        key: 'connectivity',
-        content: "You're offline. Live data and saving are unavailable until you reconnect.",
-        duration: 5,
+      toast.warning("You're offline. Live data and saving are unavailable until you reconnect.", {
+        id: 'connectivity',
+        duration: 5 * 1000,
       });
     const handleOnline = () =>
-      message.success({
-        key: 'connectivity',
-        content: 'Back online.',
-        duration: 3,
-      });
+      toast.success('Back online.', { id: 'connectivity', duration: 3 * 1000 });
 
     window.addEventListener('offline', handleOffline);
     window.addEventListener('online', handleOnline);

@@ -8,7 +8,7 @@ import { useGetCustomerCreditQuery } from '../../api/customerApi';
 
 const inr = (v) => `₹${Math.round(Number(v) || 0).toLocaleString('en-IN')}`;
 
-export default function CreditAlert({ customerId, amount = 0, style }) {
+export default function CreditAlert({ customerId, amount = 0, style, className }) {
   const { data } = useGetCustomerCreditQuery(
     { id: customerId, amount: Math.round(Number(amount) || 0) },
     { skip: !customerId },
@@ -22,6 +22,7 @@ export default function CreditAlert({ customerId, amount = 0, style }) {
         type="error"
         showIcon
         style={style}
+        className={className}
         message={`Over credit limit: ${data.name} owes ${inr(data.due)}; with this order it becomes ${inr(data.afterOrder)} against a limit of ${inr(data.creditLimit)}.`}
         description={<>Collect a payment or get approval before going ahead. {link}</>}
       />
@@ -33,6 +34,7 @@ export default function CreditAlert({ customerId, amount = 0, style }) {
         type="warning"
         showIcon
         style={style}
+        className={className}
         message={`${data.name} has ${inr(data.overdue)} overdue (older than ${data.creditDays} days) out of ${inr(data.due)} owed.`}
         description={link}
       />
@@ -44,6 +46,7 @@ export default function CreditAlert({ customerId, amount = 0, style }) {
         type="info"
         showIcon
         style={style}
+        className={className}
         message={`${data.name} owes ${inr(data.due)}${data.creditLimit ? ` (limit ${inr(data.creditLimit)})` : ''}.`}
       />
     );

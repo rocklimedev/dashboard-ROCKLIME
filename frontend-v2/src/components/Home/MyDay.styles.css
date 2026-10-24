@@ -1,0 +1,38 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-myday-52421d1325) {
+  height: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-myday-8a2053a76f) {
+  margin-bottom: 24px;
+}
+
+:is(#fv2-style-priority, .fv2-myday-57e3ac78da) {
+  font-size: var(--fv2-font-16px);
+}
+
+:is(#fv2-style-priority, .fv2-myday-33a404878a) {
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+:is(#fv2-style-priority, .fv2-myday-b2e2d3f9b6) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-myday-8016b41dc1) {
+  padding: 0;
+}
+
+:is(#fv2-style-priority, .fv2-myday-231f7c5187) {
+  padding: 6px 0;
+}
+
+:is(#fv2-style-priority, .fv2-myday-190ff2a207) {
+  font-size: var(--fv2-font-18px);
+}
+
+:is(#fv2-style-priority, .fv2-myday-aa97a183c9) {
+  padding: 4px 0;
+  cursor: pointer;
+}

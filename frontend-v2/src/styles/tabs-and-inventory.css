@@ -1,0 +1,153 @@
+/* Override Ant Design badge color specifically for the cart */
+.header .cart-badge .ant-badge-count {
+  background-color: var(--fv2-color-e31e24) !important;
+} /* Optional: Also change the dot style if needed (for overflow cases) */
+.header .cart-badge .ant-badge-dot {
+  background-color: var(--fv2-color-e31e24) !important;
+} /* Optional: Adjust text color for better contrast if needed */
+.header .cart-badge .ant-badge-count {
+  color: var(--fv2-color-fff);
+  box-shadow: none; /* Removes default shadow if desired */
+}
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--fv2-color-333333) !important;
+  font-weight: 600; /* optional – makes active tab bolder */
+}
+.active-#e31e24-btn {
+  background-color: var(--fv2-color-e31e24) !important;
+  border-color: var(--fv2-color-e31e24) !important;
+  color: var(--fv2-color-fff) !important;
+}
+.black-code code {
+  color: var(--fv2-color-000) !important;
+  background-color: transparent !important;
+} /* Underline (ink bar) */
+:where(.ant-tabs).ant-tabs-top .ant-tabs-ink-bar,
+:where(.ant-tabs).ant-tabs-bottom .ant-tabs-ink-bar {
+  background: var(--fv2-color-8c8c8c) !important; /* your grey */
+} /* Hover text color */
+.ant-tabs-tab:hover .ant-tabs-tab-btn {
+  color: var(--fv2-color-595959) !important; /* grey on hover */
+} /* Optional: selected/active tab text */
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--fv2-color-262626) !important;
+}
+.inventory-page {
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.filter-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 32px;
+  padding: 20px;
+}
+.search-input .ant-input {
+  border-radius: 8px;
+  height: 44px;
+}
+.filter-controls {
+  width: 100%;
+  justify-content: flex-end;
+}
+.action-bar {
+  margin-top: 20px;
+  text-align: right;
+}
+.report-btn,
+.add-product-btn {
+  background: var(--fv2-color-1f2937);
+  border-color: var(--fv2-color-1f2937);
+}
+.report-btn:hover,
+.add-product-btn:hover {
+  background: var(--fv2-color-374151);
+  border-color: var(--fv2-color-374151);
+}
+.inventory-tabs .ant-tabs-tab {
+  padding: 12px 20px;
+  font-weight: 500;
+}
+.inventory-tabs .ant-tabs-tab-active {
+  font-weight: 600;
+  color: var(--fv2-color-111827);
+}
+.inventory-tabs .ant-badge-count {
+  background: var(--fv2-color-e5e7eb);
+  color: var(--fv2-color-374151);
+  box-shadow: none;
+}
+.table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+.modern-inventory-table .ant-table-thead > tr > th {
+  background: var(--fv2-color-f8fafc);
+  color: var(--fv2-color-475569);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: var(--fv2-font-0_82rem);
+  border-bottom: 2px solid var(--fv2-color-e2e8f0);
+}
+.product-link {
+  color: var(--fv2-color-111827);
+  font-weight: 500;
+}
+.product-link:hover {
+  color: var(--fv2-color-e11d48);
+}
+.product-codes {
+  margin-top: 4px;
+}
+.code-tag {
+  font-size: var(--fv2-font-12px);
+  background: var(--fv2-color-f1f5f9);
+  color: var(--fv2-color-475569);
+}
+.price-text {
+  color: var(--fv2-color-15803d);
+  font-weight: 600;
+}
+.action-btn {
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.action-btn.add {
+  color: var(--fv2-color-16a34a);
+}
+.action-btn.remove {
+  color: var(--fv2-color-dc2626);
+}
+.action-btn.history {
+  color: var(--fv2-color-7c3aed);
+}
+.action-btn:hover {
+  background: var(--fv2-color-f1f5f9);
+}
+.pagination-wrapper {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
+}
+.empty-card {
+  background: white;
+  border-radius: 12px;
+  padding: 60px 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+.loading-full {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--fv2-color-6b7280);
+}

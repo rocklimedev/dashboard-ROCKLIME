@@ -1,0 +1,13 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-userlist-b5f593e33e) {
+  max-width: 280px;
+}
+
+:is(#fv2-style-priority, .fv2-userlist-4c5e59716b) {
+  cursor: pointer;
+  font-size: var(--fv2-font-16px);
+}
+
+:is(#fv2-style-priority, .fv2-userlist-0fa68bfb43) {
+  font-size: var(--fv2-font-18px);
+}

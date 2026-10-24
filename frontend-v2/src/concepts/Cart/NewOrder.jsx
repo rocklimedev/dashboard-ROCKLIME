@@ -1,7 +1,8 @@
+import './NewOrder.styles.css';
 // src/pages/quotations/NewOrder.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import moment from 'moment';
 
 import CartLayout from './CartLayout';
@@ -94,23 +95,23 @@ const NewOrder = ({ workspace, active, onAction, busy }) => {
       itemTaxes = {},
     } = layoutProps;
 
-    if (!selectedCustomer) return message.error('Please select a customer.');
-    if (calculationCartItems.length === 0) return message.error('Cart is empty.');
-    if (!orderData.dueDate) return message.error('Please select a due date.');
+    if (!selectedCustomer) return toast.error('Please select a customer.');
+    if (calculationCartItems.length === 0) return toast.error('Cart is empty.');
+    if (!orderData.dueDate) return toast.error('Please select a due date.');
 
     // Shipping Address Logic
     let finalShipTo = orderData.shipTo;
 
     if (useBillingAddress && !billingAddressId) {
       const customer = customers.find((c) => c.customerId === selectedCustomer);
-      if (!customer?.address) return message.error('Customer has no default address.');
+      if (!customer?.address) return toast.error('Customer has no default address.');
 
       let parsedAddr;
       try {
         parsedAddr =
           typeof customer.address === 'string' ? JSON.parse(customer.address) : customer.address;
       } catch {
-        return message.error('Invalid address format.');
+        return toast.error('Invalid address format.');
       }
 
       try {
@@ -125,11 +126,11 @@ const NewOrder = ({ workspace, active, onAction, busy }) => {
         }).unwrap();
         finalShipTo = res.addressId;
       } catch (e) {
-        return message.error(e?.data?.message || 'Failed to create shipping address.');
+        return toast.error(e?.data?.message || 'Failed to create shipping address.');
       }
     }
 
-    if (!finalShipTo) return message.error('Shipping address is required.');
+    if (!finalShipTo) return toast.error('Shipping address is required.');
 
     // Enrich products with discount and tax info
     // Replace the enrichedProducts map with this improved version
@@ -189,7 +190,7 @@ const NewOrder = ({ workspace, active, onAction, busy }) => {
     try {
       const result = await createOrder(orderPayload).unwrap();
 
-      message.success(`Order #${result.orderNo || ''} created successfully!`);
+      toast.success(`Order #${result.orderNo || ''} created successfully!`);
 
       // Clear draft and cart on success
       try {
@@ -197,29 +198,29 @@ const NewOrder = ({ workspace, active, onAction, busy }) => {
           claimedProductIds: orderPayload.products.map((item) => item.productId || item.id),
         });
       } catch {
-        message.warning(
+        toast.warning(
           'Order created, but its cart could not be removed. Refresh before reusing this draft.',
         );
       }
 
       navigate('/orders/list');
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to create order.');
+      toast.error(err?.data?.message || 'Failed to create order.');
     }
   };
 
   return (
     <>
-      <fieldset disabled={busy} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+      <fieldset className="fv2-neworder-b5185a27e2" disabled={busy}>
         <CartLayout
           draftWorkspace={{ workspace, active, onAction, busy, parent: draftData, customers }}
         >
           {(layoutProps) => (
             <>
               <CreditAlert
+                className="fv2-neworder-56d5b8b454"
                 customerId={selectedCustomer}
                 amount={layoutProps.totalAmount}
-                style={{ marginBottom: 16 }}
               />
 
               <OrderForm

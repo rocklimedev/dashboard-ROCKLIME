@@ -97,6 +97,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,
       },
+      gstInclusive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       gst: {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: true,

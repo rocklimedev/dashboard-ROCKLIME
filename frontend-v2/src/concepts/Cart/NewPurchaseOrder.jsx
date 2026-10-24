@@ -1,7 +1,8 @@
+import './NewPurchaseOrder.styles.css';
 // src/pages/quotations/NewPurchaseOrder.jsx
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import moment from 'moment';
 
 import CartLayout from './CartLayout';
@@ -48,11 +49,11 @@ const NewPurchaseOrder = ({ workspace, active, onAction, busy }) => {
   // ==================== CREATE PURCHASE ORDER ====================
   const handleCreatePurchaseOrder = async (layoutProps) => {
     if (!selectedVendor) {
-      return message.error('Please select a vendor.');
+      return toast.error('Please select a vendor.');
     }
 
     if (!layoutProps?.calculationCartItems || layoutProps.calculationCartItems.length === 0) {
-      return message.error('Cart is empty. Please add items.');
+      return toast.error('Cart is empty. Please add items.');
     }
 
     // the lines as edited on the checkout (qty, rate, discount, GST); the cart only if untouched
@@ -86,7 +87,7 @@ const NewPurchaseOrder = ({ workspace, active, onAction, busy }) => {
     try {
       const result = await createPurchaseOrder(payload).unwrap();
 
-      message.success(
+      toast.success(
         `Purchase Order ${result.purchaseOrder?.poNumber || ''} created successfully!`,
       );
 
@@ -95,20 +96,20 @@ const NewPurchaseOrder = ({ workspace, active, onAction, busy }) => {
           claimedProductIds: formattedItems.map((item) => item.productId || item.id),
         });
       } catch {
-        message.warning(
+        toast.warning(
           'Purchase order created, but its cart could not be removed. Refresh before reusing this draft.',
         );
       }
       // open the new PO (its PDF is ready to send)
       navigate(result.purchaseOrder?.id ? `/po/${result.purchaseOrder.id}` : '/purchase-manager');
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to create Purchase Order.');
+      toast.error(err?.data?.message || 'Failed to create Purchase Order.');
     }
   };
 
   return (
     <>
-      <fieldset disabled={busy} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+      <fieldset className="fv2-newpurchaseorder-621ffa3d37" disabled={busy}>
         <CartLayout
           draftWorkspace={{ workspace, active, onAction, busy, parent: draftData, vendors }}
         >

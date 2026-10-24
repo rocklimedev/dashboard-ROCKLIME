@@ -1,7 +1,10 @@
+import Loader from '../../components/Common/Loader';
+import './PODetails.styles.css';
 // Purchase order page: status, receiving, and the PO itself as the vendor receives it.
 import { useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Space, Spin, Tag, Typography, message } from 'antd';
+import { Button, Space, Tag, Typography } from 'antd';
+import { toast } from 'sonner';
 import {
   ArrowLeftOutlined,
   DownloadOutlined,
@@ -41,7 +44,7 @@ export default function PODetails() {
   const setHidden = (hidden) => setExportOptions({ hidden });
   const customExport = exportOptions.hidden.length > 0;
 
-  if (isLoading) return <Spin style={{ display: 'block', marginTop: 100 }} />;
+  if (isLoading) return <Loader className="fv2-podetails-02a462b344" />;
   if (error || !po)
     return (
       <div className="page-wrapper">
@@ -56,7 +59,7 @@ export default function PODetails() {
       const { blob } = await fetchPoExport(id, exportOptions);
       savePoExport(blob, `PO-${po.poNumber}.pdf`);
     } catch (e) {
-      message.error(e.message);
+      toast.error(e.message);
     } finally {
       setBusy(null);
     }
@@ -66,7 +69,7 @@ export default function PODetails() {
     try {
       savePoExport(await buildPoExcel(po, exportOptions.hidden), `PO-${po.poNumber}.xlsx`);
     } catch (e) {
-      message.error(e.message || 'Could not export Excel');
+      toast.error(e.message || 'Could not export Excel');
     } finally {
       setBusy(null);
     }
@@ -82,7 +85,7 @@ export default function PODetails() {
       if (!r.ok) throw new Error(d.message || 'Could not make a link');
       window.open(d.whatsapp, '_blank');
     } catch (e) {
-      message.error(e.message);
+      toast.error(e.message);
     } finally {
       setBusy(null);
     }
@@ -94,19 +97,10 @@ export default function PODetails() {
         <title>PO {po.poNumber}</title>
       </Helmet>
       <div className="content">
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 12,
-            flexWrap: 'wrap',
-            marginBottom: 14,
-          }}
-        >
+        <div className="fv2-podetails-fa4e38f3fb">
           <div>
             <Space size={8} align="center">
-              <Title level={4} style={{ margin: 0 }}>
+              <Title className="fv2-podetails-a3909b8a75" level={4}>
                 PO {po.poNumber}
               </Title>
               <Tag color={color}>{label}</Tag>
@@ -133,6 +127,7 @@ export default function PODetails() {
               onReset={() => setHidden([])}
             />
             <Button
+              className="fv2-podetails-78157a9cde"
               disabled={customExport}
               title={
                 customExport ? 'Reset export options to share the standard PO link' : undefined
@@ -141,7 +136,6 @@ export default function PODetails() {
               icon={<WhatsAppOutlined />}
               loading={busy === 'wa'}
               onClick={send}
-              style={{ background: '#25D366', borderColor: '#25D366' }}
             >
               Send to vendor
             </Button>
@@ -162,7 +156,7 @@ export default function PODetails() {
           </Space>
         </div>
         <PoReceivingPanel po={po} />
-        <div style={{ maxWidth: 1000, margin: '16px auto 0' }}>
+        <div className="fv2-podetails-3a75330cc1">
           <ServerPdfFrame
             loadPdf={loadPdf}
             path={`/purchase-orders/${id}/pdf`}

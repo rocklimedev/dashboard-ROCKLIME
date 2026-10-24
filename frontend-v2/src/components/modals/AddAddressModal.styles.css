@@ -1,0 +1,9 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-addaddressmodal-26a99613c0) {
+  margin-top: 24px;
+  text-align: right;
+}
+
+:is(#fv2-style-priority, .fv2-addaddressmodal-998d823b99) {
+  margin-right: 12px;
+}

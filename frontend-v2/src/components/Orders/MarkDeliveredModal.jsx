@@ -1,5 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './MarkDeliveredModal.styles.css';
 import { useState } from 'react';
-import { DatePicker, Form, Input, Modal, Upload, Button, message } from 'antd';
+import { DatePicker, Form, Input, Upload, Button } from 'antd';
+import { toast } from 'sonner';
 import { UploadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useMarkDispatchDeliveredMutation } from '../../api/orderApi';
@@ -13,7 +16,7 @@ export default function MarkDeliveredModal({ orderId, dispatch, open, onClose })
   const submit = async () => {
     const v = await form.validateFields();
     if (!v.receivedBy?.trim() && !file) {
-      message.error('Enter who received the goods, or attach the signed delivery note / photo');
+      toast.error('Enter who received the goods, or attach the signed delivery note / photo');
       return;
     }
     const fd = new FormData();
@@ -23,7 +26,7 @@ export default function MarkDeliveredModal({ orderId, dispatch, open, onClose })
     if (file) fd.append('file', file);
     try {
       const r = await markDelivered({ orderId, dispatchId: dispatch.id, formData: fd }).unwrap();
-      message.success(
+      toast.success(
         r.orderStatus === 'DELIVERED'
           ? 'Delivered — the whole order has reached the customer'
           : 'Marked delivered',
@@ -32,12 +35,12 @@ export default function MarkDeliveredModal({ orderId, dispatch, open, onClose })
       setFile(null);
       onClose();
     } catch (e) {
-      message.error(e?.data?.message || 'Could not mark delivered');
+      toast.error(e?.data?.message || 'Could not mark delivered');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       open={open}
       title={`Delivered · dispatch #${dispatch?.dispatchNumber || ''}`}
       okText="Mark delivered"
@@ -57,9 +60,10 @@ export default function MarkDeliveredModal({ orderId, dispatch, open, onClose })
         </Form.Item>
         <Form.Item name="deliveredAt" label="Delivered on">
           <DatePicker
+            className="fv2-markdeliveredmodal-0e4cf9159e"
             showTime={{ format: 'h:mm a' }}
             format="D MMM YYYY, h:mm a"
-            style={{ width: '100%' }}
+
             disabledDate={(d) => d && d.isAfter(dayjs().endOf('day'))}
           />
         </Form.Item>
@@ -81,6 +85,6 @@ export default function MarkDeliveredModal({ orderId, dispatch, open, onClose })
           <Input.TextArea rows={2} placeholder="e.g. 2 boxes slightly damaged, customer accepted" />
         </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }

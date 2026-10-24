@@ -1,0 +1,17 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-addcustomer-b65d0e7202) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-addcustomer-699e1edae3) {
+  text-align: right;
+  margin-top: 32px;
+}
+
+:is(#fv2-style-priority, .fv2-addcustomer-90fbf683e2) {
+  margin-right: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-addcustomer-44bed30d33) {
+  margin-top: 16px;
+}

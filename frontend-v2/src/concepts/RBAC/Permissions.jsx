@@ -1,10 +1,11 @@
+import './Permissions.styles.css';
 import React, { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { SearchOutlined, LeftOutlined } from '@ant-design/icons';
 import { MoreOutlined } from '@ant-design/icons';
 import { Dropdown, Menu, Button } from 'antd';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import PageHeader from '../../components/Common/PageHeader';
 import { rolePermissionsApi as api } from '../../api/rolePermissionApi';
 import './permission.css';
@@ -111,7 +112,7 @@ const Permissions = () => {
 
       dispatch(api.util.invalidateTags([{ type: 'RolePermissions', id: roleId }]));
     } catch (error) {
-      message.error(`Failed to update ${type} permission for ${module}.`);
+      toast.error(`Failed to update ${type} permission for ${module}.`);
     } finally {
       setIsUpdating(false);
     }
@@ -187,7 +188,7 @@ const Permissions = () => {
                 <table className="table table-hover align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: '25%' }}>Module</th>
+                      <th className="fv2-permissions-e83921ed68">Module</th>
                       {permissionTypes.map((type) => (
                         <th key={type} className="text-center">
                           {type.charAt(0).toUpperCase() + type.slice(1)}

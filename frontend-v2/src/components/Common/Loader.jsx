@@ -1,26 +1,55 @@
+import './Loader.styles.css';
 import React from 'react';
-import { Spin } from 'antd';
 
-const Loader = ({ loading }) => {
-  if (!loading) return null;
+/** Shared loading UI: inline by default, wrapped content, or an explicit fullscreen overlay. */
+const Loader = ({
+  loading = true,
+  fullscreen = false,
+  size = fullscreen ? 'large' : 'default',
+  tip,
+  children,
+  className = '',
+  wrapperClassName = '',
+  ...props
+}) => {
+  const hasContent = children != null;
+  if (!loading && !hasContent) return null;
+
+  const indicator = (
+    <span
+      {...props}
+      className={`cm-loader cm-loader--${size} ${className}`}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="cm-loader__ring" aria-hidden="true" />
+      <span className={tip ? 'cm-loader__tip' : 'cm-loader__sr-only'}>{tip || 'Loading…'}</span>
+    </span>
+  );
+
+  if (hasContent) {
+    return (
+      <div
+        className={`cm-loader-region ${loading ? 'cm-loader-region--loading' : ''} ${wrapperClassName}`}
+        aria-busy={loading}
+      >
+        <div className="cm-loader-region__content" inert={loading ? true : undefined}>
+          {children}
+        </div>
+        {loading && (
+          <div className={fullscreen ? 'cm-loader-fullscreen' : 'cm-loader-region__cover'}>
+            {indicator}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (!fullscreen) return indicator;
 
   return (
-    <div
-      id="global-loader"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        height: '100vh',
-        width: '100vw',
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 9999,
-      }}
-    >
-      <Spin size="large" />
+    <div className="cm-loader-fullscreen" id="global-loader">
+      {indicator}
     </div>
   );
 };

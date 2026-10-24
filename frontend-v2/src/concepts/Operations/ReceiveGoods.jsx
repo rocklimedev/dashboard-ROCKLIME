@@ -1,5 +1,7 @@
+import Loader from '../../components/Common/Loader';
+import './ReceiveGoods.styles.css';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Button, Card, Drawer, Empty, Spin, Table, Tag, Typography } from 'antd';
+import { Button, Card, Drawer, Empty, Table, Tag, Typography } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useGetReceivablePosQuery } from '../../api/stockApi';
@@ -21,7 +23,7 @@ function PoDrawer({ id, onClose }) {
       extra={po?.id && <Link to={`/po/${po.id}`}>Open purchase order</Link>}
       destroyOnClose
     >
-      {isFetching || !po?.id ? <Spin /> : <PoReceivingPanel po={po} />}
+      {isFetching || !po?.id ? <Loader /> : <PoReceivingPanel po={po} />}
     </Drawer>
   );
 }
@@ -38,7 +40,7 @@ export default function ReceiveGoods() {
       <div className="content">
         <div className="ops-head">
           <div>
-            <Title level={4} style={{ margin: 0 }}>
+            <Title className="fv2-receivegoods-69b2876691" level={4}>
               Receive goods
             </Title>
             <Text type="secondary">

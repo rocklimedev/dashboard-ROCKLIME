@@ -1,0 +1,17 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-tilecalculator-5ca1f22c5b) {
+  width: 240px;
+}
+
+:is(#fv2-style-priority, .fv2-tilecalculator-2ab2384501) {
+  width: 80px;
+  display: inline-block;
+}
+
+:is(#fv2-style-priority, .fv2-tilecalculator-9bebaa9c43) {
+  width: 150px;
+}
+
+:is(#fv2-style-priority, .fv2-tilecalculator-65ee9476fb) {
+  font-size: var(--fv2-font-12px);
+}

@@ -1,3 +1,4 @@
+import './FgsRow.styles.css';
 // src/components/purchase/FGSRow.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -25,7 +26,7 @@ const FGSRow = ({
   const createdByDisplay = fgs?.createdBy ? (
     fgs.createdBy.name || fgs.createdBy.email || fgs.createdBy.username || '—'
   ) : (
-    <span style={{ color: '#999', fontStyle: 'italic' }}>—</span>
+    <span className="fv2-fgsrow-1c4fbec42f">—</span>
   );
 
   const serial = (filters.page - 1) * filters.limit + idx + 1;
@@ -42,9 +43,10 @@ const FGSRow = ({
         <PermissionGate api="write" module="field_guided_sheets">
           {editingFGSStatusId === fgs.id ? (
             <Select
+              className="fv2-fgsrow-9dca2aba7f"
               value={status}
               onChange={(val) => handleFGSStatusChange(fgs.id, val)}
-              style={{ width: 140 }}
+
               loading={isUpdatingFGSStatus}
               autoFocus
               size="small"
@@ -62,12 +64,9 @@ const FGSRow = ({
               onClick={() => setEditingFGSStatusId(fgs.id)}
             >
               <span
-                className={`priority-badge status-${status}`}
+                className={`priority-badge status-${status}` + ' fv2-fgsrow-695bf80881'}
                 style={{
-                  padding: '4px 10px',
                   borderRadius: '4px',
-                  fontSize: '13px',
-                  fontWeight: 500,
                   backgroundColor: getFGSStatusBg(status),
                   color: getFGSStatusColor(status),
                   border: `1px solid #ef9a9a`,
@@ -75,7 +74,7 @@ const FGSRow = ({
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </span>
-              <EditOutlined style={{ fontSize: '14px' }} />
+              <EditOutlined className="fv2-fgsrow-3bb21dfc5b" />
             </div>
           )}
         </PermissionGate>
@@ -92,7 +91,7 @@ const FGSRow = ({
       <td>
         <div className="d-flex gap-2">
           <PermissionGate api="edit" module="field_guided_sheets">
-            <EditOutlined style={{ cursor: 'pointer' }} onClick={() => handleEditFGS(fgs)} />
+            <EditOutlined className="fv2-fgsrow-cb158fae2c" onClick={() => handleEditFGS(fgs)} />
           </PermissionGate>
 
           <PermissionGate api="delete" module="field_guided_sheets">
@@ -110,7 +109,7 @@ const FGSRow = ({
                   {status === 'approved' && (
                     <Menu.Item
                       key="convert"
-                      icon={<span style={{ color: '#e31e24' }}>→</span>}
+                      icon={<span className="fv2-fgsrow-07b004af9d">→</span>}
                       onClick={() => handleConvertToPO(fgs.id, fgs.fgsNumber)}
                     >
                       Convert to PO

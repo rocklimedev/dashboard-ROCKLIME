@@ -1,5 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './AddBrandModal.styles.css';
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, Button, Row, Col, message } from 'antd';
+import { Form, Input, Row, Col } from 'antd';
+import { toast } from 'sonner';
 import {
   useCreateBrandMutation,
   useUpdateBrandMutation,
@@ -37,33 +40,37 @@ const AddBrand = ({ onClose, existingBrand }) => {
     );
 
     if (isDuplicate) {
-      message.error('This brand slug is already taken.');
+      toast.error('This brand slug is already taken.');
       return;
     }
 
     try {
       if (id) {
         await updateBrand({ id, brandName, brandSlug }).unwrap();
-        message.success('Brand updated successfully!');
+        toast.success('Brand updated successfully!');
       } else {
         await createBrand({ brandName, brandSlug }).unwrap();
-        message.success('Brand created successfully!');
+        toast.success('Brand created successfully!');
       }
 
       onClose();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save brand. Please try again.');
+      toast.error(err?.data?.message || 'Failed to save brand. Please try again.');
     }
   };
 
   const title = Form.useWatch('id', form) ? 'Edit Brand' : 'Add Brand';
 
   return (
-    <Modal
+    <ModalShell
       title={title}
       open={true} // controlled by parent visibility
       onCancel={onClose}
-      footer={null} // we use custom footer below
+      onOk={() => form.submit()}
+      okText={<>{Form.useWatch('id', form) ? 'Update Brand' : 'Add Brand'}</>}
+      onCancelButton={onClose}
+      confirmLoading={isLoading}
+      cancelButtonProps={{ className: 'fv2-addbrandmodal-98be2e43c3', disabled: isLoading }} // we use custom footer below
       maskClosable={false} // prevent closing by clicking backdrop (optional)
       width={600}
     >
@@ -82,7 +89,7 @@ const AddBrand = ({ onClose, existingBrand }) => {
               name="brandName"
               label={
                 <>
-                  Brand Name <span style={{ color: '#ff4d4f' }}>*</span>
+                  Brand Name <span className="fv2-addbrandmodal-6b096a9837">*</span>
                 </>
               }
               rules={[
@@ -99,7 +106,7 @@ const AddBrand = ({ onClose, existingBrand }) => {
               name="brandSlug"
               label={
                 <>
-                  Brand Slug <span style={{ color: '#ff4d4f' }}>*</span>
+                  Brand Slug <span className="fv2-addbrandmodal-6b096a9837">*</span>
                 </>
               }
               rules={[
@@ -120,17 +127,8 @@ const AddBrand = ({ onClose, existingBrand }) => {
         <Form.Item name="id" hidden>
           <Input type="hidden" />
         </Form.Item>
-
-        <div style={{ textAlign: 'right', marginTop: 24 }}>
-          <Button style={{ marginRight: 12 }} onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button type="primary" htmlType="submit" loading={isLoading}>
-            {Form.useWatch('id', form) ? 'Update Brand' : 'Add Brand'}
-          </Button>
-        </div>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

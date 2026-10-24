@@ -1,8 +1,10 @@
+import ModalShell from '../Common/ModalShell';
+import './AddKeywordModal.styles.css';
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Button } from 'antd';
+import { Form, Input, Select } from 'antd';
 import { useCreateKeywordMutation, useUpdateKeywordMutation } from '../../api/keywordApi';
 import { useGetAllCategoriesQuery } from '../../api/categoryApi';
-import { message } from 'antd';
+import { toast } from 'sonner';
 const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
   const [form] = Form.useForm();
   const isEditMode = !!editData;
@@ -33,16 +35,18 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
       }
       onClose();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save keyword');
+      toast.error(err?.data?.message || 'Failed to save keyword');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       title={isEditMode ? 'Edit Keyword' : 'Add Keyword'}
       open={open}
       onCancel={onClose}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>{isEditMode ? 'Update' : 'Add'} Keyword</>}
+      onCancelButton={onClose}
       width={500}
     >
       <Form form={form} layout="vertical" onFinish={onFinish}>
@@ -67,17 +71,8 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
             ))}
           </Select>
         </Form.Item>
-
-        <Form.Item style={{ marginBottom: 0 }}>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <Button onClick={onClose}>Cancel</Button>
-            <Button type="primary" htmlType="submit">
-              {isEditMode ? 'Update' : 'Add'} Keyword
-            </Button>
-          </div>
-        </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

@@ -6,15 +6,15 @@
   padding: 16px 0;
   margin-top: 16px;
   font-family: 'Lato';
-  font-size: 14px;
-  color: #444;
+  font-size: var(--fv2-font-14px);
+  color: var(--fv2-color-444);
 }
 
 /* Info text */
 .pagination-info {
   flex: 1;
-  font-size: 14px;
-  color: #666;
+  font-size: var(--fv2-font-14px);
+  color: var(--fv2-color-666);
 }
 
 /* Pagination Buttons Container */
@@ -36,11 +36,11 @@
 .page-link {
   width: 34px;
   height: 34px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--fv2-color-d0d0d0);
   border-radius: 6px;
-  background: #fff;
-  color: #333;
-  font-size: 14px;
+  background: var(--fv2-color-fff);
+  color: var(--fv2-color-333);
+  font-size: var(--fv2-font-14px);
   font-weight: 500;
   cursor: pointer;
   transition: 0.2s ease;
@@ -51,32 +51,32 @@
 
 /* Hover Effect */
 .page-link:hover {
-  border-color: #e31e24;
-  background-color: #fbeaea;
-  color: #e31e24;
+  border-color: var(--fv2-color-e31e24);
+  background-color: var(--fv2-color-fbeaea);
+  color: var(--fv2-color-e31e24);
 }
 
 /* Active Page */
 .page-item.active .page-link {
-  background-color: #e31e24;
-  color: #fff;
-  border-color: #e31e24;
+  background-color: var(--fv2-color-e31e24);
+  color: var(--fv2-color-fff);
+  border-color: var(--fv2-color-e31e24);
   font-weight: 600;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Disabled State */
 .page-item.disabled .page-link {
-  background-color: #f0f0f0;
-  color: #bbb;
-  border-color: #ddd;
+  background-color: var(--fv2-color-f0f0f0);
+  color: var(--fv2-color-bbb);
+  border-color: var(--fv2-color-ddd);
   cursor: not-allowed;
 }
 
 /* Arrow Buttons */
 .previous-link,
 .next-link {
-  font-size: 16px;
+  font-size: var(--fv2-font-16px);
   padding: 0 8px;
 }
 
@@ -84,7 +84,7 @@
 .break-link {
   border: none;
   background: transparent;
-  color: #888;
+  color: var(--fv2-color-888);
   font-weight: 500;
   cursor: default;
   padding: 0 6px;
@@ -112,6 +112,6 @@
   .page-link {
     width: 30px;
     height: 30px;
-    font-size: 13px;
+    font-size: var(--fv2-font-13px);
   }
 }

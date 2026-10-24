@@ -1,3 +1,4 @@
+import './PoRow.styles.css';
 // src/components/purchase/PORow.jsx
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -26,7 +27,7 @@ const PORow = ({
   const createdByDisplay = po?.createdBy ? (
     po.createdBy.name || po.createdBy.email || po.createdBy.username || '—'
   ) : (
-    <span style={{ color: '#999', fontStyle: 'italic' }}>-</span>
+    <span className="fv2-porow-cc065f44bb">-</span>
   );
 
   const serial = (filters.page - 1) * filters.limit + idx + 1;
@@ -42,8 +43,9 @@ const PORow = ({
           <Link to={`/po/${po.id}`}>{po.poNumber}</Link>
           {po.fgsId && (
             <Tag
+              className="fv2-porow-8ad6aecd03"
               color="#e31e24"
-              style={{ fontSize: '11px', cursor: 'pointer' }}
+
               onClick={() => navigate(`/fgs/${po.fgsId}`)}
             >
               FGS
@@ -56,9 +58,10 @@ const PORow = ({
         <PermissionGate api="write" module="purchase_orders">
           {editingPOStatusId === po.id ? (
             <Select
+              className="fv2-porow-838780829c"
               value={status}
               onChange={(val) => handlePOStatusChange(po.id, val)}
-              style={{ width: 140 }}
+
               loading={isUpdatingPOStatus}
               autoFocus
               size="small"
@@ -72,24 +75,13 @@ const PORow = ({
             </Select>
           ) : (
             <div
-              className="d-flex align-items-center gap-2 pointer"
+              className="d-flex align-items-center gap-2 pointer fv2-porow-3ff098635b"
               onClick={() => setEditingPOStatusId(po.id)}
-              style={{ userSelect: 'none' }}
             >
-              <span
-                className={`priority-badge status-${status}`}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  backgroundColor: '#E6EAED',
-                  color: '#333333',
-                }}
-              >
+              <span className={`priority-badge status-${status}` + ' fv2-porow-1f08035a43'}>
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </span>
-              <EditOutlined style={{ fontSize: '14px' }} />
+              <EditOutlined className="fv2-porow-e775d198c6" />
             </div>
           )}
         </PermissionGate>
@@ -112,8 +104,11 @@ const PORow = ({
       <td>
         {po.expectDeliveryDate ? (
           <span
-            className={`due-date-link ${isDueDateClose(po.expectDeliveryDate) ? 'due-date-close' : ''}`}
-            style={{ cursor: 'pointer', textDecoration: 'underline' }}
+            className={
+              `due-date-link ${isDueDateClose(po.expectDeliveryDate) ? 'due-date-close' : ''}` +
+              ' fv2-porow-28983f1965'
+            }
+
             onClick={() => handleOpenDatesModal(po.expectDeliveryDate, po.followupDates || [])}
           >
             {new Date(po.expectDeliveryDate).toLocaleDateString('en-IN', {
@@ -133,7 +128,8 @@ const PORow = ({
         <div className="d-flex gap-2 align-items-center">
           <PermissionGate api="edit" module="purchase_orders">
             <EditOutlined
-              style={{ cursor: 'pointer', fontSize: '16px' }}
+              className="fv2-porow-57b48e880a"
+
               onClick={() => handleEditPO(po)}
             />
           </PermissionGate>

@@ -1,3 +1,5 @@
+import ModalShell from '../Common/ModalShell';
+import './AddNewTeam.styles.css';
 import React, { useState, useEffect } from 'react';
 import {
   useCreateTeamMutation,
@@ -6,7 +8,8 @@ import {
   useGetTeamByIdQuery,
 } from '../../api/teamApi';
 import { useGetAllUsersQuery, useGetUserByIdQuery } from '../../api/userApi';
-import { Modal, Form, Input, Select, Button, List, message } from 'antd';
+import { Form, Input, Select, Button, List } from 'antd';
+import { toast } from 'sonner';
 
 const { Option } = Select;
 
@@ -67,7 +70,7 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
 
     const alreadyAdded = members.some((m) => m.userId === selectedUserId);
     if (alreadyAdded) {
-      message.warning('User is already in the team');
+      toast.warning('User is already in the team');
       return;
     }
 
@@ -89,13 +92,13 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
 
   const handleSubmit = async (values) => {
     if (!members.length && !team) {
-      message.error('At least one team member is required');
+      toast.error('At least one team member is required');
       return;
     }
 
     const adminUser = users.find((u) => u.userId === values.adminId);
     if (!adminUser) {
-      message.error('Selected admin not found');
+      toast.error('Selected admin not found');
       return;
     }
 
@@ -111,11 +114,11 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
       if (team) {
         await updateTeam({ teamId: team.id, ...payload }).unwrap();
         teamId = team.id;
-        message.success('Team updated successfully');
+        toast.success('Team updated successfully');
       } else {
         const result = await createTeam(payload).unwrap();
         teamId = result.teamId || result.id;
-        message.success('Team created successfully');
+        toast.success('Team created successfully');
       }
 
       form.resetFields();
@@ -123,17 +126,30 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
       onTeamAdded?.(teamId);
       onClose();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save team');
+      toast.error(err?.data?.message || 'Failed to save team');
     }
   };
 
   // === Render (No loading states — handled globally) ===
   return (
-    <Modal
+    <ModalShell
       title={team ? 'Edit Team' : 'Add New Team'}
       open={visible}
       onCancel={onClose}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={
+        <>
+          {team
+            ? updating
+              ? 'Updating...'
+              : 'Update Team'
+            : creating
+              ? 'Creating...'
+              : 'Create Team'}
+        </>
+      }
+      onCancelButton={onClose}
+      confirmLoading={creating || updating}
       centered
       width={600}
       className="add-team-modal"
@@ -164,7 +180,8 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
         <Form.Item label="Add Team Members">
           <div className="d-flex gap-2">
             <Select
-              style={{ flex: 1 }}
+              className="fv2-addnewteam-eb43a47b92"
+
               value={selectedUserId}
               onChange={setSelectedUserId}
               placeholder="Search and select member"
@@ -187,6 +204,7 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
 
         {/* Members List */}
         <List
+          className="fv2-addnewteam-1a398c2ae4"
           bordered
           dataSource={members}
           locale={{ emptyText: 'No members added yet' }}
@@ -201,25 +219,9 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
               <List.Item.Meta title={member.userName} description={member.roleName} />
             </List.Item>
           )}
-          style={{ marginBottom: 16, maxHeight: 300, overflowY: 'auto' }}
         />
-
-        <Form.Item className="mb-0">
-          <div className="d-flex justify-content-end gap-2">
-            <Button onClick={onClose}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={creating || updating}>
-              {team
-                ? updating
-                  ? 'Updating...'
-                  : 'Update Team'
-                : creating
-                  ? 'Creating...'
-                  : 'Create Team'}
-            </Button>
-          </div>
-        </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

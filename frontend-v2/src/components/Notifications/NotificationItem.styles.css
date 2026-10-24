@@ -1,0 +1,19 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-notificationitem-587b9d49a9) {
+  width: 160px;
+  background: var(--fv2-color-dc3545);
+  transition: transform 0.3s ease;
+  z-index: 1;
+}
+
+:is(#fv2-style-priority, .fv2-notificationitem-3d129c81e7) {
+  width: 10px;
+  height: 10px;
+  background-color: var(--fv2-color-1890ff);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+:is(#fv2-style-priority, .fv2-notificationitem-735a22d41b) {
+  width: 34px;
+}

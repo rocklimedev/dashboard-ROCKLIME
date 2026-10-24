@@ -1,5 +1,8 @@
+import ModalShell from '../../components/Common/ModalShell';
+import './DealFormModal.styles.css';
 import { useEffect } from 'react';
-import { message, Col, DatePicker, Form, Input, Modal, Row, Segmented, Select } from 'antd';
+import { Col, DatePicker, Form, Input, Row, Segmented, Select } from 'antd';
+import { toast } from 'sonner';
 import { PhoneOutlined, UserOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useCreateDealMutation, useGetCrmMetaQuery, useUpdateDealMutation } from '../../api/crmApi';
@@ -42,7 +45,7 @@ export default function DealFormModal({ open, onClose, onSaved, deal, defaults =
     const v = await form.validateFields();
     const amount = parseRupees(v.amount);
     if (v.amount && amount == null)
-      return message.error('Value: type a number like 4.5 L or 450000');
+      return toast.error('Value: type a number like 4.5 L or 450000');
     const body = {
       ...v,
       amount,
@@ -52,7 +55,7 @@ export default function DealFormModal({ open, onClose, onSaved, deal, defaults =
     try {
       if (editing) {
         await updateDeal({ id: deal.id, ...body }).unwrap();
-        message.success('Deal saved');
+        toast.success('Deal saved');
         onSaved?.(deal);
       } else {
         if (v.followUpIn != null && v.followUpIn >= 0) {
@@ -60,17 +63,17 @@ export default function DealFormModal({ open, onClose, onSaved, deal, defaults =
           body.followUpTitle = v.followUpTitle || 'Follow up';
         }
         const res = await createDeal(body).unwrap();
-        message.success('Deal added');
+        toast.success('Deal added');
         onSaved?.(res.deal);
       }
       onClose();
     } catch (err) {
-      message.error(err?.data?.message || 'Could not save the deal');
+      toast.error(err?.data?.message || 'Could not save the deal');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       open={open}
       onCancel={onClose}
       onOk={submit}
@@ -173,7 +176,7 @@ export default function DealFormModal({ open, onClose, onSaved, deal, defaults =
           </Col>
           <Col xs={12} sm={8}>
             <Form.Item name="expectedClose" label="Expected to close">
-              <DatePicker style={{ width: '100%' }} format="D MMM YYYY" />
+              <DatePicker className="fv2-dealformmodal-24c509ca12" format="D MMM YYYY" />
             </Form.Item>
           </Col>
           <Col xs={24} sm={16}>
@@ -229,6 +232,6 @@ export default function DealFormModal({ open, onClose, onSaved, deal, defaults =
         </Row>
         <button type="submit" hidden />
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }

@@ -1,21 +1,8 @@
+import './OrderForm.styles.css';
 // src/components/Orders/OrderForm.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Card,
-  Button,
-  Select,
-  Input,
-  Row,
-  Col,
-  Empty,
-  Typography,
-  Radio,
-  Space,
-  Divider,
-  InputNumber,
-  Collapse,
-  message,
-} from 'antd';
+import { Card, Button, Select, Input, Row, Col, Empty, Typography, Radio, Space, Divider, InputNumber, Collapse } from 'antd';
+import { toast } from 'sonner';
 import {
   UserAddOutlined,
   CheckCircleOutlined,
@@ -39,64 +26,19 @@ const { Panel } = Collapse;
 const RESTRICTED_ROLES = ['SUPER_ADMIN', 'DEVELOPER', 'ADMIN'];
 
 /* ────────────────────── Styled ────────────────────── */
-const CompactCard = styled(Card)`
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  .ant-card-body {
-    padding: 12px 16px;
-  }
-`;
+const CompactCard = styled(Card).attrs({ className: 'fv2-orderform-compact-card' })``;
 
-const TightRow = styled(Row)`
-  margin-bottom: 8px;
-  .ant-col {
-    padding: 0 4px;
-  }
-`;
+const TightRow = styled(Row).attrs({ className: 'fv2-orderform-tight-row' })``;
 
-const MiniSelect = styled(Select)`
-  width: 100%;
-  .ant-select-selector {
-    padding: 0 8px;
-    height: 28px;
-  }
-`;
+const MiniSelect = styled(Select).attrs({ className: 'fv2-orderform-mini-select' })``;
 
-const MiniInput = styled(Input)`
-  height: 28px;
-`;
+const MiniInput = styled(Input).attrs({ className: 'fv2-orderform-mini-input' })``;
 
-const MiniNumber = styled(InputNumber)`
-  width: 100%;
-  height: 28px;
-  .ant-input-number-input {
-    height: 26px;
-  }
-`;
+const MiniNumber = styled(InputNumber).attrs({ className: 'fv2-orderform-mini-number' })``;
 
-const MiniDate = styled(DatePicker)`
-  width: 100%;
-  height: 28px;
-  .react-datepicker-wrapper {
-    width: 100%;
-  }
-  .react-datepicker__input-container input {
-    height: 28px;
-    width: 100%;
-    padding: 0 8px;
-    border-radius: 4px;
-    border: 1px solid #d9d9d9;
-  }
-  &.error-border .react-datepicker__input-container input {
-    border-color: #ff4d4f;
-    box-shadow: 0 0 0 2px rgba(245, 34, 45, 0.2);
-  }
-`;
+const MiniDate = styled(DatePicker).attrs({ className: 'fv2-orderform-mini-date' })``;
 
-const CheckoutBtn = styled(Button)`
-  height: 36px;
-  font-weight: 600;
-`;
+const CheckoutBtn = styled(Button).attrs({ className: 'fv2-orderform-checkout-btn' })``;
 
 /* ────────────────────── Constants ────────────────────── */
 const SOURCE_TYPES = ['Retail', 'Architect', 'Interior', 'Builder', 'Contractor'];
@@ -254,7 +196,7 @@ const OrderForm = ({
         }).unwrap();
         handleOrderChange('shipTo', res.addressId);
       } catch (e) {
-        message.error(e?.data?.message ?? 'Failed to create address');
+        toast.error(e?.data?.message ?? 'Failed to create address');
       } finally {
         setIsCreatingAddress(false);
       }
@@ -375,7 +317,10 @@ const OrderForm = ({
   if (!cartItems?.length) {
     return (
       <CompactCard>
-        <Empty description="Cart empty" image={<DeleteOutlined style={{ fontSize: 48 }} />} />
+        <Empty
+          description="Cart empty"
+          image={<DeleteOutlined className="fv2-orderform-f9edd9f5da" />}
+        />
         <Button
           type="primary"
           icon={<ArrowLeftOutlined />}
@@ -399,7 +344,7 @@ const OrderForm = ({
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
-                    Customer <span style={{ color: 'red' }}>*</span>
+                    Customer <span className="fv2-orderform-d139b8668d">*</span>
                   </Text>
                 </Col>
                 <Col span={16}>
@@ -440,14 +385,9 @@ const OrderForm = ({
                             value={c.customerId}
                             label={`${c.name} (${c.email || 'no email'})`} // used by filter & search highlighting
                           >
-                            <div
-                              style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                              }}
-                            >
+                            <div className="fv2-orderform-22f6fc4099">
                               <span>{c.name}</span>
-                              <Text type="secondary" style={{ fontSize: 12 }}>
+                              <Text className="fv2-orderform-e1fd4e8860" type="secondary">
                                 {c.email || '—'}
                               </Text>
                             </div>
@@ -455,7 +395,7 @@ const OrderForm = ({
                         ))}
                     </MiniSelect>
                     {hasError('customer') && (
-                      <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                      <Text className="fv2-orderform-b859d25778" type="danger">
                         {getError('customer')}
                       </Text>
                     )}
@@ -469,11 +409,11 @@ const OrderForm = ({
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
-                    Shipping <span style={{ color: 'red' }}>*</span>
+                    Shipping <span className="fv2-orderform-d139b8668d">*</span>
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <Space style={{ width: '100%', display: 'flex', gap: 8 }}>
+                  <Space className="fv2-orderform-cafa1ab504">
                     <MiniSelect
                       value={useBillingAddress ? 'sameAsBilling' : orderData?.shipTo}
                       onChange={setShip}
@@ -507,16 +447,16 @@ const OrderForm = ({
                     </MiniSelect>
 
                     {hasError('shipping') && (
-                      <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                      <Text className="fv2-orderform-b859d25778" type="danger">
                         {getError('shipping')}
                       </Text>
                     )}
 
                     <Button
+                      className="fv2-orderform-ece92f8b62"
                       type="primary"
                       onClick={handleAddAddress}
                       disabled={!selectedCustomer}
-                      style={{ minWidth: 40 }}
                     >
                       +
                     </Button>
@@ -576,7 +516,7 @@ const OrderForm = ({
                   </Space.Compact>
 
                   {hasError('source') && (
-                    <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                    <Text className="fv2-orderform-b859d25778" type="danger">
                       {getError('source')}
                     </Text>
                   )}
@@ -589,7 +529,7 @@ const OrderForm = ({
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
-                    Due Date <span style={{ color: 'red' }}>*</span>
+                    Due Date <span className="fv2-orderform-d139b8668d">*</span>
                   </Text>
                 </Col>
                 <Col span={16}>
@@ -604,7 +544,7 @@ const OrderForm = ({
                     placeholderText="DD/MM/YYYY"
                   />
                   {hasError('dueDate') && (
-                    <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                    <Text className="fv2-orderform-b859d25778" type="danger">
                       {getError('dueDate')}
                     </Text>
                   )}
@@ -617,7 +557,7 @@ const OrderForm = ({
                 </Col>
                 <Col span={16}>
                   {(orderData?.followupDates || []).map((d, i) => (
-                    <Space key={i} style={{ width: '100%', marginBottom: 4 }}>
+                    <Space className="fv2-orderform-71fe5cd002" key={i}>
                       <MiniDate
                         selected={momentToDate(d ? moment(d) : null)}
                         onChange={(v) => setFollow(i, v)}
@@ -670,7 +610,7 @@ const OrderForm = ({
                 <TightRow gutter={8}>
                   <Col span={8}>
                     <Text strong>
-                      Team <span style={{ color: 'red' }}>*</span>
+                      Team <span className="fv2-orderform-d139b8668d">*</span>
                     </Text>
                   </Col>
                   <Col span={16}>
@@ -682,7 +622,7 @@ const OrderForm = ({
                       dropdownRender={(menu) => (
                         <>
                           {menu}
-                          <Divider style={{ margin: '4px 0' }} />
+                          <Divider className="fv2-orderform-9390b9a5f2" />
                           <Button
                             type="primary"
                             icon={<PlusOutlined />}
@@ -702,7 +642,7 @@ const OrderForm = ({
                       ))}
                     </MiniSelect>
                     {hasError('assignment') && assignmentType === 'team' && (
-                      <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                      <Text className="fv2-orderform-b859d25778" type="danger">
                         {getError('assignment')}
                       </Text>
                     )}
@@ -715,7 +655,7 @@ const OrderForm = ({
                   <TightRow gutter={8}>
                     <Col span={8}>
                       <Text strong>
-                        Primary <span style={{ color: 'red' }}>*</span>
+                        Primary <span className="fv2-orderform-d139b8668d">*</span>
                       </Text>
                     </Col>
                     <Col span={16}>
@@ -732,7 +672,7 @@ const OrderForm = ({
                         ))}
                       </MiniSelect>
                       {hasError('assignment') && assignmentType === 'users' && (
-                        <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                        <Text className="fv2-orderform-b859d25778" type="danger">
                           {getError('assignment')}
                         </Text>
                       )}
@@ -826,6 +766,7 @@ const OrderForm = ({
                 <Col span={16}>
                   <Space.Compact block>
                     <MiniNumber
+                      className="fv2-orderform-c82461e425"
                       min={0}
                       precision={2}
                       value={extraDiscount}
@@ -836,10 +777,9 @@ const OrderForm = ({
                       }}
                       placeholder="0"
                       addonBefore="₹"
-                      style={{ width: '100%' }}
                     />
                   </Space.Compact>
-                  <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 4 }}>
+                  <Text className="fv2-orderform-f383faa313" type="secondary">
                     Fixed amount discount applied after subtotal, tax & shipping
                   </Text>
                 </Col>
@@ -873,14 +813,14 @@ const OrderForm = ({
             extraDiscount={Number(extraDiscAmt)}
             gst={gst}
           />
-          <Divider style={{ margin: '8px 0' }} />
+          <Divider className="fv2-orderform-d368317ef6" />
           <CheckoutBtn
             type="primary"
             block
             icon={<CheckCircleOutlined />}
             onClick={() => {
               if (!canSubmit) {
-                message.error('Please fix all required fields');
+                toast.error('Please fix all required fields');
                 return;
               }
 
@@ -898,7 +838,7 @@ const OrderForm = ({
           >
             Create Order
           </CheckoutBtn>
-          <Button block style={{ marginTop: 4 }} onClick={() => setActiveTab('cart')}>
+          <Button className="fv2-orderform-42e740c856" block onClick={() => setActiveTab('cart')}>
             Back to Cart
           </Button>
         </CompactCard>

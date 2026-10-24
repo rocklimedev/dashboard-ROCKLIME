@@ -1,6 +1,9 @@
+import ModalShell from '../Common/ModalShell';
+import './AssignItemModal.styles.css';
 // src/components/modals/AssignItemLocation.jsx
 import React, { useState, useEffect } from 'react';
-import { Modal, Select, Space, Typography, InputNumber, Button, Tag, Divider, message } from 'antd';
+import { Select, Space, Typography, InputNumber, Button, Tag, Divider } from 'antd';
+import { toast } from 'sonner';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
@@ -121,16 +124,16 @@ export default function AssignItemModal({
 
   const handleSubmit = () => {
     if (!itemId) {
-      return message.error('Could not identify this item — please retry');
+      return toast.error('Could not identify this item — please retry');
     }
     if (totalAssigned === 0) {
-      return message.error('Please assign at least some quantity');
+      return toast.error('Please assign at least some quantity');
     }
     if (assignments.some((a) => !a.floorId)) {
-      return message.error('Please select a floor for every assignment row');
+      return toast.error('Please select a floor for every assignment row');
     }
     if (totalAssigned > itemQty) {
-      return message.error('Assigned quantity cannot exceed available quantity');
+      return toast.error('Assigned quantity cannot exceed available quantity');
     }
 
     // Pass assignments with names to parent
@@ -141,7 +144,7 @@ export default function AssignItemModal({
   const selectedFloor = (floorId) => floors?.find((f) => f.floorId === floorId);
 
   return (
-    <Modal
+    <ModalShell
       title={`${item?.name || 'Item'} - Assign Location`}
       open={visible}
       onOk={handleSubmit}
@@ -149,7 +152,7 @@ export default function AssignItemModal({
       okText="Save Assignments"
       width={650}
     >
-      <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Space className="fv2-assignitemmodal-2f9a2f4b22" direction="vertical" size="large">
         <div>
           <Text strong>Available Quantity:</Text> <Tag color="blue">{itemQty}</Tag>
           <Text type="secondary">
@@ -164,17 +167,9 @@ export default function AssignItemModal({
           const floor = selectedFloor(assignment.floorId);
 
           return (
-            <div
-              key={index}
-              style={{
-                border: '1px solid #f0f0f0',
-                padding: 12,
-                borderRadius: 8,
-                backgroundColor: '#fafafa',
-              }}
-            >
-              <Space direction="vertical" style={{ width: '100%' }} size="small">
-                <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
+            <div className="fv2-assignitemmodal-6ca2f70154" key={index}>
+              <Space className="fv2-assignitemmodal-2f9a2f4b22" direction="vertical" size="small">
+                <Space className="fv2-assignitemmodal-3e858a11ea" align="center">
                   <Text strong>Assignment {index + 1}</Text>
                   {assignments.length > 1 && (
                     <Button
@@ -187,16 +182,17 @@ export default function AssignItemModal({
                 </Space>
 
                 <InputNumber
+                  className="fv2-assignitemmodal-2f9a2f4b22"
                   min={1}
                   max={remaining + (Number(assignment.assignedQuantity) || 0)}
                   value={assignment.assignedQuantity}
                   onChange={(v) => updateAssignment(index, 'assignedQuantity', v)}
                   addonAfter="qty"
-                  style={{ width: '100%' }}
                 />
 
                 <Select
-                  style={{ width: '100%' }}
+                  className="fv2-assignitemmodal-2f9a2f4b22"
+
                   placeholder="Select Floor *"
                   value={assignment.floorId}
                   onChange={(v) => updateAssignment(index, 'floorId', v)}
@@ -210,7 +206,8 @@ export default function AssignItemModal({
 
                 {assignment.floorId && (
                   <Select
-                    style={{ width: '100%' }}
+                    className="fv2-assignitemmodal-2f9a2f4b22"
+
                     placeholder="Room (optional)"
                     value={assignment.roomId}
                     onChange={(v) => updateAssignment(index, 'roomId', v)}
@@ -234,6 +231,6 @@ export default function AssignItemModal({
           </Button>
         )}
       </Space>
-    </Modal>
+    </ModalShell>
   );
 }

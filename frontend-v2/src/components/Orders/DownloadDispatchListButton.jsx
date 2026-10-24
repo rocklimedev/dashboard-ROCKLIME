@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Button, message } from 'antd';
+import { Button } from 'antd';
+import { toast } from 'sonner';
 import { FilePdfOutlined } from '@ant-design/icons';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -57,7 +58,7 @@ const DownloadDispatchListButton = ({
 
   const handleDownload = () => {
     if (!dispatches.length && !hasProducts) {
-      message.info('Nothing to export yet.');
+      toast.info('Nothing to export yet.');
       return;
     }
 
@@ -263,7 +264,7 @@ const DownloadDispatchListButton = ({
       doc.save(`DispatchList-Order-${order.orderNo || 'unknown'}.pdf`);
     } catch (err) {
       console.error(err);
-      message.error('Failed to generate dispatch list PDF.');
+      toast.error('Failed to generate dispatch list PDF.');
     } finally {
       setGenerating(false);
     }

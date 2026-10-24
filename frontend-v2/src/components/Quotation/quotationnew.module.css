@@ -19,7 +19,7 @@
   width: 210mm;
   margin: 40px auto;
   padding: 20px 0;
-  background: #f5f5f5;
+  background: var(--fv2-color-f5f5f5);
   counter-reset: page 1;
 }
 
@@ -46,7 +46,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #000;
+  background: var(--fv2-color-000);
   color: white;
 }
 
@@ -65,7 +65,7 @@
 }
 
 .dynamicCustomerName {
-  font-size: 50px;
+  font-size: var(--fv2-font-50px);
   letter-spacing: 12px;
   text-transform: uppercase;
   margin: 351px 0;
@@ -107,9 +107,9 @@
 /* Client info fields – absolute positioned */
 .clientField {
   position: absolute;
-  font-size: 17px;
+  font-size: var(--fv2-font-17px);
   font-weight: 500;
-  color: #000;
+  color: var(--fv2-color-000);
   line-height: 1.4;
 }
 
@@ -175,9 +175,9 @@
 
 .companyTitle {
   text-align: center;
-  font-size: 44px;
+  font-size: var(--fv2-font-44px);
   font-weight: bold;
-  color: #e31e24;
+  color: var(--fv2-color-e31e24);
   margin: 40px 0 10px;
   letter-spacing: 4px;
   text-transform: uppercase;
@@ -185,8 +185,8 @@
 
 .subtitle {
   text-align: center;
-  font-size: 30px;
-  color: #333;
+  font-size: var(--fv2-font-30px);
+  color: var(--fv2-color-333);
   margin-bottom: 60px;
 }
 
@@ -194,12 +194,12 @@
   display: grid;
   grid-template-columns: 220px 1fr;
   gap: 18px 35px;
-  font-size: 19px;
+  font-size: var(--fv2-font-19px);
   margin-bottom: 70px;
 }
 
 .label {
-  background: #e31e24;
+  background: var(--fv2-color-e31e24);
   color: white;
   padding: 18px 28px;
   border-radius: 50px 0 0 50px;
@@ -208,29 +208,29 @@
 }
 
 .value {
-  background: #f9f9f9;
+  background: var(--fv2-color-f9f9f9);
   padding: 18px 35px;
   border-radius: 0 50px 50px 0;
-  border: 1px solid #eee;
+  border: 1px solid var(--fv2-color-eee);
 }
 
 .summaryTable {
   width: 100%;
   border-collapse: collapse;
   margin: 70px 0;
-  font-size: 18px;
+  font-size: var(--fv2-font-18px);
 }
 
 .summaryTable th {
-  background: #e31e24;
+  background: var(--fv2-color-e31e24);
   color: white;
   padding: 22px;
-  font-size: 21px;
+  font-size: var(--fv2-font-21px);
 }
 
 .summaryTable td {
   height: 62px;
-  border-bottom: 2px solid #eee;
+  border-bottom: 2px solid var(--fv2-color-eee);
 }
 
 /* ======================= LETTERHEAD FOOTER – IMAGE MATCH ======================= */
@@ -263,13 +263,13 @@
 .letterheadFooter > div {
   text-align: left;
   /* NOT center */
-  font-size: 14px;
+  font-size: var(--fv2-font-14px);
   /* tighter typography */
 }
 
 /* Optional: slightly mute phone + website */
 .letterheadFooter > div span {
-  color: #444;
+  color: var(--fv2-color-444);
 }
 
 /* ======================= PAGE 3+: PRODUCT PAGES – CONTENT NEVER BREAKS ======================= */
@@ -284,21 +284,21 @@
   justify-content: space-between;
   align-items: flex-start;
   padding-bottom: 18px;
-  border-bottom: 6px solid #e31e24;
+  border-bottom: 6px solid var(--fv2-color-e31e24);
   margin-bottom: 30px;
 }
 
 .clientName {
-  font-size: 28px;
+  font-size: var(--fv2-font-28px);
   font-weight: bold;
-  color: #e31e24;
+  color: var(--fv2-color-e31e24);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .clientAddress {
-  font-size: 18px;
-  color: #333;
+  font-size: var(--fv2-font-18px);
+  color: var(--fv2-color-333);
   margin-top: 8px;
   line-height: 1.5;
   max-width: 600px;
@@ -306,7 +306,7 @@
 
 .pageDate {
   font-weight: bold;
-  color: #e31e24;
+  color: var(--fv2-color-e31e24);
   text-align: right;
 }
 
@@ -316,26 +316,26 @@
   border-collapse: collapse;
   margin: 24px 0 0 0;
   font-family: 'Lato', sans-serif;
-  font-size: 13px;
-  color: #222;
+  font-size: var(--fv2-font-13px);
+  color: var(--fv2-color-222);
   table-layout: fixed;
-  border: 2px solid #e31e24; /* Outer border - strong red */
+  border: 2px solid var(--fv2-color-e31e24); /* Outer border - strong red */
   background: white;
 }
 
 /* All cells get clean internal borders */
 .productTable thead th {
-  background: #e31e24;
+  background: var(--fv2-color-e31e24);
   color: white;
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--fv2-font-13px);
   text-align: center; /* Already centered - good */
   letter-spacing: 0.4px;
-  border-bottom: 2px solid #c00;
+  border-bottom: 2px solid var(--fv2-color-c00);
 }
 .productTable th,
 .productTable td {
-  border: 1px solid #333; /* Darker, clear table lines */
+  border: 1px solid var(--fv2-color-333); /* Darker, clear table lines */
   padding: 10px 6px;
   vertical-align: middle;
   text-align: center !important;
@@ -376,8 +376,8 @@
 /* ── CELL STYLING ────────────────────────────────────────────────────── */
 .snoCell {
   font-weight: 600;
-  color: #444;
-  font-size: 14px;
+  color: var(--fv2-color-444);
+  font-size: var(--fv2-font-14px);
   text-align: center;
 }
 
@@ -386,7 +386,7 @@
   padding: 12px 14px !important;
   font-weight: 500;
   line-height: 1.38;
-  font-size: 13px;
+  font-size: var(--fv2-font-13px);
   hyphens: auto;
   word-break: break-word;
 }
@@ -411,18 +411,18 @@ td.image {
   /* optional – if you add class to MRP <td> */
   text-align: right;
   font-weight: 600;
-  color: #111;
-  font-size: 13.5px;
+  color: var(--fv2-color-111);
+  font-size: var(--fv2-font-13_5px);
 }
 
 /* Optional row striping – subtle luxury feel */
 .productTable tbody tr:nth-child(even) {
-  background-color: #fdfdfd;
+  background-color: var(--fv2-color-fdfdfd);
 }
 
 @media screen {
   .productTable tbody tr:hover {
-    background-color: #fff5f5;
+    background-color: var(--fv2-color-fff5f5);
     transition: background-color 0.12s;
   }
 }
@@ -432,7 +432,7 @@ td.image {
   text-align: left !important;
   padding: 14px 12px !important;
   font-weight: 500;
-  font-size: 10px;
+  font-size: var(--fv2-font-10px);
   line-height: 1.35;
   max-width: 0;
   /* forces ellipsis + wrap */
@@ -450,8 +450,8 @@ td.image {
 .mrpCell {
   text-align: right !important;
   font-weight: 600;
-  color: #111;
-  font-size: 13.5px;
+  color: var(--fv2-color-111);
+  font-size: var(--fv2-font-13_5px);
 }
 
 /* REPLACE THE OLD .finalSummarySection COMPLETELY WITH THIS */
@@ -467,7 +467,7 @@ td.image {
   justify-content: space-between;
   align-items: flex-start;
   padding: 30px 0 20px;
-  border-top: 3px solid #e31e24;
+  border-top: 3px solid var(--fv2-color-e31e24);
   page-break-inside: avoid;
 }
 
@@ -480,9 +480,9 @@ td.image {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px dashed #ccc;
-  font-size: 15px;
-  color: #333;
+  border-bottom: 1px dashed var(--fv2-color-ccc);
+  font-size: var(--fv2-font-15px);
+  color: var(--fv2-color-333);
 }
 
 /* RIGHT COLUMN */
@@ -498,16 +498,16 @@ td.image {
 .totalAmount {
   display: block;
   justify-content: space-between;
-  font-size: 20px;
+  font-size: var(--fv2-font-20px);
   /* font-weight: 900; */
-  color: #e31e24;
+  color: var(--fv2-color-e31e24);
 }
 
 /* AMOUNT IN WORDS */
 .amountInWords {
   font-style: italic;
-  font-size: 14px;
-  color: #555;
+  font-size: var(--fv2-font-14px);
+  color: var(--fv2-color-555);
   line-height: 1.6;
 }
 
@@ -518,8 +518,8 @@ td.image {
   position: absolute;
   bottom: 20px;
   right: 50px;
-  font-size: 10px;
-  color: #e31e24;
+  font-size: var(--fv2-font-10px);
+  color: var(--fv2-color-e31e24);
   font-weight: bold;
 }
 
@@ -586,30 +586,30 @@ td.image {
 
 /* Tab text */
 .version-tabs .ant-tabs-tab {
-  color: #333333;
+  color: var(--fv2-color-333333);
 }
 
 /* Active tab */
 .version-tabs .ant-tabs-tab.ant-tabs-tab-active {
-  color: #333333;
+  color: var(--fv2-color-333333);
   font-weight: 500;
 }
 
 /* Card background */
 .version-tabs.ant-tabs-card .ant-tabs-tab {
-  background: #f5f5f5;
-  border-color: #d9d9d9;
+  background: var(--fv2-color-f5f5f5);
+  border-color: var(--fv2-color-d9d9d9);
 }
 
 /* Active card tab */
 .version-tabs.ant-tabs-card .ant-tabs-tab-active {
-  background: #ffffff;
-  border-bottom-color: #ffffff;
+  background: var(--fv2-color-ffffff);
+  border-bottom-color: var(--fv2-color-ffffff);
 }
 
 /* Hover */
 .version-tabs .ant-tabs-tab:hover {
-  color: #000000;
+  color: var(--fv2-color-000000);
 }
 
 /* Unit Price Column (new) */

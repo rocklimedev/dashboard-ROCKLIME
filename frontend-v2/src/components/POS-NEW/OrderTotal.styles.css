@@ -1,0 +1,70 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-ordertotal-80d7a86e54) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--fv2-color-f3f3f3);
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-4d26cba4a0) {
+  min-width: 0;
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-ae070caf83) {
+  font-size: var(--fv2-font-11_5px);
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-1cc4f2d2d8) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-c70a10cd2d) {
+  white-space: nowrap;
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-08875aefa5) {
+  width: 90px;
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-196763f7ac) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: var(--fv2-color-d7232f);
+  border-radius: 10px;
+  color: var(--fv2-color-fff);
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-7f63929170) {
+  letter-spacing: 0.08em;
+  font-size: var(--fv2-font-12px);
+  text-transform: uppercase;
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-53ea192b55) {
+  font-size: var(--fv2-font-20px);
+  font-weight: 600;
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-e8acd27b53) {
+  display: block;
+  text-align: right;
+  font-size: var(--fv2-font-12px);
+  margin-top: 6px;
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-6d8009f27c) {
+  display: block;
+  text-align: right;
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-ordertotal-8226c438fd) {
+  width: 76px;
+}

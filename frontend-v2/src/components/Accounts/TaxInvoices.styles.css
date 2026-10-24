@@ -1,0 +1,16 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-taxinvoices-f8f4c73be1) {
+  width: 140px;
+}
+
+:is(#fv2-style-priority, .fv2-taxinvoices-4c95cbaf80) {
+  width: 280px;
+}
+
+:is(#fv2-style-priority, .fv2-taxinvoices-0428d6290f) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-taxinvoices-f1f9e5aaa5) {
+  color: var(--fv2-color-d32f2f);
+}

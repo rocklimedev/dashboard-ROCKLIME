@@ -1,0 +1,63 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-commentrow-3dd8c6640f) {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+:is(#fv2-style-priority, .fv2-commentrow-cac484b403) {
+  display: flex;
+  align-items: flex-start;
+  max-width: 75%;
+  gap: 10px;
+}
+
+:is(#fv2-style-priority, .fv2-commentrow-44879ccb4a) {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: var(--fv2-font-13px);
+  flex-shrink: 0;
+}
+
+:is(#fv2-style-priority, .fv2-commentrow-4f81c181b2) {
+  padding: 10px 12px;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  position: relative;
+  min-width: 120px;
+}
+
+:is(#fv2-style-priority, .fv2-commentrow-ec5375229e) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  gap: 10px;
+}
+
+:is(#fv2-style-priority, .fv2-commentrow-9b4de349fa) {
+  font-size: var(--fv2-font-12px);
+  opacity: 0.9;
+}
+
+:is(#fv2-style-priority, .fv2-commentrow-8f8dda06f3) {
+  font-size: var(--fv2-font-12px);
+  padding: 0;
+  height: auto;
+  opacity: 0.85;
+}
+
+:is(#fv2-style-priority, .fv2-commentrow-97f4bd178e) {
+  font-size: var(--fv2-font-14px);
+  line-height: 1.4;
+}
+
+:is(#fv2-style-priority, .fv2-commentrow-9cbe8b93d3) {
+  margin-top: 6px;
+  font-size: var(--fv2-font-11px);
+  opacity: 0.7;
+}

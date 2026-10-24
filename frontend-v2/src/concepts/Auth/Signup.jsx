@@ -1,8 +1,9 @@
+import './Signup.styles.css';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRegisterMutation } from '../../api/authApi';
 import logo from '../../assets/img/logo.png';
-import { message } from 'antd';
+import { toast } from 'sonner';
 const Signup = () => {
   const [formData, setFormData] = useState({
     username: '',
@@ -28,12 +29,12 @@ const Signup = () => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      message.error('Passwords do not match!');
+      toast.error('Passwords do not match!');
       return;
     }
 
     if (!formData.agreeTerms) {
-      message.error('You must agree to the terms and conditions!');
+      toast.error('You must agree to the terms and conditions!');
       return;
     }
 
@@ -41,7 +42,7 @@ const Signup = () => {
       await register(formData).unwrap();
       navigate('/login');
     } catch (err) {
-      message.error(err?.data?.message || 'Something went wrong. Try again.');
+      toast.error(err?.data?.message || 'Something went wrong. Try again.');
     }
   };
 
@@ -52,7 +53,7 @@ const Signup = () => {
           <form onSubmit={handleSubmit}>
             <div className="login-userset">
               <div className="login-logo logo-normal">
-                <img src={logo} alt="Logo" style={{ width: '177px', height: 'auto' }} />
+                <img className="fv2-signup-52f4e55fe6" src={logo} alt="Logo" />
               </div>
               <div className="login-userheading">
                 <h3>Register</h3>

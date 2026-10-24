@@ -1,5 +1,6 @@
+import Loader from '../../components/Common/Loader';
 import React, { useMemo, useState } from 'react';
-import { Card, Empty, Select, Spin, Tag } from 'antd';
+import { Card, Empty, Select, Tag } from 'antd';
 import {
   Area,
   AreaChart,
@@ -160,7 +161,7 @@ const NewDashboard = () => {
         <div className="report-page-wrapper">
           {loading ? (
             <div className="report-loading">
-              <Spin size="large" />
+              <Loader size="large" />
             </div>
           ) : (
             <>

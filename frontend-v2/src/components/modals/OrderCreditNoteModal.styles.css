@@ -1,0 +1,9 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-ordercreditnotemodal-df8ad01a7f) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-ordercreditnotemodal-ff0eca19e0) {
+  text-align: center;
+  padding: 40px 0;
+}

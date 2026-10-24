@@ -1,3 +1,4 @@
+import './NotificationItem.styles.css';
 // src/components/notifications/NotificationItem.jsx
 import React, { useState } from 'react';
 import Avatar from 'react-avatar';
@@ -35,14 +36,8 @@ const NotificationItem = ({
     <div className="position-relative overflow-hidden">
       {/* Swipe Actions - Visible only on mobile */}
       <div
-        className="d-md-none position-absolute top-0 end-0 h-100 d-flex align-items-center"
-        style={{
-          width: '160px',
-          background: '#dc3545',
-          transform: `translateX(${translateX + 160}px)`,
-          transition: 'transform 0.3s ease',
-          zIndex: 1,
-        }}
+        className="d-md-none position-absolute top-0 end-0 h-100 d-flex align-items-center fv2-notificationitem-587b9d49a9"
+        style={{ transform: `translateX(${translateX + 160}px)` }}
       >
         <button
           className="flex-fill h-100 text-white border-0 bg-success"
@@ -88,19 +83,8 @@ const NotificationItem = ({
         <div className="p-3">
           <div className="d-flex align-items-start">
             {/* Unread indicator dot */}
-            {!notification.read && (
-              <div
-                className="me-3 mt-1"
-                style={{
-                  width: 10,
-                  height: 10,
-                  backgroundColor: '#1890ff',
-                  borderRadius: '50%',
-                  flexShrink: 0,
-                }}
-              />
-            )}
-            {notification.read && <div className="me-3" style={{ width: 34 }} />}
+            {!notification.read && <div className="me-3 mt-1 fv2-notificationitem-3d129c81e7" />}
+            {notification.read && <div className="me-3 fv2-notificationitem-735a22d41b" />}
 
             {/* Avatar */}
             <a

@@ -1,3 +1,5 @@
+import ModalShell from '../Common/ModalShell';
+import './AddAddressModal.styles.css';
 // src/components/addresses/AddAddress.jsx   (or wherever this component lives)
 
 import React, { useEffect, useState } from 'react';
@@ -9,7 +11,8 @@ import {
 import { useGetCustomersQuery } from '../../api/customerApi';
 import { useGetAllUsersQuery } from '../../api/userApi';
 import { v4 as uuidv4 } from 'uuid';
-import { Modal, Button, Input, Select, Form, Radio, message } from 'antd';
+import { Input, Select, Form, Radio } from 'antd';
+import { toast } from 'sonner';
 
 // Import the states list
 import { INDIAN_STATES } from '../../constants/statesConstants'; // adjust path as needed
@@ -99,7 +102,7 @@ const AddAddress = ({ visible, onClose, onSave, existingAddress, selectedCustome
   const handleSubmit = async (values) => {
     const effectiveCustomerId = values.customerId || selectedCustomer;
     if (!effectiveCustomerId && !values.userId) {
-      message.error('Please select either a Customer or a User');
+      toast.error('Please select either a Customer or a User');
       return;
     }
 
@@ -122,7 +125,7 @@ const AddAddress = ({ visible, onClose, onSave, existingAddress, selectedCustome
           updatedData: payload,
         }).unwrap();
         addressId = existingAddress.addressId;
-        message.success('Address updated successfully');
+        toast.success('Address updated successfully');
       } else {
         const newAddress = {
           addressId: uuidv4(),
@@ -131,26 +134,33 @@ const AddAddress = ({ visible, onClose, onSave, existingAddress, selectedCustome
         };
         const result = await createAddress(newAddress).unwrap();
         addressId = result.data.addressId;
-        message.success('Address created successfully');
+        toast.success('Address created successfully');
       }
 
       onSave(addressId);
       onClose();
       form.resetFields();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save address');
+      toast.error(err?.data?.message || 'Failed to save address');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       title={isEdit ? 'Edit Address' : 'Add New Address'}
       open={visible}
       onCancel={() => {
         form.resetFields();
         onClose();
       }}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>{isEdit ? 'Update Address' : 'Create Address'}</>}
+      onCancelButton={() => {
+        form.resetFields();
+        onClose();
+      }}
+      confirmLoading={isCreating || isUpdating}
+      cancelButtonProps={{ className: 'fv2-addaddressmodal-6c9b17d573' }}
       width={600}
     >
       <Form form={form} onFinish={handleSubmit} layout="vertical">
@@ -275,22 +285,8 @@ const AddAddress = ({ visible, onClose, onSave, existingAddress, selectedCustome
         )}
 
         {/* Submit Buttons */}
-        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-          <Button
-            onClick={() => {
-              form.resetFields();
-              onClose();
-            }}
-            style={{ marginRight: 8 }}
-          >
-            Cancel
-          </Button>
-          <Button type="primary" htmlType="submit" loading={isCreating || isUpdating}>
-            {isEdit ? 'Update Address' : 'Create Address'}
-          </Button>
-        </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

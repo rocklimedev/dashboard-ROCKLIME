@@ -1,0 +1,70 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-642356d98a) {
+  margin-top: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-917f0f9aa6) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-332257585b) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--fv2-color-f0f0f0);
+  border-radius: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-ed9e022d39) {
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--fv2-color-f0f0f0);
+  background: linear-gradient(135deg, var(--fv2-color-fafafa), var(--fv2-color-ffffff));
+  margin-bottom: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-e3db8cf89d) {
+  background: var(--fv2-color-1677ff);
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-c9e45a9116) {
+  flex: 1;
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-a620298a84) {
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-640812a17b) {
+  margin-bottom: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-4be0867cf0) {
+  font-weight: 600;
+  font-size: var(--fv2-font-16px);
+  margin-top: 4px;
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-455ef72218) {
+  margin-top: 4px;
+  font-family: monospace;
+  font-size: var(--fv2-font-15px);
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-80932b0011) {
+  margin-top: 4px;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-1c95e39d1f) {
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+:is(#fv2-style-priority, .fv2-activitylogdetailmodal-cb1923876f) {
+  margin-top: 6px;
+  font-family: monospace;
+}

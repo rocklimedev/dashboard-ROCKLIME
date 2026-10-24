@@ -1,3 +1,4 @@
+import './Login.styles.css';
 // src/pages/auth/Login.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -5,7 +6,7 @@ import { useLoginMutation } from '../../api/authApi';
 import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/img/logo.png';
 import { MailOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
-import { message } from 'antd';
+import { toast } from 'sonner';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +26,7 @@ const Login = () => {
   // Sent here because the login expired or the account was disabled
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('expired')) {
-      message.warning('Your session has ended. Please sign in again.');
+      toast.warning('Your session has ended. Please sign in again.');
     }
   }, []);
 
@@ -62,12 +63,12 @@ const Login = () => {
         !err?.data;
 
       if (isServerDown) {
-        message.error('Server is down. Please try again later.');
+        toast.error('Server is down. Please try again later.');
         return;
       }
 
       // Backend returned proper error
-      message.error(
+      toast.error(
         'Login failed! ' + (err?.data?.message || err.message || 'Something went wrong'),
       );
     }
@@ -80,7 +81,7 @@ const Login = () => {
           <form onSubmit={handleSubmit}>
             <div className="login-userset">
               <div className="login-logo logo-normal">
-                <img src={logo} alt="Logo" style={{ width: '177px', height: 'auto' }} />
+                <img className="fv2-login-364251872c" src={logo} alt="Logo" />
               </div>
 
               <div className="login-userheading">
@@ -159,8 +160,8 @@ const Login = () => {
               <div className="form-login">
                 <button
                   type="submit"
-                  className="btn btn-primary w-100 d-flex align-items-center justify-content-center"
-                  style={{ minHeight: '44px' }}
+                  className="btn btn-primary w-100 d-flex align-items-center justify-content-center fv2-login-d5a5186866"
+
                   disabled={false} // Let global loader handle it
                 >
                   Sign In

@@ -1,5 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './QuotationCartSwitcher.styles.css';
 import { useEffect, useRef, useState } from 'react';
-import { Button, Drawer, Input, List, Modal, Select, Space, Tag, Typography, message } from 'antd';
+import { Button, Drawer, Input, List, Modal, Select, Space, Tag, Typography } from 'antd';
+import { toast } from 'sonner';
 import {
   DeleteOutlined,
   EditOutlined,
@@ -42,7 +45,7 @@ export default function QuotationCartSwitcher({
       await onAction(type, latest.current, sourceId, extra);
       return true;
     } catch (error) {
-      message.error(
+      toast.error(
         error?.data?.message ||
           error.message ||
           'Could not save cart. Your current cart is still open.',
@@ -56,7 +59,7 @@ export default function QuotationCartSwitcher({
       .then(() => {
         lastSaved.current = serialized;
       })
-      .catch(() => message.error('Could not preserve the current editing session.'));
+      .catch(() => toast.error('Could not preserve the current editing session.'));
   }, [serialized, ready, busy, onAction, sourceId]);
   // Flush the latest snapshot when navigating away; old editors cannot overwrite a switched cart.
   const exit = useRef();
@@ -72,16 +75,17 @@ export default function QuotationCartSwitcher({
         onClose={onClose}
         width={520}
       >
-        <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
+        <Space className="fv2-quotationcartswitcher-db145b61a9" wrap>
           <Space wrap>
             <ShoppingCartOutlined />
             <Typography.Text strong>Saved drafts</Typography.Text>
             <Select
+              className="fv2-quotationcartswitcher-780ad40c33"
               aria-label="Saved draft"
               placeholder="Open a saved draft"
               value={savedId || undefined}
               disabled={busy || !ready}
-              style={{ minWidth: 220 }}
+
               onChange={async (targetId) => {
                 if (await action('switch', { targetId })) onClose();
               }}
@@ -96,7 +100,7 @@ export default function QuotationCartSwitcher({
               icon={<SaveOutlined />}
               disabled={!ready || busy}
               onClick={async () => {
-                if (await action('save')) message.success('Draft saved');
+                if (await action('save')) toast.success('Draft saved');
               }}
             >
               Save draft
@@ -111,7 +115,7 @@ export default function QuotationCartSwitcher({
             </Button>
           </Space>
         </Space>
-        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        <Typography.Text className="fv2-quotationcartswitcher-15f5e290fb" type="secondary">
           Your working session stays on this device. Saved drafts change only when you choose Save
           draft or Save &amp; new.
         </Typography.Text>
@@ -193,7 +197,7 @@ export default function QuotationCartSwitcher({
           )}
         />
       </Drawer>
-      <Modal
+      <ModalShell
         title="Rename draft"
         open={!!rename}
         onCancel={() => setRename(null)}
@@ -212,7 +216,7 @@ export default function QuotationCartSwitcher({
               setRename(null);
           }}
         />
-      </Modal>
+      </ModalShell>
     </>
   );
 }

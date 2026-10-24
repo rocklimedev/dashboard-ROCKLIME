@@ -1,5 +1,6 @@
+import ModalShell from '../Common/ModalShell';
 import React from 'react';
-import { Modal, Form, Input } from 'antd';
+import { Form, Input } from 'antd';
 
 export default function EditFloorModal({ visible, floorName, onCancel, onFinish, form }) {
   React.useEffect(() => {
@@ -9,7 +10,7 @@ export default function EditFloorModal({ visible, floorName, onCancel, onFinish,
   }, [visible, floorName, form]);
 
   return (
-    <Modal
+    <ModalShell
       title="Edit Floor Name"
       open={visible}
       onOk={() => form.submit()}
@@ -25,6 +26,6 @@ export default function EditFloorModal({ visible, floorName, onCancel, onFinish,
           <Input placeholder="e.g. First Floor" />
         </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }

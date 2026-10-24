@@ -1,20 +1,12 @@
+import Loader from '../../components/Common/Loader';
+import ModalShell from '../../components/Common/ModalShell';
+import './NewQuotationDetails.styles.css';
 // Quotation page: status and follow-ups at the top, then the quotation itself,
 // shown as the same PDF the customer receives (the Chhabra Marble format).
 import { useCallback, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  message,
-  Button,
-  Space,
-  Typography,
-  Spin,
-  Alert,
-  Select,
-  Tag,
-  Modal,
-  Checkbox,
-  Table,
-} from 'antd';
+import { Button, Space, Typography, Alert, Select, Tag, Checkbox, Table } from 'antd';
+import { toast } from 'sonner';
 import { ArrowLeftOutlined, FileExcelFilled } from '@ant-design/icons';
 import { Helmet } from 'react-helmet';
 import dayjs from 'dayjs';
@@ -159,18 +151,24 @@ export default function NewQuotationsDetails() {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setExcelOpen(false);
-      message.success('Excel exported');
+      toast.success('Excel exported');
     } catch (error) {
-      message.error(error.message || 'Export failed. Please try again.');
+      toast.error(error.message || 'Export failed. Please try again.');
     } finally {
       setIsExporting(false);
     }
   };
 
-  if (qLoading)
-    return <Spin size="large" style={{ marginTop: 100, display: 'block', textAlign: 'center' }} />;
+  if (qLoading) return <Loader className="fv2-newquotationdetails-b691cb8489" size="large" />;
   if (qError || !quotation)
-    return <Alert message="Quotation not found" type="error" showIcon style={{ margin: 40 }} />;
+    return (
+      <Alert
+        className="fv2-newquotationdetails-034131c424"
+        message="Quotation not found"
+        type="error"
+        showIcon
+      />
+    );
 
   const pdfVersion = version !== 'current' ? version : null;
 
@@ -182,7 +180,7 @@ export default function NewQuotationsDetails() {
         onClose={() => setDispatchOpen(false)}
         onSuccess={(result) => navigate(`/dispatch/${result.dispatch.id}`)}
       />
-      <Modal
+      <ModalShell
         title="Dispatch history"
         open={historyOpen}
         onCancel={() => setHistoryOpen(false)}
@@ -241,8 +239,8 @@ export default function NewQuotationsDetails() {
             { title: 'Remarks', dataIndex: 'remarks' },
           ]}
         />
-      </Modal>
-      <Modal
+      </ModalShell>
+      <ModalShell
         title="Excel export — choose sheets"
         open={excelOpen}
         onCancel={() => setExcelOpen(false)}
@@ -252,26 +250,27 @@ export default function NewQuotationsDetails() {
         okButtonProps={{ disabled: !selectedSheets.length }}
       >
         <Alert
+          className="fv2-newquotationdetails-6a5f0c52a3"
           type="info"
           showIcon
           message="Excel includes all pricing fields and optional products. PDF field and page selections apply only to PDF. Summary totals always cover the complete quotation."
-          style={{ marginBottom: 16 }}
         />
-        <Space style={{ marginBottom: 12 }}>
+        <Space className="fv2-newquotationdetails-caa6819e4f">
           <Button onClick={() => setSelectedSheets(sheetOptions.map((sheet) => sheet.id))}>
             Select all
           </Button>
           <Button onClick={() => setSelectedSheets([])}>Clear</Button>
         </Space>
-        <div style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+        <div className="fv2-newquotationdetails-1d6a626679">
           <Checkbox.Group
+            className="fv2-newquotationdetails-bb1199e2be"
             value={selectedSheets}
             onChange={setSelectedSheets}
-            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+
             options={sheetOptions.map((sheet) => ({ value: sheet.id, label: sheet.label }))}
           />
         </div>
-      </Modal>
+      </ModalShell>
       <Helmet>
         <title>
           {quotation.reference_number || 'Quotation'} ·{' '}
@@ -279,29 +278,17 @@ export default function NewQuotationsDetails() {
         </title>
       </Helmet>
       <div className="page-wrapper">
-        <div className="content" style={{ padding: 0 }}>
-          <div
-            style={{ padding: '14px 24px', background: '#fff', borderBottom: '1px solid #f0f0f0' }}
-          >
-            <div
-              style={{
-                maxWidth: 1400,
-                margin: '0 auto',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 16,
-                flexWrap: 'wrap',
-              }}
-            >
-              <div style={{ minWidth: 260 }}>
+        <div className="content fv2-newquotationdetails-f2a8198e56">
+          <div className="fv2-newquotationdetails-2d87874176">
+            <div className="fv2-newquotationdetails-0d7e32a54b">
+              <div className="fv2-newquotationdetails-6126d9a4bf">
                 <Space size={8} align="center">
-                  <Title level={4} style={{ margin: 0 }}>
+                  <Title className="fv2-newquotationdetails-6f0ddb7585" level={4}>
                     {quotation.reference_number || 'Quotation'}
                   </Title>
                   {version !== 'current' && <Tag color="blue">Version {version}</Tag>}
                 </Space>
-                <div style={{ marginTop: 2 }}>
+                <div className="fv2-newquotationdetails-36c4f5bf8d">
                   <Text type="secondary">
                     {[customerName, quotation.document_title].filter(Boolean).join(' · ') ||
                       'No customer'}
@@ -332,12 +319,13 @@ export default function NewQuotationsDetails() {
                 )}
                 {versions.length > 0 && (
                   <Select
+                    className="fv2-newquotationdetails-2a07d0e50d"
                     value={version}
                     onChange={(value) => {
                       setVersion(value);
                       resetPages();
                     }}
-                    style={{ width: 190 }}
+
                     options={[
                       { value: 'current', label: 'Current version' },
                       ...versions.map((v) => ({
@@ -391,7 +379,7 @@ export default function NewQuotationsDetails() {
             </div>
           </div>
 
-          <div style={{ padding: '0 24px' }}>
+          <div className="fv2-newquotationdetails-b3997f85e7">
             <QuotationPipelineBar
               quotation={quotation}
               canEdit={can('quotations', 'edit')}
@@ -417,10 +405,10 @@ export default function NewQuotationsDetails() {
                       try {
                         const r = await cloneQuotation(id).unwrap();
                         const newId = r?.clonedQuotation?.quotationId;
-                        message.success('Copy created as a draft');
+                        toast.success('Copy created as a draft');
                         if (newId) navigate(`/quotation/${newId}`);
                       } catch (e) {
-                        message.error(e?.data?.message || 'Could not duplicate');
+                        toast.error(e?.data?.message || 'Could not duplicate');
                       }
                     }
                   : undefined
@@ -429,8 +417,8 @@ export default function NewQuotationsDetails() {
           </div>
 
           {/* The quotation exactly as the customer receives it */}
-          <div style={{ padding: '16px 24px 32px', background: '#f6f6f6' }}>
-            <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div className="fv2-newquotationdetails-b9e8e31578">
+            <div className="fv2-newquotationdetails-8948c5d53f">
               <QuotationPdfFrame
                 quotationId={id}
                 version={pdfVersion}

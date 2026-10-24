@@ -1,16 +1,8 @@
+import ModalShell from '../Common/ModalShell';
+import './QuotationDispatchModal.styles.css';
 import { useRef, useState } from 'react';
-import {
-  Alert,
-  Button,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Table,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Input, InputNumber, Select, Space, Table, Typography } from 'antd';
+import { toast } from 'sonner';
 import {
   useCreateQuotationDispatchMutation,
   useGetQuotationDispatchesQuery,
@@ -104,12 +96,12 @@ export default function QuotationDispatchModal({ open, quotation, onClose, onSuc
         productId: line.productId,
         quantity: quantities[line.sourceLineKey],
       }));
-    if (!items.length) return message.error('Select products and enter dispatch quantities.');
-    if (needsOrder && !orderName.trim()) return message.error('Enter an order name.');
+    if (!items.length) return toast.error('Select products and enter dispatch quantities.');
+    if (needsOrder && !orderName.trim()) return toast.error('Enter an order name.');
     if (needsOrder && !(shipTo || quotation?.shipTo))
-      return message.error('Select a shipping address.');
+      return toast.error('Select a shipping address.');
     if (needsOrder && assignment === 'user' && !assignedUserId)
-      return message.error('Select a user for assignment.');
+      return toast.error('Select a user for assignment.');
     submitting.current = true;
     try {
       const result = await create({
@@ -125,19 +117,19 @@ export default function QuotationDispatchModal({ open, quotation, onClose, onSuc
             }
           : {}),
       }).unwrap();
-      message.success('Dispatch recorded');
+      toast.success('Dispatch recorded');
       reset();
       onClose();
       onSuccess?.(result);
     } catch (e) {
-      message.error(e?.data?.message || 'Could not record dispatch');
+      toast.error(e?.data?.message || 'Could not record dispatch');
       refetch();
     } finally {
       submitting.current = false;
     }
   };
   return (
-    <Modal
+    <ModalShell
       title={'Dispatch from ' + (quotation?.reference_number || 'quotation')}
       open={open}
       width={1000}
@@ -152,10 +144,10 @@ export default function QuotationDispatchModal({ open, quotation, onClose, onSuc
       maskClosable={!isLoading}
     >
       <Alert
+        className="fv2-quotationdispatchmodal-3bebb7f9d7"
         type="info"
         showIcon
         message="Choose any products and quantities for this shipment. Remaining quantities include dispatches from linked orders. Stock is deducted when you confirm."
-        style={{ marginBottom: 16 }}
       />
       {error && (
         <Alert
@@ -165,7 +157,7 @@ export default function QuotationDispatchModal({ open, quotation, onClose, onSuc
         />
       )}
       {needsOrder && !isFetching && (
-        <div className="row g-2" style={{ marginBottom: 16 }}>
+        <div className="row g-2 fv2-quotationdispatchmodal-3bebb7f9d7">
           <div className="col-md-6">
             <label htmlFor="dispatch-order-name">Order name</label>
             <Input
@@ -179,8 +171,9 @@ export default function QuotationDispatchModal({ open, quotation, onClose, onSuc
           <div className="col-md-6">
             <label htmlFor="dispatch-ship-to">Shipping address</label>
             <Select
+              className="fv2-quotationdispatchmodal-7b7c45edfd"
               id="dispatch-ship-to"
-              style={{ width: '100%' }}
+
               loading={loadingAddresses}
               value={shipTo || quotation?.shipTo || undefined}
               onChange={setShipTo}
@@ -199,8 +192,9 @@ export default function QuotationDispatchModal({ open, quotation, onClose, onSuc
           <div className="col-md-6">
             <label htmlFor="dispatch-assignment">Assign order</label>
             <Select
+              className="fv2-quotationdispatchmodal-7b7c45edfd"
               id="dispatch-assignment"
-              style={{ width: '100%' }}
+
               value={assignment}
               onChange={setAssignment}
               options={[
@@ -213,8 +207,9 @@ export default function QuotationDispatchModal({ open, quotation, onClose, onSuc
             <div className="col-md-6">
               <label htmlFor="dispatch-assigned-user">Assigned user</label>
               <Select
+                className="fv2-quotationdispatchmodal-7b7c45edfd"
                 id="dispatch-assigned-user"
-                style={{ width: '100%' }}
+
                 showSearch
                 optionFilterProp="label"
                 loading={loadingUsers}
@@ -244,16 +239,17 @@ export default function QuotationDispatchModal({ open, quotation, onClose, onSuc
           }}
         />
       )}
-      <Space wrap style={{ marginBottom: 12 }}>
+      <Space className="fv2-quotationdispatchmodal-4030a5e22b" wrap>
         <Input.Search
           placeholder="Find product or code"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <Select
+          className="fv2-quotationdispatchmodal-b4c09d8e44"
           placeholder="Floor / room group"
           allowClear
-          style={{ minWidth: 220 }}
+
           value={group}
           onChange={setGroup}
           options={groups.map((value) => ({ value, label: value }))}
@@ -324,7 +320,7 @@ export default function QuotationDispatchModal({ open, quotation, onClose, onSuc
           },
         ]}
       />
-      <div className="row g-2" style={{ marginTop: 12 }}>
+      <div className="row g-2 fv2-quotationdispatchmodal-cb0e59cd25">
         {[
           ['vehicleNo', 'Vehicle number'],
           ['driverName', 'Driver name'],
@@ -355,6 +351,6 @@ export default function QuotationDispatchModal({ open, quotation, onClose, onSuc
         This creates the dispatch document; GST invoices remain available through the order invoice
         workflow.
       </Text>
-    </Modal>
+    </ModalShell>
   );
 }

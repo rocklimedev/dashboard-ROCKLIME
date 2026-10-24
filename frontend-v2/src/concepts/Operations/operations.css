@@ -23,37 +23,37 @@
   }
 }
 .ops-stat {
-  background: #fff;
-  border: 1px solid #ececec;
+  background: var(--fv2-color-fff);
+  border: 1px solid var(--fv2-color-ececec);
   border-radius: 12px;
   padding: 14px 16px;
-  color: #1a1a1a;
+  color: var(--fv2-color-1a1a1a);
   height: 100%;
   transition: border-color 0.15s ease;
 }
 a:hover > .ops-stat {
-  border-color: #d0d0d0;
+  border-color: var(--fv2-color-d0d0d0);
 }
 .ops-stat__value {
-  font-size: 24px;
+  font-size: var(--fv2-font-24px);
   font-weight: 600;
   line-height: 1.1;
 }
 .ops-stat__label {
-  font-size: 12.5px;
-  color: #8c8c8c;
+  font-size: var(--fv2-font-12_5px);
+  color: var(--fv2-color-8c8c8c);
   margin-top: 4px;
 }
 .ops-stat__hint {
-  font-size: 11.5px;
-  color: #a6a6a6;
+  font-size: var(--fv2-font-11_5px);
+  color: var(--fv2-color-a6a6a6);
   margin-top: 2px;
 }
 .ops-stat.is-danger .ops-stat__value {
-  color: #cf1322;
+  color: var(--fv2-color-cf1322);
 }
 .ops-stat.is-warn .ops-stat__value {
-  color: #d46b08;
+  color: var(--fv2-color-d46b08);
 }
 .ops-panel {
   border-radius: 12px;
@@ -64,5 +64,5 @@ a:hover > .ops-stat {
   border-radius: 6px;
 }
 .ops-row:hover {
-  background: #fafafa;
+  background: var(--fv2-color-fafafa);
 }

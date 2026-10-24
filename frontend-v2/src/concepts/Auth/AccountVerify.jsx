@@ -1,8 +1,9 @@
+import './AccountVerify.styles.css';
 import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useVerifyAccountMutation } from '../../api/authApi';
 import logo from '../../assets/img/logo.png';
-import { message } from 'antd';
+import { toast } from 'sonner';
 const AccountVerify = () => {
   const navigate = useNavigate();
   const { token } = useParams();
@@ -11,17 +12,17 @@ const AccountVerify = () => {
   useEffect(() => {
     const verifyToken = async () => {
       if (!token || typeof token !== 'string' || token.trim() === '') {
-        message.error('Invalid verification link.');
+        toast.error('Invalid verification link.');
         setTimeout(() => navigate('/login'), 2000);
         return;
       }
 
       try {
         await verifyAccount({ token }).unwrap();
-        message.success('Account verified successfully!');
+        toast.success('Account verified successfully!');
         setTimeout(() => navigate('/login'), 2000);
       } catch (error) {
-        message.error(error?.data?.message || 'Failed to verify account.');
+        toast.error(error?.data?.message || 'Failed to verify account.');
         setTimeout(() => navigate('/login'), 2000);
       }
     };
@@ -47,9 +48,8 @@ const AccountVerify = () => {
                     </div>
                     <div className="form-login mt-4">
                       <button
-                        className="btn btn-login"
+                        className="btn btn-login fv2-accountverify-5229aa4117"
                         onClick={() => navigate('/login')}
-                        style={{ minWidth: '140px' }}
                       >
                         Go to Login
                       </button>

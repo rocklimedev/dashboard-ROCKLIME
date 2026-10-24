@@ -1,17 +1,8 @@
+import './Operations.styles.css';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  InputNumber,
-  Row,
-  Space,
-  Table,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Card, Col, InputNumber, Row, Space, Table, Typography } from 'antd';
+import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import {
   useGetOperationsQuery,
@@ -28,13 +19,13 @@ export default function Operations() {
   const [run, { isLoading: running }] = useRunOperationMutation();
   const [download, { isLoading: downloading }] = useDownloadOperationMutation();
   const showError = (error) =>
-    message.error(
+    toast.error(
       error?.data?.message || error?.data?.error || 'Operation failed. Please try again.',
     );
   const execute = async (service) => {
     try {
       await run({ service, threshold: threshold / 100 }).unwrap();
-      message.success('Operation completed. Download the result below.');
+      toast.success('Operation completed. Download the result below.');
       refetch();
     } catch (failure) {
       showError(failure);
@@ -70,7 +61,7 @@ export default function Operations() {
       <div className="content">
         <Typography.Title level={2}>Operations</Typography.Title>
         <Link to="/inventory/onboard-new-brand">
-          <Button type="primary" style={{ marginBottom: 20 }}>
+          <Button className="fv2-operations-34490d2d0c" type="primary">
             Onboard New Brand Workspace
           </Button>
         </Link>
@@ -79,18 +70,18 @@ export default function Operations() {
           added here later.
         </Typography.Paragraph>
         <Alert
+          className="fv2-operations-ec631d7a89"
           type="info"
           showIcon
           message="Product snapshots include products and metadata definitions. Duplicate scans never change data; review candidates before any cleanup."
-          style={{ marginBottom: 24 }}
         />
         {error && (
           <Alert
+            className="fv2-operations-efc9bb02a8"
             type="error"
             showIcon
             message={error?.data?.message || 'Unable to load operations.'}
             action={<Button onClick={refetch}>Retry</Button>}
-            style={{ marginBottom: 16 }}
           />
         )}
         <Row gutter={[16, 16]}>
@@ -99,7 +90,7 @@ export default function Operations() {
               <Card title={service.name}>
                 <Typography.Paragraph>{service.description}</Typography.Paragraph>
                 {service.id === 'duplicate-scan' && (
-                  <Space style={{ marginBottom: 16 }}>
+                  <Space className="fv2-operations-efc9bb02a8">
                     <span>Minimum name match (%)</span>
                     <InputNumber
                       min={90}
@@ -133,8 +124,9 @@ export default function Operations() {
           </Col>
         </Row>
         <Card
+          className="fv2-operations-02fd97d364"
           title="Backups and reports"
-          style={{ marginTop: 24 }}
+
           extra={
             <Button onClick={refetch} disabled={running}>
               Refresh

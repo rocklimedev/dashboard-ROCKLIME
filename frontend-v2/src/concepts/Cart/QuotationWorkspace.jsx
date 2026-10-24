@@ -1,5 +1,6 @@
+import Loader from '../../components/Common/Loader';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Spin } from 'antd';
+import { Alert, Button } from 'antd';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { reconcileQuotationItems } from '../../components/Quotation/quotationCartHelpers';
@@ -250,7 +251,7 @@ export default function CartWorkspace({ children, documentType = 'quotation' }) 
     return (
       <div className="page-wrapper">
         <div className="content">
-          <Spin tip="Loading your session…" />
+          <Loader tip="Loading your session…" />
         </div>
       </div>
     );

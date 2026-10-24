@@ -1,5 +1,7 @@
+import './InventoryReportActions.styles.css';
 import { useState } from 'react';
-import { Button, Card, Space, message } from 'antd';
+import { Button, Card, Space } from 'antd';
+import { toast } from 'sonner';
 import { DownloadOutlined, FileTextOutlined } from '@ant-design/icons';
 import ReportBuilderModal from '../modals/ReportBuilderModal';
 import { generatePDF, generateExcel } from '../../utils/helpers';
@@ -32,15 +34,15 @@ export default function InventoryReportActions({ products, loading }) {
         })),
         `Monthly Stock Report - ${month}`,
       );
-      message.success('Monthly report generated successfully!');
+      toast.success('Monthly report generated successfully!');
     } catch {
-      message.error('Failed to generate monthly report');
+      toast.error('Failed to generate monthly report');
     } finally {
       setGenerating(false);
     }
   };
   return (
-    <Card title="Inventory Reports" style={{ marginBottom: 24, borderRadius: 12 }}>
+    <Card className="fv2-inventoryreportactions-db7efe22d7" title="Inventory Reports">
       <Space wrap>
         <Button
           type="primary"

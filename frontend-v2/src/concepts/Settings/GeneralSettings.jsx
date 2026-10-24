@@ -1,9 +1,12 @@
+import ModalShell from '../../components/Common/ModalShell';
+import './GeneralSettings.styles.css';
 // src/pages/settings/GeneralSettings.jsx   (adjust path as needed)
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { message, Modal, Button, Typography, Space, Tag } from 'antd';
+import { Button, Typography, Space, Tag } from 'antd';
+import { toast } from 'sonner';
 import { MailOutlined, UserDeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { useDeleteUserMutation, useGetProfileQuery } from '../../api/userApi';
 import {
@@ -38,20 +41,20 @@ const GeneralSettings = () => {
   const handleResendVerification = async () => {
     try {
       await resendVerificationEmail({ email: profile?.user?.email }).unwrap();
-      message.success('Verification email sent successfully!');
+      toast.success('Verification email sent successfully!');
     } catch (error) {
-      message.error(error?.data?.message || 'Failed to send verification email');
+      toast.error(error?.data?.message || 'Failed to send verification email');
     }
   };
 
   const handleDeactivateAccount = async () => {
     try {
       await deactivateAccount().unwrap();
-      message.success('Account deactivated successfully. You can reactivate by logging in again.');
+      toast.success('Account deactivated successfully. You can reactivate by logging in again.');
       dispatch(logout());
       navigate('/login');
     } catch (error) {
-      message.error(error?.data?.message || 'Failed to deactivate account. Please try again.');
+      toast.error(error?.data?.message || 'Failed to deactivate account. Please try again.');
     }
   };
 
@@ -64,11 +67,11 @@ const GeneralSettings = () => {
   const handleDeleteAccount = async () => {
     try {
       await deleteUser().unwrap();
-      message.success('Account permanently deleted.');
+      toast.success('Account permanently deleted.');
       dispatch(logout());
       navigate('/login');
     } catch (error) {
-      message.error(error?.data?.message || 'Failed to delete account');
+      toast.error(error?.data?.message || 'Failed to delete account');
     }
   };
 
@@ -85,9 +88,10 @@ const GeneralSettings = () => {
     setShowConfirmModal(false);
   };
 
-  if (isProfileLoading) return <div style={{ padding: 20, textAlign: 'center' }}>Loading...</div>;
+  if (isProfileLoading) return <div className="fv2-generalsettings-b89494a7d1">Loading...</div>;
 
-  if (profileError) return <div style={{ padding: 20, color: 'red' }}>Error loading profile.</div>;
+  if (profileError)
+    return <div className="fv2-generalsettings-fd2453a69d">Error loading profile.</div>;
 
   const user = profile?.user || {};
 
@@ -108,10 +112,10 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <MailOutlined style={{ fontSize: 24, color: '#e31e24' }} />
+                  <MailOutlined className="fv2-generalsettings-03d31bbfe2" />
                 </div>
                 <div>
-                  <Title level={5} style={{ margin: 0 }}>
+                  <Title className="fv2-generalsettings-04624dbbf2" level={5}>
                     Email Verification
                   </Title>
                   <Text>
@@ -137,17 +141,17 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <EyeOutlined style={{ fontSize: 24, color: '#e31e24' }} />
+                  <EyeOutlined className="fv2-generalsettings-03d31bbfe2" />
                 </div>
                 <div>
-                  <Title level={5} style={{ margin: 0 }}>
+                  <Title className="fv2-generalsettings-04624dbbf2" level={5}>
                     Password
                   </Title>
                   <Text type="secondary">
                     Update your password securely.
                     <br />
                     Forgot your password?{' '}
-                    <Link to="/forgot-password" style={{ color: '#1890ff' }}>
+                    <Link className="fv2-generalsettings-4d2e58010f" to="/forgot-password">
                       Click here to reset it
                     </Link>
                     .
@@ -155,8 +159,9 @@ const GeneralSettings = () => {
                 </div>
               </Space>
               <Button
+                className="fv2-generalsettings-53b21fd144"
                 type="primary"
-                style={{ background: '#E31E24', color: '#fff' }}
+
                 onClick={() => setShowPasswordModal(true)}
               >
                 Change Password
@@ -167,10 +172,10 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <UserDeleteOutlined style={{ fontSize: 24, color: '#e31e24' }} />
+                  <UserDeleteOutlined className="fv2-generalsettings-03d31bbfe2" />
                 </div>
                 <div>
-                  <Title level={5} style={{ margin: 0 }}>
+                  <Title className="fv2-generalsettings-04624dbbf2" level={5}>
                     Deactivate Account
                   </Title>
                   <Text type="secondary">
@@ -188,10 +193,10 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <UserDeleteOutlined style={{ fontSize: 24, color: '#e31e24' }} />
+                  <UserDeleteOutlined className="fv2-generalsettings-03d31bbfe2" />
                 </div>
                 <div>
-                  <Title level={5} style={{ margin: 0 }}>
+                  <Title className="fv2-generalsettings-04624dbbf2" level={5}>
                     Delete Account
                   </Title>
                   <Text type="secondary">
@@ -201,8 +206,9 @@ const GeneralSettings = () => {
                 </div>
               </Space>
               <Button
+                className="fv2-generalsettings-53b21fd144"
                 type="primary"
-                style={{ background: '#E31E24', color: '#fff' }}
+
                 danger
                 onClick={handleInitiateDelete}
               >
@@ -220,7 +226,7 @@ const GeneralSettings = () => {
       />
 
       {/* Confirmation Modal (for logout/deactivate/delete) */}
-      <Modal
+      <ModalShell
         open={showConfirmModal}
         title="Confirm Action"
         onCancel={() => setShowConfirmModal(false)}
@@ -234,7 +240,7 @@ const GeneralSettings = () => {
         }
       >
         <Text>{confirmMessage}</Text>
-      </Modal>
+      </ModalShell>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+import './Cart.styles.css';
 // src/components/POS-NEW/Cart.jsx
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
@@ -25,13 +26,13 @@ import {
   Row,
   Col,
   Empty,
-  message,
   Alert,
   Tag,
   Modal,
   Form,
   Tabs,
 } from 'antd';
+import { toast } from 'sonner';
 import {
   ArrowLeftOutlined,
   ShoppingCartOutlined,
@@ -56,57 +57,19 @@ const { Title, Text } = Typography;
 
 /* ────────────────────── Styled Components ────────────────────── */
 
-const CartItemsCard = styled(Card)`
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 16px;
-`;
+const CartItemsCard = styled(Card).attrs({ className: 'fv2-cart-cart-items-card' })``;
 
-const CartHeader = styled.div`
-  width: 100%;
-`;
+const CartHeader = styled.div.attrs({ className: 'fv2-cart-cart-header' })``;
 
-const CartSummaryCard = styled(Card)`
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 16px;
-`;
+const CartSummaryCard = styled(Card).attrs({ className: 'fv2-cart-cart-summary-card' })``;
 
-const CheckoutButton = styled(Button)`
-  background: #e31e24;
-  border-color: #e31e24;
-  color: white;
+const CheckoutButton = styled(Button).attrs({ className: 'fv2-cart-checkout-button' })``;
 
-  &:hover,
-  &:focus {
-    background: #c41e1e;
-    border-color: #c41e1e;
-    color: white;
-  }
-`;
+const EmptyCartWrapper = styled.div.attrs({ className: 'fv2-cart-empty-cart-wrapper' })``;
 
-const EmptyCartWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 40px 0;
-`;
+const OptionGroupWrapper = styled.div.attrs({ className: 'fv2-cart-option-group-wrapper' })``;
 
-const OptionGroupWrapper = styled.div`
-  margin-left: 40px;
-  opacity: 0.92;
-  border-left: 2px solid #ff4d4f;
-  padding-left: 12px;
-`;
-
-const LayoutTabs = styled(Tabs)`
-  margin-bottom: 12px;
-
-  .ant-tabs-nav {
-    margin-bottom: 8px;
-  }
-`;
+const LayoutTabs = styled(Tabs).attrs({ className: 'fv2-cart-layout-tabs' })``;
 
 /* ────────────────────── Helpers (Site Layout) ────────────────────── */
 
@@ -472,13 +435,13 @@ const CartTab = ({
           item?.quantity || 1,
         );
       }
-      message.info('Location cleared');
+      toast.info('Location cleared');
       return;
     }
 
     // Floor without a room is not a valid assignment
     if (!roomId) {
-      message.error('Select both a floor and a room to assign this item');
+      toast.error('Select both a floor and a room to assign this item');
       return;
     }
 
@@ -510,7 +473,7 @@ const CartTab = ({
       );
     }
 
-    message.success(
+    toast.success(
       floor?.implicit || !floor?.floorName
         ? `Assigned to ${room?.roomName || 'room'}`
         : `Assigned to ${floor.floorName} › ${room?.roomName || 'room'}`,
@@ -604,7 +567,7 @@ const CartTab = ({
       setFloorModalVisible(false);
       floorForm.resetFields();
       setActiveFloorId(named.floorId);
-      message.success(`Rooms moved under ${named.floorName}`);
+      toast.success(`Rooms moved under ${named.floorName}`);
       return;
     }
     const newFloor = {
@@ -618,7 +581,7 @@ const CartTab = ({
     floorForm.resetFields();
     setActiveFloorId(newFloor.floorId);
     setActiveRoomId(null);
-    message.success('Floor added');
+    toast.success('Floor added');
   };
 
   const editFloor = (values) => {
@@ -628,7 +591,7 @@ const CartTab = ({
         : f,
     );
     handleQuotationChange('floors', updatedFloors);
-    message.success('Floor updated');
+    toast.success('Floor updated');
     setEditFloorModal({ visible: false, floorId: null });
     floorForm.resetFields();
   };
@@ -665,7 +628,7 @@ const CartTab = ({
           setActiveFloorId(null);
           setActiveRoomId('__global__');
         }
-        message.success('Floor deleted');
+        toast.success('Floor deleted');
       },
     });
   };
@@ -690,7 +653,7 @@ const CartTab = ({
       roomForm.resetFields();
       setActiveFloorId(IMPLICIT_FLOOR);
       setActiveRoomId(room.roomId);
-      message.success('Room added');
+      toast.success('Room added');
       return;
     }
     const updatedFloors = (quotationData.floors || []).map((floor) =>
@@ -712,7 +675,7 @@ const CartTab = ({
     handleQuotationChange('floors', updatedFloors);
     setRoomModal({ visible: false, floorId: null });
     roomForm.resetFields();
-    message.success('Room added');
+    toast.success('Room added');
   };
 
   const editRoom = (values) => {
@@ -729,7 +692,7 @@ const CartTab = ({
         : floor,
     );
     handleQuotationChange('floors', updatedFloors);
-    message.success('Room updated');
+    toast.success('Room updated');
     setEditRoomModal({ visible: false, floorId: null, roomId: null });
     roomForm.resetFields();
   };
@@ -773,7 +736,7 @@ const CartTab = ({
         }
 
         if (activeRoomId === roomId) setActiveRoomId(null);
-        message.success('Room deleted');
+        toast.success('Room deleted');
       },
     });
   };
@@ -787,12 +750,12 @@ const CartTab = ({
    */
   const handleMultiAssign = (itemId, assignments) => {
     if (!assignments?.length) {
-      return message.error('No assignment data received');
+      return toast.error('No assignment data received');
     }
 
     const missingRoom = assignments.some((a) => !a.floorId || !a.roomId);
     if (missingRoom) {
-      return message.error('Select both a floor and a room for each assignment');
+      return toast.error('Select both a floor and a room for each assignment');
     }
 
     const item =
@@ -803,7 +766,7 @@ const CartTab = ({
     const assignedSum = assignments.reduce((s, a) => s + (Number(a.assignedQuantity) || 0), 0);
 
     if (assignedSum > totalQty) {
-      return message.error(`Assigned qty (${assignedSum}) exceeds item quantity (${totalQty})`);
+      return toast.error(`Assigned qty (${assignedSum}) exceeds item quantity (${totalQty})`);
     }
 
     let updatedFloors = [...(quotationData.floors || [])];
@@ -947,10 +910,10 @@ const CartTab = ({
     <EmptyCartWrapper>
       <Empty description="Your cart is empty" />
       <Button
+        className="fv2-cart-29e1ad1cc5"
         type="primary"
         icon={<ArrowLeftOutlined />}
         href="/category-selector"
-        style={{ marginTop: 16 }}
       >
         Continue Shopping
       </Button>
@@ -1068,7 +1031,7 @@ const CartTab = ({
           <Space size={4}>
             <HomeOutlined />
             <span>{f.floorName}</span>
-            <Tag style={{ marginRight: 0 }}>{count}</Tag>
+            <Tag className="fv2-cart-07aa95ea7b">{count}</Tag>
           </Space>
         ),
         closable: true,
@@ -1080,7 +1043,7 @@ const CartTab = ({
       label: (
         <Space size={4}>
           <span>Unassigned</span>
-          <Tag color="orange" style={{ marginRight: 0 }}>
+          <Tag className="fv2-cart-07aa95ea7b" color="orange">
             {layoutTree.globalUnassigned.length}
           </Tag>
         </Space>
@@ -1100,7 +1063,7 @@ const CartTab = ({
       label: (
         <Space size={4}>
           <span>{r.roomName}</span>
-          <Tag style={{ marginRight: 0 }}>{r.items.length}</Tag>
+          <Tag className="fv2-cart-07aa95ea7b">{r.items.length}</Tag>
         </Space>
       ),
       closable: true,
@@ -1115,8 +1078,8 @@ const CartTab = ({
             <Col xs={24} md={16}>
               <CartItemsCard>
                 <CartHeader>
-                  <Space style={{ justifyContent: 'space-between', width: '100%' }}>
-                    <Title level={3} style={{ margin: 0 }}>
+                  <Space className="fv2-cart-146690a015">
+                    <Title className="fv2-cart-d2c07545a2" level={3}>
                       <ShoppingCartOutlined /> Cart ({safeCartItems.length})
                     </Title>
 
@@ -1190,7 +1153,7 @@ const CartTab = ({
                             label: (
                               <Space size={4}>
                                 <span>{r.roomName}</span>
-                                <Tag style={{ marginRight: 0 }}>{r.items.length}</Tag>
+                                <Tag className="fv2-cart-07aa95ea7b">{r.items.length}</Tag>
                               </Space>
                             ),
                             closable: true,
@@ -1200,7 +1163,7 @@ const CartTab = ({
                             label: (
                               <Space size={4}>
                                 <span>Unassigned</span>
-                                <Tag color="orange" style={{ marginRight: 0 }}>
+                                <Tag className="fv2-cart-07aa95ea7b" color="orange">
                                   {layoutTree.globalUnassigned.length}
                                 </Tag>
                               </Space>
@@ -1323,10 +1286,10 @@ const CartTab = ({
                             />
                           ) : (
                             <Alert
+                              className="fv2-cart-1f4d677ff1"
                               message="Add a room to this floor before assigning items"
                               type="info"
                               showIcon
-                              style={{ marginBottom: 12 }}
                             />
                           ))}
                       </>
@@ -1335,36 +1298,29 @@ const CartTab = ({
                     {isQuotationMode &&
                       safeCartItems.length > 0 &&
                       !allFloors.some((f) => (f.rooms || []).length) && (
-                        <Text
-                          type="secondary"
-                          style={{
-                            display: 'block',
-                            marginBottom: 8,
-                            fontSize: 12,
-                          }}
-                        >
+                        <Text className="fv2-cart-157e36f623" type="secondary">
                           Add rooms to group the quotation room by room, or leave it as one list.
                         </Text>
                       )}
 
                     {unassignedCount > 0 && (activeRoomId === '__global__' || !activeFloorId) && (
                       <Alert
+                        className="fv2-cart-1f4d677ff1"
                         message={`${unassignedCount} item(s) not fully assigned to a location`}
                         type="warning"
                         showIcon
-                        style={{ marginBottom: 12 }}
                       />
                     )}
 
                     {visibleGrouped.grouped.length === 0 &&
                     visibleGrouped.ungroupedOptions.length === 0 ? (
                       <Empty
+                        className="fv2-cart-56f41f804c"
                         description={
                           activeRoomId === '__global__' || !activeFloorId
                             ? 'No unassigned items'
                             : 'No items in this room'
                         }
-                        style={{ padding: '24px 0' }}
                       />
                     ) : (
                       renderCartItemRows(visibleGrouped.grouped, visibleGrouped.ungroupedOptions)
@@ -1394,6 +1350,15 @@ const CartTab = ({
                   }
                   itemCount={mainCartItems.length}
                   optionalTotal={optionalTotal}
+                  gstInclusive={isQuotationMode && quotationData.gstInclusive === true}
+                  onGstInclusiveChange={
+                    isQuotationMode
+                      ? (value) => {
+                          handleQuotationChange('gstInclusive', value);
+                          if (value) setGst(0);
+                        }
+                      : undefined
+                  }
                   onGstChange={setGst}
                   onShippingChange={onShippingChange}
                 />
@@ -1409,7 +1374,7 @@ const CartTab = ({
                   Proceed to Checkout
                 </CheckoutButton>
 
-                <Button block href="/category-selector" style={{ marginTop: 8 }}>
+                <Button className="fv2-cart-3f9fdd180f" block href="/category-selector">
                   Continue Shopping
                 </Button>
               </CartSummaryCard>

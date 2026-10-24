@@ -1,19 +1,7 @@
+import './OrderPaymentsCard.styles.css';
 import { useState } from 'react';
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Input,
-  Modal,
-  Row,
-  Space,
-  Statistic,
-  Table,
-  Tag,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Card, Col, Input, Modal, Row, Space, Statistic, Table, Tag, Typography } from 'antd';
+import { toast } from 'sonner';
 import { WalletOutlined } from '@ant-design/icons';
 import { useCancelPaymentMutation, useGetOrderPaymentsQuery } from '../../api/paymentsApi';
 import { inr } from '../../utils/quotationMath';
@@ -53,14 +41,14 @@ export default function OrderPaymentsCard({ orderId, customerName }) {
       okButtonProps: { danger: true },
       onOk: async () => {
         if (!reason.trim()) {
-          message.error('A reason is required');
+          toast.error('A reason is required');
           throw new Error('reason');
         }
         try {
           await cancel({ id: p.id, reason }).unwrap();
-          message.success('Payment cancelled');
+          toast.success('Payment cancelled');
         } catch (e) {
-          message.error(e?.data?.message || 'Could not cancel');
+          toast.error(e?.data?.message || 'Could not cancel');
         }
       },
     });
@@ -68,8 +56,8 @@ export default function OrderPaymentsCard({ orderId, customerName }) {
 
   return (
     <Card
-      className="section-card"
-      style={{ marginTop: 16 }}
+      className="section-card fv2-orderpaymentscard-7d37610ab0"
+
       title={
         <span>
           <WalletOutlined /> Payments
@@ -89,7 +77,7 @@ export default function OrderPaymentsCard({ orderId, customerName }) {
         <Alert type="info" showIcon message="Draft and cancelled orders are not billed." />
       ) : (
         <>
-          <Row gutter={12} style={{ marginBottom: 12 }}>
+          <Row className="fv2-orderpaymentscard-f9ffda6f15" gutter={12}>
             <Col span={8}>
               <Statistic
                 title="Billed"
@@ -97,7 +85,7 @@ export default function OrderPaymentsCard({ orderId, customerName }) {
                 valueStyle={{ fontSize: 18 }}
               />
               {data?.credited > 0 && (
-                <Text type="secondary" style={{ fontSize: 12 }}>
+                <Text className="fv2-orderpaymentscard-b660e2a307" type="secondary">
                   after credit notes {inr(data.credited)}
                 </Text>
               )}
@@ -154,7 +142,7 @@ export default function OrderPaymentsCard({ orderId, customerName }) {
                   ) : (
                     <Space size={4}>
                       <Tag color="red">Cancelled</Tag>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
+                      <Text className="fv2-orderpaymentscard-b660e2a307" type="secondary">
                         {r.cancelReason}
                       </Text>
                     </Space>

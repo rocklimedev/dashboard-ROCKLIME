@@ -1,0 +1,67 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-addneworder-9dfaff592b) {
+  color: red;
+}
+
+:is(#fv2-style-priority, .fv2-addneworder-2ade9eb7d5) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-addneworder-e007c174fc) {
+  flex: 1;
+}
+
+:is(#fv2-style-priority, .fv2-addneworder-53e3541e7d) {
+  margin-bottom: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-addneworder-8e2eeeb643) {
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-addneworder-0281ac6e4b) {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+/* Component layout and responsive rules. */
+
+.fv2-addneworder-form-container {
+  padding: 16px;
+  background: var(--fv2-color-fff);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.fv2-addneworder-form-section {
+  margin-bottom: 12px;
+}
+
+.fv2-addneworder-compact-select {
+  width: 100%;
+}
+.fv2-addneworder-compact-select .ant-select-selector {
+  height: 32px !important;
+  padding: 0 8px !important;
+}
+
+.fv2-addneworder-compact-input {
+  height: 32px;
+}
+
+.fv2-addneworder-compact-text-area {
+  resize: vertical;
+}
+
+.fv2-addneworder-action-button {
+  padding: 0;
+  font-size: var(--fv2-font-12px);
+}
+
+.fv2-addneworder-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}

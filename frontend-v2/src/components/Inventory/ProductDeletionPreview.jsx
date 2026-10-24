@@ -1,67 +1,28 @@
-import { useEffect, useState } from 'react';
-import { Alert, Button, Modal, Spin, Table, Typography } from 'antd';
-import { usePreviewProductDeletionMutation } from '../../api/inventoryBulkApi';
+import Loader from '../Common/Loader';
+import './ProductDeletionPreview.styles.css';
+import { Alert, Button, Table, Typography } from 'antd';
 
-export default function ProductDeleteModal({ products, onConfirm, onCancel, isLoading = false }) {
-  const [loadPreview] = usePreviewProductDeletionMutation();
-  const [report, setReport] = useState(null);
-  const [failure, setFailure] = useState('');
-  const [attempt, setAttempt] = useState(0);
-  const ids = JSON.stringify(products.map((product) => product.productId).sort());
-  useEffect(() => {
-    let active = true;
-    const request = loadPreview(JSON.parse(ids));
-    request
-      .unwrap()
-      .then((data) => {
-        if (active) setReport(data);
-      })
-      .catch((error) => {
-        if (active)
-          setFailure(error?.data?.message || 'Reference checks failed. Retry before deleting.');
-      });
-    return () => {
-      active = false;
-      request.abort();
-    };
-  }, [ids, attempt, loadPreview]);
-  const retry = () => {
-    setReport(null);
-    setFailure('');
-    setAttempt((value) => value + 1);
-  };
+export default function ProductDeletionPreview({ products, report, failure, onRetry, isLoading }) {
   const names = new Map(products.map((product) => [product.productId, product.name]));
   return (
-    <Modal
-      open
-      title={`Delete ${products.length === 1 ? products[0].name : `${products.length} selected products`}?`}
-      width={850}
-      onCancel={onCancel}
-      onOk={onConfirm}
-      confirmLoading={isLoading}
-      okText="Delete permanently"
-      okButtonProps={{ danger: true, disabled: !report?.canDelete || !!failure }}
-      cancelButtonProps={{ disabled: isLoading }}
-      closable={!isLoading}
-      maskClosable={!isLoading}
-      keyboard={!isLoading}
-    >
+    <>
       {!report && !failure && (
-        <Spin tip="Checking all product references…">
-          <div style={{ height: 70 }} />
-        </Spin>
+        <Loader tip="Checking all product references…">
+          <div className="fv2-productdeletemodal-237c943ad8" />
+        </Loader>
       )}
       {failure && (
         <Alert
           type="error"
           showIcon
           message={failure}
-          action={<Button onClick={retry}>Retry</Button>}
+          action={<Button onClick={onRetry}>Retry</Button>}
         />
       )}
       {report && (
         <>
           <Alert
+            className="fv2-productdeletemodal-e830f42839"
             type={report.canDelete ? 'warning' : 'error'}
             showIcon
             message={
@@ -70,7 +31,6 @@ export default function ProductDeleteModal({ products, onConfirm, onCancel, isLo
                 : 'Deletion blocked: these products are still referenced.'
             }
             description={report.impact}
-            style={{ marginBottom: 16 }}
           />
           <Typography.Paragraph>
             Counts are unique records across all selected products. A quotation with several
@@ -93,9 +53,9 @@ export default function ProductDeleteModal({ products, onConfirm, onCancel, isLo
             expandable={{
               rowExpandable: (row) => row.count > 0,
               expandedRowRender: (row) => (
-                <div style={{ maxHeight: 260, overflow: 'auto' }}>
+                <div className="fv2-productdeletemodal-3a8f68a12e">
                   {row.records.map((record) => (
-                    <div key={record.id} style={{ marginBottom: 8 }}>
+                    <div className="fv2-productdeletemodal-f0a14949a3" key={record.id}>
                       <Typography.Text strong>{record.label}</Typography.Text>
                       {record.label !== record.id && (
                         <Typography.Text type="secondary"> · {record.id}</Typography.Text>
@@ -107,14 +67,14 @@ export default function ProductDeleteModal({ products, onConfirm, onCancel, isLo
               ),
             }}
           />
-          <Typography.Paragraph type="secondary" style={{ marginTop: 12 }}>
+          <Typography.Paragraph className="fv2-productdeletemodal-28f7e7bb45" type="secondary">
             References are checked again when you confirm.
           </Typography.Paragraph>
-          <Button disabled={isLoading} onClick={retry}>
+          <Button disabled={isLoading} onClick={onRetry}>
             Refresh references
           </Button>
         </>
       )}
-    </Modal>
+    </>
   );
 }

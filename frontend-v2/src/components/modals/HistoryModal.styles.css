@@ -1,0 +1,16 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-historymodal-462c8f5a94) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+:is(#fv2-style-priority, .fv2-historymodal-6e0e70c6ba) {
+  text-align: center;
+  padding: 40px;
+}
+
+:is(#fv2-style-priority, .fv2-historymodal-e797475589) {
+  margin-top: 16px;
+  text-align: center;
+}

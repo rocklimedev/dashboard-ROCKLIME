@@ -1,5 +1,7 @@
+import Loader from './Loader';
+import './ServerPdfFrame.styles.css';
 import { useEffect, useState } from 'react';
-import { Alert, Spin } from 'antd';
+import { Alert } from 'antd';
 import { API_URL } from '../../store/config';
 import { token } from '../Quotation/quotationPdf';
 
@@ -47,35 +49,17 @@ export default function ServerPdfFrame({
   }, [path, refreshKey, loadPdf, onPdfLoad]);
   if (state.error) return <Alert type="error" showIcon message={state.error} />;
   return (
-    <div
-      style={{
-        position: 'relative',
-        height,
-        minHeight: 520,
-        background: '#525659',
-        borderRadius: 10,
-        overflow: 'hidden',
-      }}
-    >
+    <div className="fv2-serverpdfframe-dbd877a046" style={{ height }}>
       {state.url && (
         <iframe
+          className="fv2-serverpdfframe-8b9b8660fa"
           title="Document"
           src={`${state.url}#view=FitH`}
-          style={{ width: '100%', height: '100%', border: 0 }}
         />
       )}
       {state.loading && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(255,255,255,0.6)',
-          }}
-        >
-          <Spin />
+        <div className="fv2-serverpdfframe-9e3e3f0d15">
+          <Loader />
         </div>
       )}
     </div>

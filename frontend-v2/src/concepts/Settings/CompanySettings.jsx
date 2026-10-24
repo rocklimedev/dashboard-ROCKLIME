@@ -1,21 +1,8 @@
+import ModalShell from '../../components/Common/ModalShell';
+import './CompanySettings.styles.css';
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Row,
-  Select,
-  Skeleton,
-  Space,
-  Switch,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Card, Col, Form, Input, InputNumber, Row, Select, Skeleton, Space, Switch, Typography } from 'antd';
+import { toast } from 'sonner';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { useGetSettingsQuery, useSaveSettingMutation } from '../../api/settingsApi';
 import { useRoles } from '../../utils/useCan';
@@ -66,14 +53,14 @@ const STATES = [
 /** An editable list of lines (inclusions, exclusions, terms). */
 function ListField({ name, title, isAdmin, addLabel, numbered = false }) {
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div className="fv2-companysettings-36c2b69b88">
       <Text strong>{title}</Text>
       <Form.List name={name}>
         {(fields, { add, remove }) => (
-          <Space direction="vertical" style={{ width: '100%', marginTop: 8 }}>
+          <Space className="fv2-companysettings-878f6fdf52" direction="vertical">
             {fields.map((f, i) => (
-              <div key={f.key} style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                <Text type="secondary" style={{ width: 18 }}>
+              <div className="fv2-companysettings-ed8e7bb806" key={f.key}>
+                <Text className="fv2-companysettings-ed5668a05b" type="secondary">
                   {numbered ? `${i + 1}.` : '•'}
                 </Text>
                 <Form.Item {...f} style={{ marginBottom: 0, flex: 1 }}>
@@ -118,16 +105,16 @@ export default function CompanySettings() {
     try {
       setSummary(await loadSummary().unwrap());
     } catch (e) {
-      message.error(e?.data?.message || 'Could not build the summary');
+      toast.error(e?.data?.message || 'Could not build the summary');
     }
   };
   const sendNow = async () => {
     try {
       const r = await sendSummary().unwrap();
-      if (r.sent) message.success(`Sent to ${r.to.join(', ')}`);
-      else message.warning(r.reason);
+      if (r.sent) toast.success(`Sent to ${r.to.join(', ')}`);
+      else toast.warning(r.reason);
     } catch (e) {
-      message.error(e?.data?.message || 'Could not send');
+      toast.error(e?.data?.message || 'Could not send');
     }
   };
 
@@ -135,23 +122,24 @@ export default function CompanySettings() {
     try {
       const values = await form.validateFields();
       await save({ key, ...values }).unwrap();
-      message.success('Saved');
+      toast.success('Saved');
     } catch (e) {
       if (e?.errorFields) return;
-      message.error(e?.data?.message || 'Could not save');
+      toast.error(e?.data?.message || 'Could not save');
     }
   };
 
   return (
     <div className="page-wrapper">
-      <div className="content" style={{ maxWidth: 980 }}>
-        <Title level={3} style={{ marginBottom: 0 }}>
+      <div className="content fv2-companysettings-f59ef3d562">
+        <Title className="fv2-companysettings-648e005843" level={3}>
           Company &amp; documents
         </Title>
         <Text type="secondary">Printed on quotations, purchase orders and invoices.</Text>
         {!isAdmin && (
           <Alert
-            style={{ marginTop: 12 }}
+            className="fv2-companysettings-77b8c5d98f"
+
             type="info"
             showIcon
             message="Only administrators can change these settings."
@@ -159,7 +147,8 @@ export default function CompanySettings() {
         )}
         {error && (
           <Alert
-            style={{ marginTop: 12 }}
+            className="fv2-companysettings-77b8c5d98f"
+
             type="error"
             showIcon
             message={error?.data?.message || 'Could not load settings'}
@@ -169,7 +158,7 @@ export default function CompanySettings() {
           <Skeleton active />
         ) : (
           <>
-            <Card title="Company" style={{ marginTop: 16 }}>
+            <Card className="fv2-companysettings-9107b627f1" title="Company">
               <Form form={companyForm} layout="vertical" disabled={!isAdmin}>
                 <Row gutter={16}>
                   <Col xs={24} md={12}>
@@ -312,17 +301,17 @@ export default function CompanySettings() {
               </Form>
             </Card>
 
-            <Card title="Quotations" style={{ marginTop: 16 }}>
+            <Card className="fv2-companysettings-9107b627f1" title="Quotations">
               <Form form={quoteForm} layout="vertical" disabled={!isAdmin}>
                 <Row gutter={16}>
                   <Col xs={12} md={6}>
                     <Form.Item name="validityDays" label="Valid for (days)">
-                      <InputNumber min={1} max={180} style={{ width: '100%' }} />
+                      <InputNumber className="fv2-companysettings-183007976a" min={1} max={180} />
                     </Form.Item>
                   </Col>
                   <Col xs={12} md={6}>
                     <Form.Item name="defaultGstRate" label="Default GST %">
-                      <InputNumber min={0} max={28} style={{ width: '100%' }} />
+                      <InputNumber className="fv2-companysettings-183007976a" min={0} max={28} />
                     </Form.Item>
                   </Col>
                   <Col xs={12} md={6}>
@@ -345,7 +334,7 @@ export default function CompanySettings() {
                     </Form.Item>
                   </Col>
                 </Row>
-                <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+                <Text className="fv2-companysettings-a2f226d581" type="secondary">
                   In any line you can write {'{validityDays}'}, {'{validTill}'} or {'{gst}'}; the
                   quotation fills in the real value.
                 </Text>
@@ -376,10 +365,10 @@ export default function CompanySettings() {
                 />
                 {isAdmin && (
                   <Button
+                    className="fv2-companysettings-9107b627f1"
                     type="primary"
                     onClick={submit('quotation', quoteForm)}
                     loading={saving}
-                    style={{ marginTop: 16 }}
                   >
                     Save quotation settings
                   </Button>
@@ -387,7 +376,7 @@ export default function CompanySettings() {
               </Form>
             </Card>
 
-            <Modal
+            <ModalShell
               open={!!summary}
               title="Today's summary"
               onCancel={() => setSummary(null)}
@@ -410,12 +399,10 @@ export default function CompanySettings() {
                 ),
               ]}
             >
-              <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>
-                {summary?.text}
-              </pre>
-            </Modal>
+              <pre className="fv2-companysettings-c95c767d0b">{summary?.text}</pre>
+            </ModalShell>
 
-            <Card title="Invoices & Tally" style={{ marginTop: 16 }}>
+            <Card className="fv2-companysettings-9107b627f1" title="Invoices & Tally">
               <Form form={accountsForm} layout="vertical" disabled={!isAdmin}>
                 <Row gutter={16}>
                   <Col xs={12} md={6}>
@@ -435,12 +422,13 @@ export default function CompanySettings() {
                 <Text strong>Terms printed on every invoice</Text>
                 <Form.List name="invoiceTerms">
                   {(fields, { add, remove }) => (
-                    <Space
-                      direction="vertical"
-                      style={{ width: '100%', marginTop: 8, marginBottom: 16 }}
-                    >
+                    <Space className="fv2-companysettings-28d824ef04" direction="vertical">
                       {fields.map((f, i) => (
-                        <Space key={f.key} align="baseline" style={{ width: '100%' }}>
+                        <Space
+                          className="fv2-companysettings-183007976a"
+                          key={f.key}
+                          align="baseline"
+                        >
                           <Text type="secondary">{i + 1}.</Text>
                           <Form.Item
                             {...f}
@@ -466,7 +454,7 @@ export default function CompanySettings() {
                     import.
                   </Text>
                 </div>
-                <Row gutter={16} style={{ marginTop: 8 }}>
+                <Row className="fv2-companysettings-6ce8c1965e" gutter={16}>
                   {[
                     ['tallySalesLedger', 'Sales'],
                     ['tallyFreightLedger', 'Freight'],

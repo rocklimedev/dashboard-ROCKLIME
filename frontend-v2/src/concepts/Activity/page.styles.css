@@ -1,0 +1,52 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-page-dcf06b452c) {
+  font-size: var(--fv2-font-12px);
+  white-space: nowrap;
+}
+
+:is(#fv2-style-priority, .fv2-page-e724ccdf75) {
+  color: var(--fv2-color-999);
+}
+
+:is(#fv2-style-priority, .fv2-page-1035bf5593) {
+  font-size: var(--fv2-font-11px);
+  font-family: monospace;
+  color: var(--fv2-color-666);
+}
+
+:is(#fv2-style-priority, .fv2-page-2d55ff248d) {
+  font-size: var(--fv2-font-13px);
+  display: block;
+}
+
+:is(#fv2-style-priority, .fv2-page-8372fb8da4) {
+  font-size: var(--fv2-font-11px);
+}
+
+:is(#fv2-style-priority, .fv2-page-1b531b5b63) {
+  font-size: var(--fv2-font-13px);
+}
+
+:is(#fv2-style-priority, .fv2-page-29131215bd) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-page-6b54ec7bda) {
+  color: var(--fv2-color-bbb);
+}
+
+:is(#fv2-style-priority, .fv2-page-80aad87194) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-page-db28016bed) {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+:is(#fv2-style-priority, .fv2-page-1052677dfc) {
+  padding: 40px 0;
+}

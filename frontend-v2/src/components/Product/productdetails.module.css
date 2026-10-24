@@ -8,12 +8,12 @@
 
 .breadcrumb {
   margin-bottom: 2rem;
-  font-size: 0.95rem;
-  color: #666;
+  font-size: var(--fv2-font-0_95rem);
+  color: var(--fv2-color-666);
 }
 
 .breadcrumb a {
-  color: #2563eb;
+  color: var(--fv2-color-2563eb);
   text-decoration: none;
 }
 
@@ -43,7 +43,7 @@
   aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: 1rem;
-  background: #f8fafc;
+  background: var(--fv2-color-f8fafc);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
 }
 
@@ -73,12 +73,12 @@
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #f1f5f9;
+  background: var(--fv2-color-f1f5f9);
 }
 
 .thumbnailBtn:hover,
 .thumbnailBtn.active {
-  border-color: #3b82f6;
+  border-color: var(--fv2-color-3b82f6);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
@@ -95,11 +95,11 @@
 }
 
 .title {
-  font-size: 2.25rem;
+  font-size: var(--fv2-font-2_25rem);
   font-weight: 700;
   line-height: 1.1;
   margin: 0;
-  color: #111827;
+  color: var(--fv2-color-111827);
 }
 
 .priceContainer {
@@ -110,21 +110,21 @@
 }
 
 .mrp {
-  font-size: 1.125rem;
-  color: #9ca3af;
+  font-size: var(--fv2-font-1_125rem);
+  color: var(--fv2-color-9ca3af);
   text-decoration: line-through;
 }
 
 .currentPrice {
-  font-size: 2rem;
+  font-size: var(--fv2-font-2rem);
   font-weight: 700;
-  color: #dc2626;
+  color: var(--fv2-color-dc2626);
 }
 
 .description {
-  color: #4b5563;
+  color: var(--fv2-color-4b5563);
   line-height: 1.7;
-  font-size: 1.05rem;
+  font-size: var(--fv2-font-1_05rem);
 }
 
 .actionRow {
@@ -141,15 +141,15 @@
 
 .addToCartBtn {
   height: 48px !important;
-  font-size: 1.05rem !important;
+  font-size: var(--fv2-font-1_05rem) !important;
   padding: 0 2rem !important;
 }
 
 .barcodeSection {
   padding: 1.25rem;
-  background: #f8fafc;
+  background: var(--fv2-color-f8fafc);
   border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--fv2-color-e5e7eb);
 }
 
 .barcodeActions {
@@ -161,12 +161,12 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 0.75rem 1.5rem;
-  font-size: 0.95rem;
+  font-size: var(--fv2-font-0_95rem);
 }
 
 .metaLabel {
   font-weight: 600;
-  color: #374151;
+  color: var(--fv2-color-374151);
 }
 
 .relatedSection {
@@ -174,7 +174,7 @@
 }
 
 .relatedHeader {
-  font-size: 1.75rem;
+  font-size: var(--fv2-font-1_75rem);
   font-weight: 700;
   margin-bottom: 2rem;
   text-align: center;
@@ -194,15 +194,15 @@
   justify-content: center;
   flex-direction: column;
   gap: 1.5rem;
-  color: #4b5563;
+  color: var(--fv2-color-4b5563);
 }
 
 @media (max-width: 640px) {
   .title {
-    font-size: 1.875rem;
+    font-size: var(--fv2-font-1_875rem);
   }
   .currentPrice {
-    font-size: 1.75rem;
+    font-size: var(--fv2-font-1_75rem);
   }
   .thumbnailBtn {
     flex: 0 0 calc(25% - 0.75rem * 3 / 4);

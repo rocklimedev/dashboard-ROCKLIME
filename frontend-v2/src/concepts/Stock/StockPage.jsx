@@ -1,27 +1,9 @@
+import ModalShell from '../../components/Common/ModalShell';
+import './StockPage.styles.css';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Row,
-  Segmented,
-  Select,
-  Space,
-  Statistic,
-  Switch,
-  Table,
-  Tabs,
-  Tag,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Card, Col, Empty, Form, Input, InputNumber, Modal, Row, Segmented, Select, Space, Statistic, Switch, Table, Tabs, Tag, Typography } from 'antd';
+import { toast } from 'sonner';
 import { ReloadOutlined, SearchOutlined, EditOutlined } from '@ant-design/icons';
 import {
   useApproveStockCountMutation,
@@ -77,7 +59,7 @@ function LiveStock({ warehouseId, onOpen, initialFilter = '' }) {
   const t = data?.totals || {};
   return (
     <>
-      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+      <Row className="fv2-stockpage-825070f00b" gutter={[12, 12]}>
         {[
           ['On hand', t.onHand, 'Good stock in the godown'],
           ['Reserved', t.reserved, 'Held for confirmed orders'],
@@ -88,15 +70,16 @@ function LiveStock({ warehouseId, onOpen, initialFilter = '' }) {
           <Col xs={12} md={8} lg={4} key={label} flex="1">
             <Card size="small">
               <Statistic title={label} value={fmtQty(value)} />
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <Text className="fv2-stockpage-c188fee3a1" type="secondary">
                 {hint}
               </Text>
             </Card>
           </Col>
         ))}
       </Row>
-      <Space wrap style={{ marginBottom: 12, width: '100%', justifyContent: 'space-between' }}>
+      <Space className="fv2-stockpage-5346a92030" wrap>
         <Input
+          className="fv2-stockpage-d716cc6be0"
           allowClear
           prefix={<SearchOutlined />}
           placeholder="Search name, code or field"
@@ -105,7 +88,6 @@ function LiveStock({ warehouseId, onOpen, initialFilter = '' }) {
             setSearch(e.target.value);
             setPage(1);
           }}
-          style={{ width: 300 }}
         />
         <Space wrap>
           <Segmented
@@ -128,10 +110,10 @@ function LiveStock({ warehouseId, onOpen, initialFilter = '' }) {
       </Space>
       {error && (
         <Alert
+          className="fv2-stockpage-f34f27c7a2"
           type="error"
           showIcon
           message={error?.data?.message || 'Could not load stock'}
-          style={{ marginBottom: 12 }}
         />
       )}
       <Table
@@ -160,8 +142,8 @@ function LiveStock({ warehouseId, onOpen, initialFilter = '' }) {
             dataIndex: 'name',
             render: (v, r) => (
               <Space direction="vertical" size={0}>
-                <span style={{ fontWeight: 500 }}>{v}</span>
-                <Text type="secondary" style={{ fontSize: 12 }}>
+                <span className="fv2-stockpage-b74b5d958e">{v}</span>
+                <Text className="fv2-stockpage-c188fee3a1" type="secondary">
                   {[r.product_code, r.brandName].filter(Boolean).join(' · ')}
                 </Text>
               </Space>
@@ -232,7 +214,7 @@ function Backorders({ onOpen }) {
   const rows = data?.data || [];
   return (
     <>
-      <Space style={{ marginBottom: 12, width: '100%', justifyContent: 'space-between' }}>
+      <Space className="fv2-stockpage-5346a92030">
         <Text type="secondary">
           Order lines that could not be fully reserved. They fill automatically, oldest order first,
           when goods arrive.
@@ -298,8 +280,9 @@ function Movements({ onOpen, entriesOnly = false }) {
   );
   return (
     <>
-      <Space wrap style={{ marginBottom: 12 }}>
+      <Space className="fv2-stockpage-f34f27c7a2" wrap>
         <Input
+          className="fv2-stockpage-6a9abfc04f"
           allowClear
           prefix={<SearchOutlined />}
           placeholder="Product name or code"
@@ -308,9 +291,9 @@ function Movements({ onOpen, entriesOnly = false }) {
             setSearch(e.target.value);
             setPage(1);
           }}
-          style={{ width: 260 }}
         />
         <Select
+          className="fv2-stockpage-d152b9f0fc"
           allowClear
           placeholder="All movements"
           value={movement}
@@ -318,7 +301,7 @@ function Movements({ onOpen, entriesOnly = false }) {
             setMovement(v);
             setPage(1);
           }}
-          style={{ width: 220 }}
+
           options={Object.entries(MOVEMENT_LABELS).map(([value, label]) => ({ value, label }))}
         />
       </Space>
@@ -462,15 +445,15 @@ function CountSheet({ id, onBack }) {
   const diffN = lines.filter((l) => l.variance).length;
   const doSave = async (silent = false) => {
     if (!draftReady) {
-      message.error('Please wait for the draft to load');
+      toast.error('Please wait for the draft to load');
       return false;
     }
     if (!(await flushDraft())) {
-      message.error('Could not save the draft. Keep this page open and retry Save.');
+      toast.error('Could not save the draft. Keep this page open and retry Save.');
       return false;
     }
     await refetch();
-    if (!silent) message.success('Counts saved');
+    if (!silent) toast.success('Counts saved');
     return true;
   };
   const doApprove = () =>
@@ -483,10 +466,10 @@ function CountSheet({ id, onBack }) {
         try {
           if (!(await doSave(true))) throw new Error('Save the draft before approving');
           const r = await approve(id).unwrap();
-          message.success(r?.message || 'Count approved');
+          toast.success(r?.message || 'Count approved');
           refetch();
         } catch (e) {
-          message.error(e?.data?.message || e?.message || 'Could not approve');
+          toast.error(e?.data?.message || e?.message || 'Could not approve');
           throw e;
         } finally {
           setApprovalPending(false);
@@ -495,10 +478,10 @@ function CountSheet({ id, onBack }) {
     });
   return (
     <>
-      <Space wrap style={{ marginBottom: 12, width: '100%', justifyContent: 'space-between' }}>
+      <Space className="fv2-stockpage-5346a92030" wrap>
         <Space wrap>
           <Button onClick={onBack}>← All counts</Button>
-          <Title level={5} style={{ margin: 0 }}>
+          <Title className="fv2-stockpage-053af1dc0a" level={5}>
             {count?.countNo}
           </Title>
           {count && (
@@ -515,6 +498,7 @@ function CountSheet({ id, onBack }) {
         </Space>
         <Space wrap>
           <Input
+            className="fv2-stockpage-67aa029c13"
             allowClear
             placeholder="Product name or company code"
             value={search}
@@ -522,7 +506,6 @@ function CountSheet({ id, onBack }) {
               setSearch(e.target.value);
               changePage(1);
             }}
-            style={{ width: 200 }}
           />
           <Space>
             <Switch
@@ -577,12 +560,12 @@ function CountSheet({ id, onBack }) {
             render: (v, r) =>
               draft ? (
                 <InputNumber
+                  className="fv2-stockpage-b568bbfe40"
                   min={0}
                   precision={0}
                   value={v}
                   disabled={!draftReady || approvalPending || !can('inventory', 'edit')}
                   onChange={(val) => editCount(r.productId, val)}
-                  style={{ width: 110 }}
                 />
               ) : v == null ? (
                 '—'
@@ -622,26 +605,28 @@ function Counts({ warehouses }) {
   const start = async () => {
     try {
       const r = await create({ warehouseId: wh || warehouses[0]?.id }).unwrap();
-      message.success(`Count ${r.data.countNo} started with ${r.lines} products`);
+      toast.success(`Count ${r.data.countNo} started with ${r.lines} products`);
       navigate(`/inventory/counts/${r.data.id}?page=1`);
     } catch (e) {
-      message.error(e?.data?.message || 'Could not start a count');
+      toast.error(e?.data?.message || 'Could not start a count');
     }
   };
   return (
     <>
       <Alert
+        className="fv2-stockpage-f34f27c7a2"
         type="info"
         showIcon
-        style={{ marginBottom: 12 }}
+
         message="Count what is physically on the shelf, enter it here, then approve. On hand is set to the counted figure and every difference is logged."
       />
       {can('inventory', 'edit') && (
-        <Space style={{ marginBottom: 12 }}>
+        <Space className="fv2-stockpage-f34f27c7a2">
           <Select
+            className="fv2-stockpage-67aa029c13"
             value={wh || warehouses[0]?.id}
             onChange={setWh}
-            style={{ width: 200 }}
+
             options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
           />
           <Button type="primary" onClick={start} loading={isLoading}>
@@ -704,16 +689,16 @@ function Godowns({ warehouses, loading }) {
   const submit = async (v) => {
     try {
       await save({ id: editing?.id, ...v }).unwrap();
-      message.success('Godown saved');
+      toast.success('Godown saved');
       setEditing(null);
     } catch (e) {
-      message.error(e?.data?.message || 'Could not save');
+      toast.error(e?.data?.message || 'Could not save');
     }
   };
   return (
     <>
       {can('inventory', 'edit') && (
-        <Button type="primary" onClick={() => open(null)} style={{ marginBottom: 12 }}>
+        <Button className="fv2-stockpage-f34f27c7a2" type="primary" onClick={() => open(null)}>
           Add godown
         </Button>
       )}
@@ -753,7 +738,7 @@ function Godowns({ warehouses, loading }) {
             : []),
         ]}
       />
-      <Modal
+      <ModalShell
         open={!!editing}
         title={editing?.id ? 'Edit godown' : 'Add godown'}
         onCancel={() => setEditing(null)}
@@ -786,7 +771,7 @@ function Godowns({ warehouses, loading }) {
             </Form.Item>
           </Space>
         </Form>
-      </Modal>
+      </ModalShell>
     </>
   );
 }
@@ -857,9 +842,9 @@ export default function StockPage({ initialView = 'live' }) {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Space wrap style={{ width: '100%', justifyContent: 'space-between', marginBottom: 16 }}>
+        <Space className="fv2-stockpage-d2d1da9b7d" wrap>
           <div>
-            <Title level={3} style={{ marginBottom: 0 }}>
+            <Title className="fv2-stockpage-aa5edc0173" level={3}>
               {view.title}
             </Title>
             <Text type="secondary">{view.help}</Text>
@@ -867,11 +852,12 @@ export default function StockPage({ initialView = 'live' }) {
           <Space wrap>
             {warehouses.length > 1 && ['live', 'movements'].includes(tab) && (
               <Select
+                className="fv2-stockpage-67aa029c13"
                 allowClear
                 placeholder="All godowns"
                 value={warehouseId}
                 onChange={setWarehouseId}
-                style={{ width: 200 }}
+
                 options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
               />
             )}
@@ -897,9 +883,9 @@ export default function StockPage({ initialView = 'live' }) {
                       {can('inventory', 'edit') && (
                         <Link to="/operations/stock-entry">
                           <Button
+                            className="fv2-stockpage-825070f00b"
                             type="primary"
                             icon={<EditOutlined />}
-                            style={{ marginBottom: 16 }}
                           >
                             New stock entry
                           </Button>

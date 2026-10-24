@@ -1,5 +1,7 @@
+import ModalShell from '../Common/ModalShell';
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, Button, message, Row, Col } from 'antd';
+import { Form, Input, Select, Row, Col } from 'antd';
+import { toast } from 'sonner';
 import {
   useCreateProductMetaMutation,
   useUpdateProductMetaMutation,
@@ -61,26 +63,30 @@ const ProductMetaFormModal = ({ visible, onCancel, editingMeta, onSuccess }) => 
           id: editingMeta.id,
           ...values,
         }).unwrap();
-        message.success('Meta field updated successfully');
+        toast.success('Meta field updated successfully');
       } else {
         await createProductMeta(values).unwrap();
-        message.success('Meta field created successfully');
+        toast.success('Meta field created successfully');
       }
 
       form.resetFields();
       onSuccess?.();
       onCancel();
     } catch (error) {
-      message.error(error?.data?.message || 'Failed to save meta field. Please try again.');
+      toast.error(error?.data?.message || 'Failed to save meta field. Please try again.');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       title={isEditing ? 'Edit Meta Field' : 'Create New Meta Field'}
       open={visible}
       onCancel={onCancel}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>{isEditing ? 'Update Meta Field' : 'Create Meta Field'}</>}
+      onCancelButton={onCancel}
+      confirmLoading={isLoading}
+      cancelButtonProps={{ disabled: isLoading }}
       width={600}
       destroyOnClose
     >
@@ -142,17 +148,8 @@ const ProductMetaFormModal = ({ visible, onCancel, editingMeta, onSuccess }) => 
             </Form.Item>
           </Col>
         </Row>
-
-        <div className="d-flex justify-content-end gap-3 mt-4">
-          <Button onClick={onCancel} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button type="primary" htmlType="submit" loading={isLoading}>
-            {isEditing ? 'Update Meta Field' : 'Create Meta Field'}
-          </Button>
-        </div>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

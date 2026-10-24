@@ -1,3 +1,4 @@
+import './DocumentExportOptions.styles.css';
 import { Button, Checkbox, Divider, Dropdown, Typography } from 'antd';
 import { SettingOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 const { Text } = Typography;
@@ -24,19 +25,9 @@ export default function DocumentExportOptions({
       trigger={['click']}
       placement="bottomRight"
       dropdownRender={() => (
-        <div
-          style={{
-            background: 'white',
-            padding: 16,
-            width: 340,
-            maxHeight: '70vh',
-            overflowY: 'auto',
-            borderRadius: 10,
-            boxShadow: '0 8px 24px #0002',
-          }}
-        >
+        <div className="fv2-documentexportoptions-5f69e0bdd3">
           <Text strong>{pdfOnly ? 'PDF export fields' : 'Export fields (PDF & Excel)'}</Text>
-          <div style={{ marginTop: 8 }}>
+          <div className="fv2-documentexportoptions-d5bf6c693d">
             {[
               ['image', 'Image'],
               ['name', 'Product name'],
@@ -69,7 +60,7 @@ export default function DocumentExportOptions({
               ),
             )}
           </div>
-          <Divider style={{ margin: '12px 0' }} />
+          <Divider className="fv2-documentexportoptions-f558ec376e" />
           <Text strong>PDF pages — include & order</Text>
           <div>
             <Text type="secondary">
@@ -86,12 +77,10 @@ export default function DocumentExportOptions({
             .map((page) => {
               const index = selectedPages.indexOf(page.id);
               return (
-                <div
-                  key={page.id}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}
-                >
+                <div className="fv2-documentexportoptions-6d22fb2064" key={page.id}>
                   <Checkbox
-                    style={{ flex: 1 }}
+                    className="fv2-documentexportoptions-38de269a3f"
+
                     checked={index >= 0}
                     disabled={index >= 0 && selectedPages.length === 1}
                     onChange={(e) =>

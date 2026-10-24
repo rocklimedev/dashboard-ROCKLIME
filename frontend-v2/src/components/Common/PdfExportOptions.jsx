@@ -1,3 +1,4 @@
+import './PdfExportOptions.styles.css';
 import { Button, Checkbox, Dropdown, Typography } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 
@@ -7,17 +8,7 @@ export default function PdfExportOptions({ fields, hidden, onHiddenChange, onRes
       trigger={['click']}
       placement="bottomRight"
       dropdownRender={() => (
-        <div
-          style={{
-            background: 'white',
-            padding: 16,
-            width: 270,
-            maxHeight: '70vh',
-            overflowY: 'auto',
-            borderRadius: 10,
-            boxShadow: '0 8px 24px #0002',
-          }}
-        >
+        <div className="fv2-pdfexportoptions-0d8340b838">
           <Typography.Text strong>Export fields (PDF & Excel)</Typography.Text>
           {fields.map(([key, label]) => (
             <div key={key}>

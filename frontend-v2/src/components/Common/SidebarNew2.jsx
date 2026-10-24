@@ -1,3 +1,4 @@
+import './SidebarNew2.styles.css';
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { ChevronsLeft } from 'react-feather';
@@ -8,7 +9,7 @@ import { DownCircleOutlined } from '@ant-design/icons';
 import { BiLogOut } from 'react-icons/bi';
 import { useAuth } from '../../context/AuthContext';
 import { useLogoutMutation } from '../../api/authApi';
-import { message } from 'antd';
+import { toast } from 'sonner';
 const SidebarNew = ({ isSidebarOpen, toggleSidebar, layoutMode = 'vertical' }) => {
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(null);
@@ -35,7 +36,7 @@ const SidebarNew = ({ isSidebarOpen, toggleSidebar, layoutMode = 'vertical' }) =
       await logout();
       navigate('/login', { replace: true });
     } catch (error) {
-      message.error('Logout failed. Please try again.');
+      toast.error('Logout failed. Please try again.');
     }
   };
 
@@ -191,16 +192,12 @@ const SidebarNew = ({ isSidebarOpen, toggleSidebar, layoutMode = 'vertical' }) =
                   e.preventDefault();
                   handleLogout();
                 }}
-                className={`d-flex align-items-center gap-2 text-danger ${
-                  isSidebarOpen ? '' : 'justify-content-center'
-                }`}
-                style={{
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  borderRadius: '8px',
-                  padding: isSidebarOpen ? '10px 12px' : '10px',
-                  transition: 'background 0.2s ease',
-                }}
+                className={
+                  `d-flex align-items-center gap-2 text-danger ${
+                    isSidebarOpen ? '' : 'justify-content-center'
+                  }` + ' fv2-sidebarnew2-449530d8ba'
+                }
+                style={{ padding: isSidebarOpen ? '10px 12px' : '10px' }}
                 title={!isSidebarOpen ? 'Logout' : ''}
                 onMouseEnter={(e) => (e.currentTarget.style.background = '#f8d7da')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}

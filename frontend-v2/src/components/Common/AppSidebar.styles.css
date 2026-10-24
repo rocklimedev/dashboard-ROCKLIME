@@ -1,0 +1,8 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-appsidebar-933b13b3fc) {
+  overflow-y: auto;
+}
+
+:is(#fv2-style-priority, .fv2-appsidebar-227a45c3db) {
+  display: inline-flex;
+}

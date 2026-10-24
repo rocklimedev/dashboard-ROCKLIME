@@ -1,4 +1,5 @@
-import { Alert, Button, Result, Space, Spin } from 'antd';
+import Loader from '../Common/Loader';
+import { Alert, Button, Result, Space } from 'antd';
 import { Link } from 'react-router-dom';
 import { LockOutlined } from '@ant-design/icons';
 import { useGetBiginStatusQuery } from '../../api/crmApi';
@@ -14,7 +15,7 @@ export default function ZohoConnectionGate({ children }) {
     return (
       <div className="page-wrapper">
         <div className="content">
-          <Spin tip="Checking Zoho connection…" />
+          <Loader tip="Checking Zoho connection…" />
         </div>
       </div>
     );

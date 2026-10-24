@@ -1,7 +1,9 @@
+import './NewQuotation.styles.css';
 // src/pages/quotations/NewQuotation.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { message, Button, Space } from 'antd';
+import { Button, Space } from 'antd';
+import { toast } from 'sonner';
 import { PlusOutlined } from '@ant-design/icons';
 import { v4 as uuidv4 } from 'uuid';
 import moment from 'moment';
@@ -214,7 +216,8 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
       extraDiscountType: quotationData.discountType || 'fixed',
 
       shippingAmount: Number(shipping) || 0,
-      gst: Number(gst) || 0,
+      gstInclusive: quotationData.gstInclusive === true,
+      gst: quotationData.gstInclusive ? 0 : Number(gst) || 0,
       miscellaneousChargeItems: quotationData.miscellaneousChargeItems || [],
       additionalDiscount: Number(quotationData.additionalDiscount) || 0,
       flatPrice: quotationData.flatPrice ?? null,
@@ -232,10 +235,10 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
 
   const handleCreateQuotation = async (layoutProps = {}) => {
     const { payload: quotationPayload, error } = buildQuotationPayload(layoutProps);
-    if (error) return message.error(error);
+    if (error) return toast.error(error);
     try {
       const result = await createQuotation(quotationPayload).unwrap();
-      message.success(
+      toast.success(
         `Quotation created successfully!${
           result.quotation?.reference_number ? ` Ref: ${result.quotation.reference_number}` : ''
         }`,
@@ -246,7 +249,7 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
           claimedProductIds: quotationPayload.products.map((item) => item.productId || item.id),
         });
       } catch {
-        message.warning(
+        toast.warning(
           'Quotation created, but its cart could not be removed. Refresh before reusing this draft.',
         );
       }
@@ -254,16 +257,16 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
         const quotationId = result.quotation?.quotationId || quotationPayload.quotationId;
         try {
           await linkDealQuotation({ id: dealId, quotationId }).unwrap();
-          message.success('Linked to the CRM deal');
+          toast.success('Linked to the CRM deal');
         } catch {
-          message.warning('Quotation saved, but it could not be linked to the deal');
+          toast.warning('Quotation saved, but it could not be linked to the deal');
         }
         navigate(`/quotation/${quotationId}`);
         return;
       }
       navigate('/quotations/list');
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to create quotation.');
+      toast.error(err?.data?.message || 'Failed to create quotation.');
     }
   };
 
@@ -272,7 +275,7 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
   const handleCustomerSave = (newCustomer) => {
     setSelectedCustomer(newCustomer.customerId || '');
     setShowAddCustomerModal(false);
-    message.success('Customer created successfully');
+    toast.success('Customer created successfully');
   };
 
   const handleAddAddress = () => setShowAddAddressModal(true);
@@ -280,16 +283,16 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
     setQuotationData((prev) => ({ ...prev, shipTo: addressId }));
     setShowAddAddressModal(false);
     refetchAddresses();
-    message.success('Address added successfully');
+    toast.success('Address added successfully');
   };
 
   const handleProductCreated = (newProduct) => {
-    message.success(`Product "${newProduct.name}" created successfully!`);
+    toast.success(`Product "${newProduct.name}" created successfully!`);
   };
 
   return (
     <>
-      <fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+      <fieldset className="fv2-newquotation-6dc7b339c3" disabled={busy}>
         <CartLayout
           quotationData={quotationData}
           handleQuotationChange={handleQuotationChange}
@@ -298,7 +301,7 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
           {(layoutProps) => (
             <>
               {/* Header Buttons */}
-              <div style={{ marginBottom: 16, textAlign: 'right' }}>
+              <div className="fv2-newquotation-16f21fc497">
                 <Space>
                   <Button
                     icon={<PlusOutlined />}

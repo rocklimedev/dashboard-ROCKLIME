@@ -1,5 +1,6 @@
+import Loader from '../Common/Loader';
 import React from 'react';
-import { Table, Spin, Alert, Badge, Typography } from 'antd';
+import { Table, Alert, Badge, Typography } from 'antd';
 
 const { Title } = Typography;
 
@@ -8,7 +9,7 @@ const DataTable = ({ title, columns, dataSource, isLoading, error, rowKey }) => 
     <div>
       <Title level={4}>{title}</Title>
       {isLoading ? (
-        <Spin />
+        <Loader />
       ) : error ? (
         <Alert
           message={`Error loading ${title.toLowerCase()}`}

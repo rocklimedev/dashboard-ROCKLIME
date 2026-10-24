@@ -1,6 +1,8 @@
+import ModalShell from '../Common/ModalShell';
 // components/Brand/BrandParentCategoryFormModal.jsx
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, message } from 'antd';
+import { Form, Input } from 'antd';
+import { toast } from 'sonner';
 import {
   useCreateBrandParentCategoryMutation,
   useUpdateBrandParentCategoryMutation, // You'll need to add this mutation if not present
@@ -30,26 +32,29 @@ const BrandParentCategoryFormModal = ({ visible, onCancel, editingCategory = nul
     try {
       if (editingCategory) {
         await updateBpc({ id: editingCategory.id, ...values }).unwrap();
-        message.success('Brand Parent Category updated successfully');
+        toast.success('Brand Parent Category updated successfully');
       } else {
         await createBpc(values).unwrap();
-        message.success('Brand Parent Category created successfully');
+        toast.success('Brand Parent Category created successfully');
       }
       onSuccess?.();
       onCancel();
     } catch (error) {
-      message.error(error?.data?.message || 'Failed to save');
+      toast.error(error?.data?.message || 'Failed to save');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       title={editingCategory ? 'Edit Brand Category' : 'Add New Brand Category'}
       open={visible}
       onCancel={onCancel}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>{editingCategory ? 'Update Category' : 'Create Category'}</>}
+      onCancelButton={onCancel}
+      confirmLoading={loading}
       destroyOnClose
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
@@ -75,15 +80,8 @@ const BrandParentCategoryFormModal = ({ visible, onCancel, editingCategory = nul
         >
           <Input placeholder="cp-fitting" />
         </Form.Item>
-
-        <div className="d-flex justify-content-end gap-2 mt-4">
-          <Button onClick={onCancel}>Cancel</Button>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            {editingCategory ? 'Update Category' : 'Create Category'}
-          </Button>
-        </div>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 

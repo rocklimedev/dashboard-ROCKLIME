@@ -1,6 +1,10 @@
+import Loader from '../Common/Loader';
+import ModalShell from '../Common/ModalShell';
+import './StockModal.styles.css';
 // src/components/Common/StockModal.jsx
 import React, { useEffect } from 'react';
-import { Modal, Form, InputNumber, Button, Space, Typography, message, Spin } from 'antd';
+import { Form, InputNumber, Space, Typography } from 'antd';
+import { toast } from 'sonner';
 import { PlusOutlined, MinusOutlined } from '@ant-design/icons';
 import { useAddStockMutation, useRemoveStockMutation } from '../../api/productApi';
 
@@ -23,7 +27,7 @@ const StockModal = ({ open, onCancel, product, action = 'add' }) => {
 
   const handleSubmit = async (values) => {
     if (!product?.productId) {
-      message.error('Invalid product');
+      toast.error('Invalid product');
       return;
     }
 
@@ -33,24 +37,24 @@ const StockModal = ({ open, onCancel, product, action = 'add' }) => {
           productId: product.productId,
           quantity: values.quantity,
         }).unwrap();
-        message.success(`Successfully added ${values.quantity} unit(s)`);
+        toast.success(`Successfully added ${values.quantity} unit(s)`);
       } else {
         await removeStock({
           productId: product.productId,
           quantity: values.quantity,
         }).unwrap();
-        message.success(`Successfully removed ${values.quantity} unit(s)`);
+        toast.success(`Successfully removed ${values.quantity} unit(s)`);
       }
       onCancel(); // Close modal on success
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to update stock');
+      toast.error(err?.data?.message || 'Failed to update stock');
     }
   };
 
   if (!product) return null;
 
   return (
-    <Modal
+    <ModalShell
       title={
         <Space>
           <span>
@@ -58,7 +62,7 @@ const StockModal = ({ open, onCancel, product, action = 'add' }) => {
               {isAdd ? 'Add' : 'Remove'} Stock — {product.name || 'Product'}
             </strong>
             {product.product_code && (
-              <Text type="secondary" style={{ marginLeft: 8 }}>
+              <Text className="fv2-stockmodal-c31289fe96" type="secondary">
                 #{product.product_code}
               </Text>
             )}
@@ -67,13 +71,18 @@ const StockModal = ({ open, onCancel, product, action = 'add' }) => {
       }
       open={open}
       onCancel={onCancel}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>{isLoading ? 'Processing...' : isAdd ? 'Add to Stock' : 'Remove from Stock'}</>}
+      onCancelButton={onCancel}
+      confirmLoading={isLoading}
+      okButtonProps={{ danger: !isAdd }}
+      cancelButtonProps={{ disabled: isLoading }}
       width={500}
       destroyOnClose
     >
       <Form form={form} onFinish={handleSubmit} layout="vertical">
         <Form.Item label={<strong>Current Stock</strong>}>
-          <Text strong style={{ fontSize: 18 }}>
+          <Text className="fv2-stockmodal-247bb8f398" strong>
             {product.quantity || 0} units
           </Text>
         </Form.Item>
@@ -97,44 +106,23 @@ const StockModal = ({ open, onCancel, product, action = 'add' }) => {
           ]}
         >
           <InputNumber
+            className="fv2-stockmodal-9fb64db8e5"
             min={1}
             max={isAdd ? undefined : product.quantity || 0}
-            style={{ width: '100%' }}
+
             size="large"
             placeholder="Enter quantity"
             disabled={isLoading}
           />
         </Form.Item>
-
-        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-          <Space>
-            <Button onClick={onCancel} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button type="primary" htmlType="submit" loading={isLoading} danger={!isAdd}>
-              {isLoading ? 'Processing...' : isAdd ? 'Add to Stock' : 'Remove from Stock'}
-            </Button>
-          </Space>
-        </Form.Item>
       </Form>
 
       {isLoading && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'rgba(255,255,255,0.9)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 8,
-            zIndex: 10,
-          }}
-        >
-          <Spin size="large" tip={isAdd ? 'Adding stock...' : 'Removing stock...'} />
+        <div className="fv2-stockmodal-67381c3139">
+          <Loader size="large" tip={isAdd ? 'Adding stock...' : 'Removing stock...'} />
         </div>
       )}
-    </Modal>
+    </ModalShell>
   );
 };
 

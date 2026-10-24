@@ -1,16 +1,9 @@
+import Loader from '../Common/Loader';
+import ModalShell from '../Common/ModalShell';
+import './QuotationPdfActions.styles.css';
 import { useEffect, useState } from 'react';
-import {
-  Button,
-  Checkbox,
-  Input,
-  Modal,
-  Segmented,
-  Space,
-  Spin,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+import { Button, Checkbox, Input, Segmented, Space, Tooltip, Typography } from 'antd';
+import { toast } from 'sonner';
 import {
   DownloadOutlined,
   EyeOutlined,
@@ -97,7 +90,7 @@ export default function QuotationPdfActions({
         setTimeout(() => URL.revokeObjectURL(url), 2000);
       }
     } catch (e) {
-      message.error(e.message);
+      toast.error(e.message);
     } finally {
       setBusy(null);
     }
@@ -120,7 +113,7 @@ export default function QuotationPdfActions({
           baseApi.util.invalidateTags(['Quotations', { type: 'Quotations', id: quotationId }]),
         );
     } catch (e) {
-      message.error(e.message);
+      toast.error(e.message);
     } finally {
       setBusy(null);
     }
@@ -129,9 +122,9 @@ export default function QuotationPdfActions({
   const copy = async (textToCopy) => {
     try {
       await navigator.clipboard.writeText(textToCopy);
-      message.success('Copied');
+      toast.success('Copied');
     } catch {
-      message.info('Select the text and copy it');
+      toast.info('Select the text and copy it');
     }
   };
 
@@ -180,7 +173,7 @@ export default function QuotationPdfActions({
         )}
       </Space>
 
-      <Modal
+      <ModalShell
         open={!!preview}
         onCancel={() => setPreview(null)}
         title={preview?.name}
@@ -204,16 +197,16 @@ export default function QuotationPdfActions({
       >
         {preview ? (
           <iframe
+            className="fv2-quotationpdfactions-0c4102930f"
             title={`${documentLabel} PDF`}
             src={preview.url}
-            style={{ width: '100%', height: '78vh', border: 0 }}
           />
         ) : (
-          <Spin />
+          <Loader />
         )}
-      </Modal>
+      </ModalShell>
 
-      <Modal
+      <ModalShell
         open={!!share}
         onCancel={() => setShare(null)}
         title="Share with the customer"
@@ -221,25 +214,25 @@ export default function QuotationPdfActions({
         footer={null}
       >
         {share && (
-          <Space direction="vertical" style={{ width: '100%' }} size={12}>
+          <Space className="fv2-quotationpdfactions-c6c295ed84" direction="vertical" size={12}>
             <Text type="secondary">
               Anyone with this link can open the{' '}
               {STYLES.find((s) => s.value === style)?.label.toLowerCase()} PDF for{' '}
               {share.expiresInDays} days — no login needed.
             </Text>
-            <Space.Compact style={{ width: '100%' }}>
+            <Space.Compact className="fv2-quotationpdfactions-c6c295ed84">
               <Input value={share.url} readOnly />
               <Button icon={<CopyOutlined />} onClick={() => copy(share.url)} />
             </Space.Compact>
             <Input.TextArea value={share.message} rows={4} readOnly />
             <Space wrap>
               <Button
+                className="fv2-quotationpdfactions-1e300903ab"
                 type="primary"
                 icon={<WhatsAppOutlined />}
                 href={share.whatsapp}
                 target="_blank"
                 rel="noreferrer"
-                style={{ background: '#25D366', borderColor: '#25D366' }}
               >
                 Send on WhatsApp
               </Button>
@@ -249,7 +242,7 @@ export default function QuotationPdfActions({
             </Space>
           </Space>
         )}
-      </Modal>
+      </ModalShell>
     </>
   );
 }

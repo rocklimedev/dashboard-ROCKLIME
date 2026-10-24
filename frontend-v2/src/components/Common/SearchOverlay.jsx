@@ -1,5 +1,8 @@
+import Loader from './Loader';
+import './SearchOverlay.styles.css';
 import React, { useEffect, useRef, useState } from 'react';
-import { Spin, Empty, Avatar, Button, message } from 'antd';
+import { Empty, Avatar, Button } from 'antd';
+import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   SearchOutlined,
@@ -61,10 +64,10 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
     e.stopPropagation();
 
     if (!userId) {
-      return message.error('Please login first');
+      return toast.error('Please login first');
     }
     if (!product?.productId) {
-      return message.error('Invalid product');
+      return toast.error('Invalid product');
     }
 
     const productKey = product.productId;
@@ -77,9 +80,9 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
         quantity: 1,
       }).unwrap();
 
-      message.success(`Added ${product.name || 'item'} to cart`);
+      toast.success(`Added ${product.name || 'item'} to cart`);
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to add to cart');
+      toast.error(err?.data?.message || 'Failed to add to cart');
     } finally {
       setCartLoadingStates((prev) => ({ ...prev, [productKey]: false }));
     }
@@ -158,10 +161,11 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
         }
         return productImage ? (
           <Avatar
+            className="fv2-searchoverlay-39e7d391ad"
             src={productImage}
             shape="square"
             size={40}
-            style={{ objectFit: 'cover' }}
+
             alt={item.name || 'Product'}
           />
         ) : (
@@ -170,7 +174,7 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
 
       case 'PurchaseOrder':
         return (
-          <Avatar icon={<FileTextOutlined />} size={40} style={{ backgroundColor: '#722ed1' }} />
+          <Avatar className="fv2-searchoverlay-b9869aa403" icon={<FileTextOutlined />} size={40} />
         );
 
       case 'Order':
@@ -267,29 +271,29 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
   return (
     <div className="search-overlay-backdrop" onClick={onClose}>
       <div className="search-overlay-content" onClick={(e) => e.stopPropagation()} ref={overlayRef}>
-        <Spin spinning={loading}>
+        <Loader loading={loading}>
           <div className="search-results-wrapper">
             {loading ? (
               <div className="search-loading text-center py-6">
-                <Spin size="large" />
+                <Loader size="large" />
                 <div className="mt-3 text-muted">Searching across all modules...</div>
               </div>
             ) : !query?.trim() ? (
               <div className="text-center text-muted py-8">
-                <SearchOutlined style={{ fontSize: 64, color: '#d9d9d9' }} />
+                <SearchOutlined className="fv2-searchoverlay-e203da5c74" />
                 <div className="mt-4">
                   Start typing to search users, products, orders, purchase orders, quotations...
                 </div>
               </div>
             ) : !hasResults ? (
               <Empty
+                className="fv2-searchoverlay-cfb166dcae"
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                 description={
                   <span>
                     No results found for "<strong>{query}</strong>"
                   </span>
                 }
-                style={{ margin: '60px 0' }}
               />
             ) : (
               <>
@@ -380,11 +384,8 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
                                 loading={isAdding}
                                 disabled={isCartLoadingGlobal}
                                 onClick={(e) => handleAddToCart(e, item)}
-                                style={{
-                                  backgroundColor: '#e31e24',
-                                  borderColor: '#e31e24',
-                                }}
-                                className="me-3"
+
+                                className="me-3 fv2-searchoverlay-5c443ca5e0"
                               >
                                 Add
                               </Button>
@@ -398,7 +399,7 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
               </>
             )}
           </div>
-        </Spin>
+        </Loader>
       </div>
     </div>
   );

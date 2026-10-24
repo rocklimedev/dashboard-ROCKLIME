@@ -1,5 +1,9 @@
+import Loader from '../Common/Loader';
+import ModalShell from '../Common/ModalShell';
+import './HistoryModal.styles.css';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, Table, Spin, Empty, Alert, Tag, Typography, Button, Space, message } from 'antd';
+import { Table, Empty, Alert, Tag, Typography, Button, Space } from 'antd';
+import { toast } from 'sonner';
 import { FileExcelOutlined, FilePdfOutlined, EyeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useGetHistoryByProductIdQuery } from '../../api/productApi';
@@ -46,7 +50,7 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
   }, [dataSource]);
   const exportToExcel = () => {
     if (!dataSource.length) {
-      return message.warning('No data to export');
+      return toast.warning('No data to export');
     }
 
     const worksheetData = dataSource.map((item) => ({
@@ -80,12 +84,12 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
       `${product?.name || 'Product'}_Stock_History_${dayjs().format('YYYY-MM-DD')}.xlsx`,
     );
 
-    message.success('Excel report downloaded');
+    toast.success('Excel report downloaded');
   };
 
   const exportToPDF = () => {
     if (!dataSource.length) {
-      return message.warning('No data to export');
+      return toast.warning('No data to export');
     }
 
     const doc = new jsPDF('landscape', 'mm', 'a4');
@@ -122,7 +126,7 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
 
     doc.save(`${product?.name || 'Product'}_Stock_History.pdf`);
 
-    message.success('PDF report downloaded');
+    toast.success('PDF report downloaded');
   };
 
   const columns = useMemo(
@@ -205,19 +209,13 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
   );
 
   return (
-    <Modal
+    <ModalShell
       open={open}
       onCancel={onCancel}
       footer={null}
       width={1100}
       title={
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
+        <div className="fv2-historymodal-462c8f5a94">
           {' '}
           <div>
             {' '}
@@ -238,13 +236,8 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
       }
     >
       {isLoading && (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: 40,
-          }}
-        >
-          <Spin size="large" />
+        <div className="fv2-historymodal-6e0e70c6ba">
+          <Loader size="large" />
         </div>
       )}
 
@@ -266,12 +259,7 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
           />
 
           {dataSource.length > 10 && (
-            <div
-              style={{
-                marginTop: 16,
-                textAlign: 'center',
-              }}
-            >
+            <div className="fv2-historymodal-e797475589">
               <Button
                 type="primary"
                 icon={<EyeOutlined />}
@@ -291,7 +279,7 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
           )}
         </>
       )}
-    </Modal>
+    </ModalShell>
   );
 };
 

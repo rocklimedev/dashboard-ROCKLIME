@@ -1,11 +1,11 @@
 :global(.ant-typography) {
-  color: #1a1a1a;
+  color: var(--fv2-color-1a1a1a);
 }
 
 .main-layout {
   display: flex;
   height: 100%;
-  background: #fff;
+  background: var(--fv2-color-fff);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   border-radius: 12px;
   overflow: hidden;
@@ -14,8 +14,8 @@
 .left-panel {
   width: 380px;
   min-width: 320px;
-  background: #fafbfc;
-  border-right: 1px solid #e8ecef;
+  background: var(--fv2-color-fafbfc);
+  border-right: 1px solid var(--fv2-color-e8ecef);
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.04);
@@ -23,8 +23,8 @@
 
 .left-header {
   padding: 20px;
-  background: #ffffff;
-  border-bottom: 1px solid #e8ecef;
+  background: var(--fv2-color-ffffff);
+  border-bottom: 1px solid var(--fv2-color-e8ecef);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
@@ -44,7 +44,7 @@
   border-radius: 8px;
   font-weight: 500;
   height: 38px;
-  font-size: 13px;
+  font-size: var(--fv2-font-13px);
   transition: all 0.2s ease;
 }
 
@@ -52,7 +52,7 @@
   flex: 1;
   overflow-y: auto;
   padding: 12px 8px;
-  background: #fafbfc;
+  background: var(--fv2-color-fafbfc);
 }
 
 .tree-node {
@@ -67,7 +67,7 @@
 }
 
 .tree-node:hover {
-  background: #f0f5ff;
+  background: var(--fv2-color-f0f5ff);
 }
 
 .tree-title {
@@ -75,7 +75,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  font-size: 14px;
+  font-size: var(--fv2-font-14px);
   font-weight: 500;
 }
 
@@ -94,7 +94,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
+  background: var(--fv2-color-ffffff);
   padding: 24px;
   gap: 20px;
 }
@@ -111,7 +111,7 @@
   flex: 1;
   border-radius: 14px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--fv2-color-f0f0f0);
 }
 
 .product-table :global(.ant-table) {
@@ -125,19 +125,19 @@
   height: 48px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--fv2-color-e8e8e8);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .no-image {
   width: 48px;
   height: 48px;
-  background: #f9f9f9;
-  border: 1px dashed #d9d9d9;
+  background: var(--fv2-color-f9f9f9);
+  border: 1px dashed var(--fv2-color-d9d9d9);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  color: #aaa;
+  font-size: var(--fv2-font-11px);
+  color: var(--fv2-color-aaa);
 }

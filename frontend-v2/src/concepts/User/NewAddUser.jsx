@@ -1,6 +1,7 @@
+import './NewAddUser.styles.css';
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Input, Select, Checkbox, DatePicker, TimePicker } from 'antd';
-import { message } from 'antd';
+import { toast } from 'sonner';
 import moment from 'moment';
 import {
   useCreateUserMutation,
@@ -128,7 +129,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           const user = data?.data || data?.user;
           if (user) populateForm(user);
         } catch {
-          message.error('Failed to reload user data');
+          toast.error('Failed to reload user data');
         }
       }
     } else {
@@ -200,7 +201,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
 
       for (const field of required) {
         if (!formData[field]?.trim()) {
-          message.error(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`);
+          toast.error(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`);
           return;
         }
       }
@@ -209,14 +210,14 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         const from = moment(`1970-01-01 ${formData.shiftFrom}`);
         const to = moment(`1970-01-01 ${formData.shiftTo}`);
         if (to.isSameOrBefore(from)) {
-          message.error('Shift To must be after Shift From');
+          toast.error('Shift To must be after Shift From');
           return;
         }
       }
 
       const selectedRole = roles?.find((r) => r.roleId === formData.roleId);
       if (!selectedRole) {
-        message.error('Invalid role selected');
+        toast.error('Invalid role selected');
         return;
       }
 
@@ -290,10 +291,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         }
       }
 
-      message.success(isEditMode ? 'User updated successfully' : 'User created successfully');
+      toast.success(isEditMode ? 'User updated successfully' : 'User created successfully');
       navigate('/users/list');
     } catch (err) {
-      message.error(err?.data?.message || 'Operation failed');
+      toast.error(err?.data?.message || 'Operation failed');
     }
   };
 
@@ -408,10 +409,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Date of Birth">
                     <DatePicker
+                      className="fv2-newadduser-58aee94e9e"
                       value={formData.dateOfBirth ? moment(formData.dateOfBirth) : null}
                       onChange={(d) => handleDateChange('dateOfBirth', d)}
                       format="YYYY-MM-DD"
-                      style={{ width: '100%' }}
                     />
                   </Form.Item>
                 </div>
@@ -419,10 +420,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Shift From">
                     <TimePicker
+                      className="fv2-newadduser-58aee94e9e"
                       value={formData.shiftFrom ? moment(formData.shiftFrom, 'HH:mm') : null}
                       onChange={(t) => handleTimeChange('shiftFrom', t)}
                       format="HH:mm"
-                      style={{ width: '100%' }}
                     />
                   </Form.Item>
                 </div>
@@ -430,10 +431,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Shift To">
                     <TimePicker
+                      className="fv2-newadduser-58aee94e9e"
                       value={formData.shiftTo ? moment(formData.shiftTo, 'HH:mm') : null}
                       onChange={(t) => handleTimeChange('shiftTo', t)}
                       format="HH:mm"
-                      style={{ width: '100%' }}
                     />
                   </Form.Item>
                 </div>
@@ -577,7 +578,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
 
           {/* Submit */}
           <div className="text-end">
-            <Button onClick={handleClose} style={{ marginRight: 8 }}>
+            <Button className="fv2-newadduser-f919c99b86" onClick={handleClose}>
               Cancel
             </Button>
             <Button type="primary" htmlType="submit" loading={false}>

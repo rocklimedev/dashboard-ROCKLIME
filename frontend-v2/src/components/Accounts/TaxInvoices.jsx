@@ -1,21 +1,8 @@
+import './TaxInvoices.styles.css';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Button,
-  Col,
-  DatePicker,
-  Input,
-  Modal,
-  Row,
-  Select,
-  Space,
-  Statistic,
-  Table,
-  Tag,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+import { Button, Col, DatePicker, Input, Modal, Row, Select, Space, Statistic, Table, Tag, Tooltip, Typography } from 'antd';
+import { toast } from 'sonner';
 import { DownloadOutlined, FilePdfOutlined, StopOutlined, ExportOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useCancelInvoiceMutation, useGetInvoicesQuery } from '../../api/invoicesApi';
@@ -57,7 +44,7 @@ export default function TaxInvoices() {
     try {
       await fn();
     } catch (e) {
-      message.error(e.message);
+      toast.error(e.message);
     } finally {
       setBusy(null);
     }
@@ -85,14 +72,14 @@ export default function TaxInvoices() {
       zIndex: 2000,
       onOk: async () => {
         if (!reason.trim()) {
-          message.error('A reason is required');
+          toast.error('A reason is required');
           throw new Error('reason');
         }
         try {
           await cancel({ id: inv.id, reason }).unwrap();
-          message.success(`${inv.invoiceNo} cancelled`);
+          toast.success(`${inv.invoiceNo} cancelled`);
         } catch (e) {
-          message.error(e?.data?.message || 'Could not cancel');
+          toast.error(e?.data?.message || 'Could not cancel');
         }
       },
     });
@@ -130,12 +117,13 @@ export default function TaxInvoices() {
           allowClear={false}
         />
         <Select
+          className="fv2-taxinvoices-f8f4c73be1"
           value={status}
           onChange={(v) => {
             setStatus(v);
             setPage(1);
           }}
-          style={{ width: 140 }}
+
           options={[
             { value: '', label: 'All' },
             { value: 'ISSUED', label: 'Issued' },
@@ -143,13 +131,13 @@ export default function TaxInvoices() {
           ]}
         />
         <Input.Search
+          className="fv2-taxinvoices-4c95cbaf80"
           placeholder="Invoice no., customer, GSTIN, order"
           allowClear
           onSearch={(v) => {
             setSearch(v);
             setPage(1);
           }}
-          style={{ width: 280 }}
         />
         <div className="ms-auto d-flex gap-2">
           <Tooltip title="Sales and receipt vouchers for Tally (Gateway → Import → Vouchers)">
@@ -223,7 +211,7 @@ export default function TaxInvoices() {
               <div>
                 {r.customerId ? <Link to={`/customer/${r.customerId}`}>{v}</Link> : v}
                 <div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
+                  <Text className="fv2-taxinvoices-0428d6290f" type="secondary">
                     {r.customerGstin || 'Unregistered (B2C)'}
                   </Text>
                 </div>
@@ -268,7 +256,7 @@ export default function TaxInvoices() {
                 <Tooltip title="Open PDF">
                   <Button
                     type="text"
-                    icon={<FilePdfOutlined style={{ color: '#d32f2f' }} />}
+                    icon={<FilePdfOutlined className="fv2-taxinvoices-f1f9e5aaa5" />}
                     loading={busy === r.id}
                     onClick={() =>
                       run(r.id, () => fetchFile(`/invoices/${r.id}/pdf`, { open: true }))

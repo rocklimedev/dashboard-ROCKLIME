@@ -1,10 +1,13 @@
+import Loader from './Loader';
+import './Header.styles.css';
 // src/components/Layout/Header.jsx
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGetProfileQuery } from '../../api/userApi';
 import { useGetCartQuery } from '../../api/cartApi';
 import { useGetNotificationsQuery } from '../../api/notificationApi';
-import { Dropdown, Button, Menu, Badge, Input, Spin, message } from 'antd';
+import { Dropdown, Button, Menu, Badge, Input } from 'antd';
+import { toast } from 'sonner';
 import {
   BellOutlined,
   ShoppingCartOutlined,
@@ -144,7 +147,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
       logout();
       navigate('/login', { replace: true });
     } catch {
-      message.error('Logout failed. Please try again.');
+      toast.error('Logout failed. Please try again.');
     }
   }, [logoutMutation, logout, navigate]);
 
@@ -159,7 +162,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
   // User Dropdown Menu
   const userMenu = useMemo(
     () => (
-      <Menu className="shadow-sm rounded menu-drop-user" style={{ zIndex: 1100 }}>
+      <Menu className="shadow-sm rounded menu-drop-user fv2-header-a69c3f8efe">
         <Menu.Item
           key="profile-header"
           className="d-flex align-items-center p-3 profileset"
@@ -232,28 +235,22 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
                   className={mobileSearchOpen ? 'd-none' : 'd-inline-block'}
                   onClick={() => setMobileSearchOpen(true)}
                 >
-                  <SearchOutlined style={{ fontSize: 24 }} />
+                  <SearchOutlined className="fv2-header-6c9de3ae60" />
                 </Button>
               </div>
 
               {/* Mobile Full-width Search */}
               <div
-                className={`mobile-search-container d-md-none ${mobileSearchOpen ? 'open' : ''}`}
-                style={{
-                  position: mobileSearchOpen ? 'fixed' : 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  zIndex: 1000,
-                  background: 'var(--background-color, white)',
-                  padding: '12px 16px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                }}
+                className={
+                  `mobile-search-container d-md-none ${mobileSearchOpen ? 'open' : ''}` +
+                  ' fv2-header-3bde8b0bc9'
+                }
+                style={{ position: mobileSearchOpen ? 'fixed' : 'absolute' }}
               >
                 <Input
                   ref={mobileSearchInputRef}
                   prefix={<SearchOutlined />}
-                  suffix={searchFetching ? <Spin size="small" /> : null}
+                  suffix={searchFetching ? <Loader size="small" /> : null}
                   placeholder="Search products, users, orders..."
                   value={searchQuery}
                   onChange={handleSearchChange}
@@ -270,17 +267,9 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
                   prefix={<SearchOutlined />}
                   suffix={
                     searchFetching ? (
-                      <Spin size="small" />
+                      <Loader size="small" />
                     ) : (
-                      <span
-                        style={{
-                          color: '#bfbfbf',
-                          fontSize: 12,
-                          border: '1px solid #e8e8e8',
-                          borderRadius: 4,
-                          padding: '0 5px',
-                        }}
-                      >
+                      <span className="fv2-header-8bb5f62121">
                         {/Mac/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}
                       </span>
                     )
@@ -313,7 +302,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
               type="text"
               aria-label="Open Cliq chat"
               title="Cliq chat"
-              icon={<CommentOutlined style={{ fontSize: 21 }} />}
+              icon={<CommentOutlined className="fv2-header-b5b215d54b" />}
               onClick={() => setChatOpen(true)}
             />
             {/* Desktop Icons */}
@@ -322,14 +311,14 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
 
               <Button type="link" onClick={() => setShowNotifications(true)}>
                 <Badge count={notificationCount} size="small" offset={[-4, 4]}>
-                  <BellOutlined style={{ fontSize: 18 }} />
+                  <BellOutlined className="fv2-header-2024ce2514" />
                 </Badge>
               </Button>
 
               <PermissionsGate api="write" module="cart">
                 <Link to="/cart/quotation">
                   <Badge count={cartItemCount} size="small" offset={[-4, 4]}>
-                    <ShoppingCartOutlined style={{ fontSize: 20 }} />
+                    <ShoppingCartOutlined className="fv2-header-d18c372548" />
                   </Badge>
                 </Link>
               </PermissionsGate>
@@ -381,9 +370,8 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
                 <Dropdown overlay={userMenu} trigger={['click']}>
                   <a
                     href="#"
-                    className="nav-link userset d-flex align-items-center justify-content-center"
+                    className="nav-link userset d-flex align-items-center justify-content-center fv2-header-93cbf68ba8"
                     onClick={(e) => e.preventDefault()}
-                    style={{ width: 40, height: 40 }}
                   >
                     {avatarSrc ? (
                       <Avatar
@@ -393,18 +381,8 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
                         round
                       />
                     ) : (
-                      <div
-                        style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: '50%',
-                          background: '#f0f0f0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <UserOutlined style={{ fontSize: 18 }} />
+                      <div className="fv2-header-d9db2f99af">
+                        <UserOutlined className="fv2-header-2024ce2514" />
                       </div>
                     )}
                   </a>

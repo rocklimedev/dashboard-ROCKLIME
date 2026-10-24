@@ -1,3 +1,4 @@
+import './CartItemRow.styles.css';
 // src/components/POS-NEW/CartItemRow.jsx
 import React, { useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
@@ -15,133 +16,31 @@ const { Option } = Select;
 
 /* ===================== STYLES ===================== */
 
-const ItemContainer = styled.div`
-  padding: 12px 8px;
-  transition: all 0.2s;
-  background: #fff;
-  border-radius: 8px;
-  position: relative;
+const ItemContainer = styled.div.attrs(({ isDragging }) => ({
+  className: `fv2-cartitemrow-item-container${isDragging ? ' fv2-cartitemrow-item-container--dragging' : ''}`,
+}))``;
 
-  &:hover {
-    background: #fafafa;
-  }
+const MainRow = styled(Row).attrs({ className: 'fv2-cartitemrow-main-row' })``;
 
-  ${({ isDragging }) =>
-    isDragging &&
-    `
-    opacity: 0.75;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    z-index: 100;
-  `}
+const SnoHandle = styled.div.attrs({ className: 'fv2-cartitemrow-sno-handle' })``;
 
-  @media (min-width: 768px) {
-    padding: 14px 10px;
-  }
-`;
+const CartItemImage = styled(LazyLoadImage).attrs({
+  className: 'fv2-cartitemrow-cart-item-image',
+})``;
 
-const MainRow = styled(Row)`
-  flex-wrap: wrap;
+const QtyTotalCol = styled(Col).attrs({ className: 'fv2-cartitemrow-qty-total-col' })``;
 
-  @media (min-width: 576px) {
-    flex-wrap: nowrap;
-  }
-`;
+const RemoveLabel = styled.span.attrs({ className: 'fv2-cartitemrow-remove-label' })``;
 
-const SnoHandle = styled.div`
-  cursor: grab;
-  min-width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
-  color: #595959;
-  border-radius: 6px;
-  user-select: none;
-  background: #f5f5f5;
+const ResponsiveDivider = styled(Divider).attrs({
+  className: 'fv2-cartitemrow-responsive-divider',
+})``;
 
-  &:hover {
-    background: #e6f4ff;
-    color: #1677ff;
-  }
+const LocationChip = styled(Tag).attrs({ className: 'fv2-cartitemrow-location-chip' })``;
 
-  &:active {
-    cursor: grabbing;
-  }
-`;
+const SplitTags = styled.div.attrs({ className: 'fv2-cartitemrow-split-tags' })``;
 
-const CartItemImage = styled(LazyLoadImage)`
-  border-radius: 8px;
-  object-fit: cover;
-  width: 56px;
-  height: 56px;
-  background: #f5f5f5;
-
-  @media (min-width: 576px) {
-    width: 64px;
-    height: 64px;
-  }
-
-  @media (min-width: 768px) {
-    width: 80px;
-    height: 80px;
-  }
-`;
-
-const QtyTotalCol = styled(Col)`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  margin-top: 10px;
-
-  @media (min-width: 576px) {
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: flex-start;
-    gap: 8px;
-    width: auto;
-    margin-top: 0;
-  }
-`;
-
-const RemoveLabel = styled.span`
-  display: none;
-
-  @media (min-width: 576px) {
-    display: inline;
-    margin-left: 4px;
-  }
-`;
-
-const ResponsiveDivider = styled(Divider)`
-  margin: 12px 0 0 0 !important;
-
-  @media (min-width: 576px) {
-    margin: 12px 0 0 80px !important;
-  }
-`;
-
-const LocationChip = styled(Tag)`
-  margin-top: 6px;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const SplitTags = styled.div`
-  margin-top: 6px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-`;
-
-const AssignRow = styled.div`
-  margin-top: 8px;
-`;
+const AssignRow = styled.div.attrs({ className: 'fv2-cartitemrow-assign-row' })``;
 
 /* ===================== HELPERS ===================== */
 
@@ -336,7 +235,7 @@ const CartItemRow = ({
     onLocationChange?.(itemId, floorId, roomId);
   };
 
-  if (isLoading) return <div style={{ padding: '20px' }}>Loading...</div>;
+  if (isLoading) return <div className="fv2-cartitemrow-645379e773">Loading...</div>;
 
   return (
     <ItemContainer ref={setSortableRef} style={style} isDragging={isDragging}>
@@ -356,26 +255,26 @@ const CartItemRow = ({
         </Col>
 
         {/* CONTENT */}
-        <Col flex="1 1 160px" style={{ minWidth: 0 }}>
-          <Text strong ellipsis style={{ display: 'block' }}>
+        <Col className="fv2-cartitemrow-23e4be640d" flex="1 1 160px">
+          <Text className="fv2-cartitemrow-b8fd776dfa" strong ellipsis>
             {product?.name || item?.name}
           </Text>
 
-          <div style={{ marginTop: 4 }}>
+          <div className="fv2-cartitemrow-1fbc87ccc0">
             <Text type="success">₹{Number(item?.price || 0).toLocaleString()}</Text>
             {isOption && (
-              <Tag color="orange" style={{ marginLeft: 8 }}>
+              <Tag className="fv2-cartitemrow-318bf3c263" color="orange">
                 Optional
               </Tag>
             )}
             {isSplit && (
-              <Tag color="purple" style={{ marginLeft: 8 }}>
+              <Tag className="fv2-cartitemrow-318bf3c263" color="purple">
                 Split
               </Tag>
             )}
           </div>
           {stockInfo && (
-            <div style={{ marginTop: 4 }}>
+            <div className="fv2-cartitemrow-1fbc87ccc0">
               <StockBadge
                 available={stockInfo.available}
                 reserved={stockInfo.reserved}
@@ -388,7 +287,7 @@ const CartItemRow = ({
           )}
 
           {isQuotationMode && viewAssignedQty != null && (
-            <div style={{ marginTop: 4 }}>
+            <div className="fv2-cartitemrow-1fbc87ccc0">
               {isPartialUnassignedView ? (
                 <Tag color="orange">Unassigned portion ×{viewAssignedQty}</Tag>
               ) : (
@@ -413,7 +312,7 @@ const CartItemRow = ({
           )}
 
           {isQuotationMode && !isSplit && hasPartialUnassigned && locations.length === 1 && (
-            <div style={{ marginTop: 4 }}>
+            <div className="fv2-cartitemrow-1fbc87ccc0">
               <Tag color="orange">Unassigned ×{remainingQty}</Tag>
             </div>
           )}
@@ -422,12 +321,13 @@ const CartItemRow = ({
           {isQuotationMode && onLocationChange && hasRooms && !isSplit && (
             <AssignRow>
               <Select
+                className="fv2-cartitemrow-938dfc111d"
                 size="small"
                 allowClear
                 showSearch
                 optionFilterProp="label"
                 placeholder="Choose room"
-                style={{ width: 220 }}
+
                 value={assignedValue}
                 onChange={handleRoomPick}
                 options={roomOptions}
@@ -436,12 +336,13 @@ const CartItemRow = ({
           )}
 
           {isQuotationMode && onSplit && (totalQty > 1 || isSplit) && (
-            <div style={{ marginTop: 6 }}>
+            <div className="fv2-cartitemrow-d8f7c55c9a">
               <Button
+                className="fv2-cartitemrow-43c85038d7"
                 type="link"
                 size="small"
                 icon={<SplitCellsOutlined />}
-                style={{ padding: 0, height: 'auto' }}
+
                 onClick={handleSplitClick}
               >
                 {isSplit ? 'Edit split' : 'Split across floors/rooms'}
@@ -450,14 +351,14 @@ const CartItemRow = ({
           )}
 
           {isQuotationMode && handleMakeOption && (
-            <Space style={{ marginTop: 8 }} wrap>
+            <Space className="fv2-cartitemrow-16aa65c514" wrap>
               <Select
+                className="fv2-cartitemrow-fb26dcf3b0"
                 size="small"
                 value={item.optionType || 'main'}
                 onChange={(v) =>
                   handleMakeOption(item.productId, v === 'main' ? null : v, item.parentProductId)
                 }
-                style={{ width: 120 }}
               >
                 <Option value="main">Main Product</Option>
                 <Option value="addon">Add-on</Option>
@@ -467,16 +368,17 @@ const CartItemRow = ({
           )}
 
           {isOption && isQuotationMode && mainCartItems.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <Text type="secondary" style={{ fontSize: '12px' }}>
+            <div className="fv2-cartitemrow-16aa65c514">
+              <Text className="fv2-cartitemrow-f30652ca3e" type="secondary">
                 Attach to Main Product:
               </Text>
               <Select
+                className="fv2-cartitemrow-0d7e10774a"
                 size="small"
                 placeholder="Select main product..."
                 value={item.parentProductId || item.isOptionFor || undefined}
                 onChange={(parentId) => handleAssignOptionToParent?.(item.productId, parentId)}
-                style={{ width: '100%', marginTop: 4 }}
+
                 allowClear
               >
                 {mainCartItems.map((main) => (
@@ -487,7 +389,7 @@ const CartItemRow = ({
               </Select>
 
               {currentParentName && (
-                <Tag color="blue" style={{ marginTop: 6 }}>
+                <Tag className="fv2-cartitemrow-d8f7c55c9a" color="blue">
                   Attached to: {currentParentName}
                 </Tag>
               )}
@@ -495,22 +397,22 @@ const CartItemRow = ({
           )}
 
           {showDiscountAndTax && (
-            <Space style={{ marginTop: 8 }} wrap>
+            <Space className="fv2-cartitemrow-16aa65c514" wrap>
               <Select
+                className="fv2-cartitemrow-9a71741ce7"
                 size="small"
                 value={itemDiscountTypes[item?.productId] || 'percent'}
                 onChange={(v) => handleDiscountTypeChange?.(item.productId, v)}
-                style={{ width: 70 }}
               >
                 <Option value="percent">%</Option>
                 <Option value="fixed">₹</Option>
               </Select>
 
               <InputNumber
+                className="fv2-cartitemrow-f89aeb003c"
                 size="small"
                 value={itemDiscounts[item?.productId] ?? 0}
                 onChange={(v) => handleDiscountChange?.(item.productId, v ?? 0)}
-                style={{ width: 90 }}
               />
             </Space>
           )}
@@ -528,11 +430,12 @@ const CartItemRow = ({
             </Button>
 
             <InputNumber
+              className="fv2-cartitemrow-9cb1382127"
               min={1}
               size="small"
               value={displayQty}
               onChange={handleQtyChange}
-              style={{ width: 56 }}
+
               disabled={updatingItems[item?.productId]}
             />
 
@@ -550,8 +453,8 @@ const CartItemRow = ({
             />
           </Space>
 
-          <div style={{ textAlign: 'right' }}>
-            <Text strong style={{ color: '#52c41a', fontSize: 15 }}>
+          <div className="fv2-cartitemrow-784a37453a">
+            <Text className="fv2-cartitemrow-9ef4911efa" strong>
               ₹{lineTotal?.(item) || '0.00'}
             </Text>
           </div>

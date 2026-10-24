@@ -1,0 +1,80 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-addpurchaseorder-f15ecc278b) {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-99752499ab) {
+  font-weight: 500;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-2de8f27e20) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-f8377128cc) {
+  color: var(--fv2-color-52c41a);
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-7cb166c43f) {
+  margin-bottom: 24px;
+  display: flex;
+  gap: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-7e45f3e282) {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-a331bf6008) {
+  flex: 1;
+  min-width: 300px;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-5fb8f710e4) {
+  display: flex;
+  gap: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-b50e936d8d) {
+  flex: 1;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-bd45cfb70c) {
+  flex: 1;
+  min-width: 220px;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-f1d2120304) {
+  flex: 1;
+  min-width: 180px;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-b0a52f2a6b) {
+  margin: 32px 0 16px;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-03387f9a9e) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-c7d8c4512e) {
+  margin-top: 16px;
+  text-align: right;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-46caa01e0d) {
+  font-size: var(--fv2-font-18px);
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-2e8a7d4e0c) {
+  margin-top: 32px;
+  text-align: right;
+}
+
+:is(#fv2-style-priority, .fv2-addpurchaseorder-976c6489b4) {
+  margin-right: 12px;
+}

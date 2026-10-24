@@ -1,0 +1,120 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-orderform-f9edd9f5da) {
+  font-size: var(--fv2-font-48px);
+}
+
+:is(#fv2-style-priority, .fv2-orderform-d139b8668d) {
+  color: red;
+}
+
+:is(#fv2-style-priority, .fv2-orderform-22f6fc4099) {
+  display: flex;
+  justify-content: space-between;
+}
+
+:is(#fv2-style-priority, .fv2-orderform-e1fd4e8860) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-orderform-b859d25778) {
+  font-size: var(--fv2-font-12px);
+  display: block;
+}
+
+:is(#fv2-style-priority, .fv2-orderform-cafa1ab504) {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-orderform-ece92f8b62) {
+  min-width: 40px;
+}
+
+:is(#fv2-style-priority, .fv2-orderform-71fe5cd002) {
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+:is(#fv2-style-priority, .fv2-orderform-9390b9a5f2) {
+  margin: 4px 0;
+}
+
+:is(#fv2-style-priority, .fv2-orderform-c82461e425) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-orderform-f383faa313) {
+  font-size: var(--fv2-font-11px);
+  display: block;
+  margin-top: 4px;
+}
+
+:is(#fv2-style-priority, .fv2-orderform-d368317ef6) {
+  margin: 8px 0;
+}
+
+:is(#fv2-style-priority, .fv2-orderform-42e740c856) {
+  margin-top: 4px;
+}
+
+/* Component layout and responsive rules. */
+
+.fv2-orderform-compact-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.fv2-orderform-compact-card .ant-card-body {
+  padding: 12px 16px;
+}
+
+.fv2-orderform-tight-row {
+  margin-bottom: 8px;
+}
+.fv2-orderform-tight-row .ant-col {
+  padding: 0 4px;
+}
+
+.fv2-orderform-mini-select {
+  width: 100%;
+}
+.fv2-orderform-mini-select .ant-select-selector {
+  padding: 0 8px;
+  height: 28px;
+}
+
+.fv2-orderform-mini-input {
+  height: 28px;
+}
+
+.fv2-orderform-mini-number {
+  width: 100%;
+  height: 28px;
+}
+.fv2-orderform-mini-number .ant-input-number-input {
+  height: 26px;
+}
+
+.fv2-orderform-mini-date {
+  width: 100%;
+  height: 28px;
+}
+.fv2-orderform-mini-date .react-datepicker-wrapper {
+  width: 100%;
+}
+.fv2-orderform-mini-date .react-datepicker__input-container input {
+  height: 28px;
+  width: 100%;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid var(--fv2-color-d9d9d9);
+}
+.fv2-orderform-mini-date.error-border .react-datepicker__input-container input {
+  border-color: var(--fv2-color-ff4d4f);
+  box-shadow: 0 0 0 2px rgba(245, 34, 45, 0.2);
+}
+
+.fv2-orderform-checkout-btn {
+  height: 36px;
+  font-weight: 600;
+}

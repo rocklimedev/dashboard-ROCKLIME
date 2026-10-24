@@ -1,25 +1,9 @@
+import ModalShell from '../../components/Common/ModalShell';
+import './DealDrawer.styles.css';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  message,
-  Button,
-  Checkbox,
-  DatePicker,
-  Drawer,
-  Dropdown,
-  Empty,
-  Input,
-  Modal,
-  Popconfirm,
-  Segmented,
-  Select,
-  Skeleton,
-  Space,
-  Tag,
-  Timeline,
-  Tooltip,
-  Typography,
-} from 'antd';
+import { Button, Checkbox, DatePicker, Drawer, Dropdown, Empty, Input, Modal, Popconfirm, Segmented, Select, Skeleton, Space, Tag, Timeline, Tooltip, Typography } from 'antd';
+import { toast } from 'sonner';
 import {
   PhoneOutlined,
   WhatsAppOutlined,
@@ -65,7 +49,7 @@ const NOTE_KINDS = [
 export function LostReasonModal({ open, onCancel, onOk, reasons = [] }) {
   const [reason, setReason] = useState('');
   return (
-    <Modal
+    <ModalShell
       open={open}
       title="Why was the deal lost?"
       okText="Mark lost"
@@ -75,7 +59,7 @@ export function LostReasonModal({ open, onCancel, onOk, reasons = [] }) {
       destroyOnHidden
       afterClose={() => setReason('')}
     >
-      <Space wrap size={6} style={{ marginBottom: 10 }}>
+      <Space className="fv2-dealdrawer-fff94b34e7" wrap size={6}>
         {reasons.map((r) => (
           <Tag.CheckableTag key={r} checked={reason === r} onChange={() => setReason(r)}>
             {r}
@@ -87,7 +71,7 @@ export function LostReasonModal({ open, onCancel, onOk, reasons = [] }) {
         value={reason}
         onChange={(e) => setReason(e.target.value)}
       />
-    </Modal>
+    </ModalShell>
   );
 }
 
@@ -116,13 +100,13 @@ export default function DealDrawer({ id, open, onClose }) {
 
   const deal = data?.deal;
   const stages = meta?.stages || [];
-  const err = (e, fallback) => message.error(e?.data?.message || fallback);
+  const err = (e, fallback) => toast.error(e?.data?.message || fallback);
 
   const toStage = async (stage, lostReason) => {
     if (stage === 'lost' && !lostReason) return setLostOpen(true);
     try {
       await moveDeal({ id, stage, lostReason }).unwrap();
-      message.success(`Moved to ${stages.find((s) => s.id === stage)?.label}`);
+      toast.success(`Moved to ${stages.find((s) => s.id === stage)?.label}`);
     } catch (e) {
       err(e, 'Could not move the deal');
     }
@@ -138,7 +122,7 @@ export default function DealDrawer({ id, open, onClose }) {
     }
   };
   const saveTask = async (title = taskTitle, due = taskDue) => {
-    if (!title.trim()) return message.info('Write the follow-up first');
+    if (!title.trim()) return toast.info('Write the follow-up first');
     try {
       await addTask({ id, title, dueDate: due ? due.format('YYYY-MM-DD') : null }).unwrap();
       setTaskTitle('');
@@ -149,7 +133,7 @@ export default function DealDrawer({ id, open, onClose }) {
 
   const ensureCustomer = async () => {
     const r = await makeCustomer(id).unwrap();
-    if (r.created) message.success('Customer created');
+    if (r.created) toast.success('Customer created');
     return r.customerId;
   };
   const startQuotation = async () => {
@@ -179,7 +163,7 @@ export default function DealDrawer({ id, open, onClose }) {
       if (key === 'push')
         push(id)
           .unwrap()
-          .then((r) => message.success(r?.skipped ? 'Bigin is not connected' : 'Sent to Bigin'))
+          .then((r) => toast.success(r?.skipped ? 'Bigin is not connected' : 'Sent to Bigin'))
           .catch((e) => err(e, 'Bigin refused the deal'));
       if (key === 'delete')
         Modal.confirm({
@@ -191,7 +175,7 @@ export default function DealDrawer({ id, open, onClose }) {
           okButtonProps: { danger: true },
           onOk: async () => {
             await deleteDeal(id).unwrap();
-            message.success('Deal deleted');
+            toast.success('Deal deleted');
             onClose();
           },
         });
@@ -217,12 +201,16 @@ export default function DealDrawer({ id, open, onClose }) {
       ) : (
         <div className="crm-drawer__body">
           <div className="crm-drawer__head">
-            <div style={{ minWidth: 0 }}>
-              <Title level={4} style={{ margin: 0 }} ellipsis={{ tooltip: deal.title }}>
+            <div className="fv2-dealdrawer-8dc350e844">
+              <Title
+                className="fv2-dealdrawer-77afeae61c"
+                level={4}
+                ellipsis={{ tooltip: deal.title }}
+              >
                 {deal.title}
               </Title>
-              <Space size={6} wrap style={{ marginTop: 4 }}>
-                <Text strong style={{ fontSize: 16 }}>
+              <Space className="fv2-dealdrawer-81c0bcec28" size={6} wrap>
+                <Text className="fv2-dealdrawer-92af5aba04" strong>
                   {deal.amount ? lakh(deal.amount) : 'No value yet'}
                 </Text>
                 {deal.tag && <Tag color={TAG_COLOR[deal.tag]}>{deal.tag}</Tag>}
@@ -257,7 +245,7 @@ export default function DealDrawer({ id, open, onClose }) {
                 </button>
               ))}
           </div>
-          <Space size={6} style={{ marginBottom: 12 }} wrap>
+          <Space className="fv2-dealdrawer-4f17684b92" size={6} wrap>
             {deal.stage === 'lost' ? (
               <Tag color="red">Lost · {deal.lostReason}</Tag>
             ) : deal.stage === 'nurture' ? (
@@ -278,7 +266,7 @@ export default function DealDrawer({ id, open, onClose }) {
             >
               Mark lost
             </Button>
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="fv2-dealdrawer-36c67568f6" type="secondary">
               {deal.daysInStage}d in this stage
             </Text>
           </Space>
@@ -290,7 +278,7 @@ export default function DealDrawer({ id, open, onClose }) {
                 <UserOutlined /> {deal.contactName || '—'}
                 {deal.company ? <Text type="secondary"> · {deal.company}</Text> : null}
               </div>
-              <Text type="secondary" style={{ fontSize: 13 }}>
+              <Text className="fv2-dealdrawer-f817b01634" type="secondary">
                 {[deal.phone, deal.email, deal.city].filter(Boolean).join(' · ') ||
                   'No contact details'}
                 {deal.ownerName ? ` · owner ${deal.ownerName}` : ''}
@@ -300,11 +288,11 @@ export default function DealDrawer({ id, open, onClose }) {
               {deal.phone && <Button icon={<PhoneOutlined />} href={`tel:${deal.phone}`} />}
               {deal.phone && (
                 <Button
+                  className="fv2-dealdrawer-f95bb9174a"
                   icon={<WhatsAppOutlined />}
                   href={waLink(deal.phone, `Namaste ${deal.contactName || ''}, `)}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ color: '#25d366' }}
                 />
               )}
             </Space>
@@ -313,7 +301,7 @@ export default function DealDrawer({ id, open, onClose }) {
           <div className="crm-links">
             {deal.customerId ? (
               <Link to={`/customer/${deal.customerId}`} className="crm-link">
-                <CheckCircleFilled style={{ color: '#389e0d' }} /> Customer:{' '}
+                <CheckCircleFilled className="fv2-dealdrawer-2a7c89e222" /> Customer:{' '}
                 <b>{deal.customerName || 'open'}</b>
               </Link>
             ) : (
@@ -328,7 +316,7 @@ export default function DealDrawer({ id, open, onClose }) {
             )}
             {deal.quotationId ? (
               <Link to={`/quotation/${deal.quotationId}`} className="crm-link">
-                <CheckCircleFilled style={{ color: '#389e0d' }} /> Quotation{' '}
+                <CheckCircleFilled className="fv2-dealdrawer-2a7c89e222" /> Quotation{' '}
                 <b>{deal.quotationRef || 'open'}</b>
               </Link>
             ) : (
@@ -343,19 +331,20 @@ export default function DealDrawer({ id, open, onClose }) {
             )}
             {deal.orderId && (
               <Link to={`/order/${deal.orderId}`} className="crm-link">
-                <CheckCircleFilled style={{ color: '#389e0d' }} /> Order{' '}
+                <CheckCircleFilled className="fv2-dealdrawer-2a7c89e222" /> Order{' '}
                 <b>{deal.orderNo || 'open'}</b>
               </Link>
             )}
             {!deal.quotationId && data.quotations?.length > 0 && (
               <Select
+                className="fv2-dealdrawer-f1d706d9b8"
                 size="middle"
                 placeholder={
                   <span>
                     <LinkOutlined /> Link a quotation
                   </span>
                 }
-                style={{ minWidth: 200 }}
+
                 disabled={!canEdit}
                 options={data.quotations.map((qt) => ({
                   value: qt.quotationId,
@@ -365,7 +354,7 @@ export default function DealDrawer({ id, open, onClose }) {
                   linkQuotation({ id, quotationId })
                     .unwrap()
                     .then(() =>
-                      message.success('Quotation linked — the deal follows it from now on'),
+                      toast.success('Quotation linked — the deal follows it from now on'),
                     )
                     .catch((e) => err(e, 'Could not link'))
                 }
@@ -382,7 +371,7 @@ export default function DealDrawer({ id, open, onClose }) {
               {openTasks.length ? <Tag>{openTasks.length}</Tag> : null}
             </div>
             {canEdit && (
-              <Space.Compact style={{ width: '100%', marginBottom: 6 }}>
+              <Space.Compact className="fv2-dealdrawer-eadcb28e4b">
                 <Input
                   placeholder="Call back about the sample tiles"
                   value={taskTitle}
@@ -390,10 +379,11 @@ export default function DealDrawer({ id, open, onClose }) {
                   onPressEnter={() => saveTask()}
                 />
                 <DatePicker
+                  className="fv2-dealdrawer-79e8313501"
                   value={taskDue}
                   onChange={setTaskDue}
                   format="D MMM"
-                  style={{ width: 120 }}
+
                   allowClear={false}
                 />
                 <Button type="primary" loading={tasking} onClick={() => saveTask()}>
@@ -402,7 +392,7 @@ export default function DealDrawer({ id, open, onClose }) {
               </Space.Compact>
             )}
             {canEdit && (
-              <Space size={4} wrap style={{ marginBottom: 8 }}>
+              <Space className="fv2-dealdrawer-eea539ec6c" size={4} wrap>
                 {[
                   ['Call tomorrow', 1],
                   ['Send catalogue today', 0],
@@ -465,7 +455,7 @@ export default function DealDrawer({ id, open, onClose }) {
               </Text>
             )}
             {doneTasks.length > 0 && (
-              <Text type="secondary" style={{ display: 'block', marginTop: 6, fontSize: 12 }}>
+              <Text className="fv2-dealdrawer-2619739552" type="secondary">
                 {doneTasks.length} done
               </Text>
             )}
@@ -477,11 +467,11 @@ export default function DealDrawer({ id, open, onClose }) {
             {canEdit && (
               <>
                 <Segmented
+                  className="fv2-dealdrawer-6340fe60e7"
                   size="small"
                   options={NOTE_KINDS}
                   value={noteKind}
                   onChange={setNoteKind}
-                  style={{ marginBottom: 6 }}
                 />
                 <Input.TextArea
                   autoSize={{ minRows: 2, maxRows: 6 }}
@@ -498,7 +488,7 @@ export default function DealDrawer({ id, open, onClose }) {
                     if (e.ctrlKey || e.metaKey) saveNote();
                   }}
                 />
-                <div style={{ textAlign: 'right', margin: '6px 0 12px' }}>
+                <div className="fv2-dealdrawer-c9333c3c8f">
                   <Button
                     type="primary"
                     size="small"
@@ -563,7 +553,7 @@ export default function DealDrawer({ id, open, onClose }) {
             </div>
           )}
           {isFetching && (
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text className="fv2-dealdrawer-36c67568f6" type="secondary">
               Updating…
             </Text>
           )}

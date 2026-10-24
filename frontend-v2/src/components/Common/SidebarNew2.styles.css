@@ -1,0 +1,7 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-sidebarnew2-449530d8ba) {
+  cursor: pointer;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}

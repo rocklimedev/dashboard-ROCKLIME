@@ -1,6 +1,9 @@
+import Loader from '../../components/Common/Loader';
+import './DispatchDetails.styles.css';
 import { useCallback, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Alert, Button, Card, Descriptions, Space, Spin, Tag, Typography, message } from 'antd';
+import { Alert, Button, Card, Descriptions, Space, Tag, Typography } from 'antd';
+import { toast } from 'sonner';
 import { ArrowLeftOutlined, FileExcelFilled } from '@ant-design/icons';
 import { useGetDispatchDetailsQuery } from '../../api/quotationApi';
 import QuotationPdfActions from '../../components/Quotation/QuotationPdfActions';
@@ -34,7 +37,7 @@ export default function DispatchDetails() {
     setPages([]);
     setPageOrder(null);
   };
-  if (isLoading) return <Spin size="large" style={{ display: 'block', marginTop: 100 }} />;
+  if (isLoading) return <Loader className="fv2-dispatchdetails-75e8757d68" size="large" />;
   if (error || !data)
     return (
       <Alert
@@ -83,7 +86,7 @@ export default function DispatchDetails() {
         documentTotals: totals,
       });
     } catch {
-      message.error('Could not export dispatch Excel');
+      toast.error('Could not export dispatch Excel');
     } finally {
       setExporting(false);
     }
@@ -97,18 +100,10 @@ export default function DispatchDetails() {
           open={deliveryOpen}
           onClose={() => setDeliveryOpen(false)}
         />
-        <Space direction="vertical" size={16} style={{ width: '100%' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 12,
-            }}
-          >
+        <Space className="fv2-dispatchdetails-85df17f384" direction="vertical" size={16}>
+          <div className="fv2-dispatchdetails-bcbe1231cc">
             <div>
-              <Title level={3} style={{ margin: 0 }}>
+              <Title className="fv2-dispatchdetails-1541555046" level={3}>
                 Dispatch {q.reference_number}
               </Title>
               <Text type="secondary">

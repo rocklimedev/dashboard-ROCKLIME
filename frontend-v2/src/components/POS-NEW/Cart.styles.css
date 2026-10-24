@@ -1,0 +1,87 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-cart-29e1ad1cc5) {
+  margin-top: 16px;
+}
+
+:is(#fv2-style-priority, .fv2-cart-07aa95ea7b) {
+  margin-right: 0;
+}
+
+:is(#fv2-style-priority, .fv2-cart-146690a015) {
+  justify-content: space-between;
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-cart-d2c07545a2) {
+  margin: 0;
+}
+
+:is(#fv2-style-priority, .fv2-cart-1f4d677ff1) {
+  margin-bottom: 12px;
+}
+
+:is(#fv2-style-priority, .fv2-cart-157e36f623) {
+  display: block;
+  margin-bottom: 8px;
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-cart-56f41f804c) {
+  padding: 24px 0;
+}
+
+:is(#fv2-style-priority, .fv2-cart-3f9fdd180f) {
+  margin-top: 8px;
+}
+
+/* Component layout and responsive rules. */
+
+.fv2-cart-cart-items-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.fv2-cart-cart-header {
+  width: 100%;
+}
+
+.fv2-cart-cart-summary-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 16px;
+}
+
+.fv2-cart-checkout-button {
+  background: var(--fv2-color-e31e24);
+  border-color: var(--fv2-color-e31e24);
+  color: white;
+}
+.fv2-cart-checkout-button:hover,
+.fv2-cart-checkout-button:focus {
+  background: var(--fv2-color-c41e1e);
+  border-color: var(--fv2-color-c41e1e);
+  color: white;
+}
+
+.fv2-cart-empty-cart-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.fv2-cart-option-group-wrapper {
+  margin-left: 40px;
+  opacity: 0.92;
+  border-left: 2px solid var(--fv2-color-ff4d4f);
+  padding-left: 12px;
+}
+
+.fv2-cart-layout-tabs {
+  margin-bottom: 12px;
+}
+.fv2-cart-layout-tabs .ant-tabs-nav {
+  margin-bottom: 8px;
+}

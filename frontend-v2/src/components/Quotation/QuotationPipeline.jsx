@@ -1,23 +1,11 @@
+import ModalShell from '../Common/ModalShell';
+import './QuotationPipeline.styles.css';
 // Quotation pipeline UI: status tag, status actions, lost reasons and the
 // follow-up log. The rules live on the server (modules/quotations/pipeline.js);
 // Won and Expired are automatic, so they are never offered as buttons.
 import { useState } from 'react';
-import {
-  Button,
-  DatePicker,
-  Empty,
-  Form,
-  Input,
-  List,
-  Modal,
-  Select,
-  Space,
-  Tag,
-  Timeline,
-  Tooltip,
-  Typography,
-  message,
-} from 'antd';
+import { Button, DatePicker, Empty, Form, Input, List, Select, Space, Tag, Timeline, Tooltip, Typography } from 'antd';
+import { toast } from 'sonner';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -53,7 +41,7 @@ export function QuotationStatusTag({ status, lostReason }) {
   const meta = STATUS_META[status] || STATUS_META.DRAFT;
   return (
     <Tooltip title={status === 'LOST' && lostReason ? `Lost: ${lostReason}` : meta.help}>
-      <Tag color={meta.color} style={{ marginInlineEnd: 0 }}>
+      <Tag className="fv2-quotationpipeline-21efc96ca6" color={meta.color}>
         {meta.label}
       </Tag>
     </Tooltip>
@@ -90,15 +78,15 @@ export function LostModal({ quotation, open, onClose }) {
     const v = await form.validateFields();
     try {
       await updateStatus({ id: quotation.quotationId, status: 'LOST', ...v }).unwrap();
-      message.success('Marked lost');
+      toast.success('Marked lost');
       form.resetFields();
       onClose();
     } catch (e) {
-      message.error(e?.data?.message || 'Could not update the quotation');
+      toast.error(e?.data?.message || 'Could not update the quotation');
     }
   };
   return (
-    <Modal
+    <ModalShell
       open={open}
       title={`Mark ${quotation?.reference_number || 'quotation'} as lost`}
       okText="Mark lost"
@@ -126,7 +114,7 @@ export function LostModal({ quotation, open, onClose }) {
           />
         </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }
 
@@ -143,17 +131,17 @@ export function FollowUpModal({ quotation, open, onClose }) {
         note: v.note,
         nextDate: v.nextDate ? v.nextDate.format('YYYY-MM-DD') : null,
       }).unwrap();
-      message.success(
+      toast.success(
         v.nextDate ? `Follow-up saved; next on ${v.nextDate.format('D MMM')}` : 'Follow-up saved',
       );
       form.resetFields();
       onClose();
     } catch (e) {
-      message.error(e?.data?.message || 'Could not save the follow-up');
+      toast.error(e?.data?.message || 'Could not save the follow-up');
     }
   };
   return (
-    <Modal
+    <ModalShell
       open={open}
       title={`Follow-up · ${quotation?.reference_number || ''}`}
       okText="Save follow-up"
@@ -187,13 +175,13 @@ export function FollowUpModal({ quotation, open, onClose }) {
           extra="Leave empty if no follow-up is needed."
         >
           <DatePicker
+            className="fv2-quotationpipeline-ecee828998"
             format="D MMM YYYY"
             disabledDate={(d) => d && d.isBefore(dayjs().startOf('day'))}
-            style={{ width: '100%' }}
           />
         </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }
 
@@ -216,7 +204,7 @@ export function FollowUpHistory({ quotationId }) {
               · {dayjs(f.createdAt).format('D MMM YYYY, h:mm a')}
               {f.userName ? ` · ${f.userName}` : ''}
             </Text>
-            <div style={{ whiteSpace: 'pre-wrap' }}>{f.note}</div>
+            <div className="fv2-quotationpipeline-b7d8d26d89">{f.note}</div>
             {f.nextDate && <Text type="secondary">Next follow-up: {fmt(f.nextDate)}</Text>}
           </div>
         ),
@@ -244,9 +232,9 @@ export function QuotationStatusActions({
   const move = async (to, label) => {
     try {
       await updateStatus({ id: quotation.quotationId, status: to }).unwrap();
-      message.success(label);
+      toast.success(label);
     } catch (e) {
-      message.error(e?.data?.message || 'Could not update the quotation');
+      toast.error(e?.data?.message || 'Could not update the quotation');
     }
   };
 
@@ -310,7 +298,7 @@ export function FollowUpsDueList({ rows = [], onOpen }) {
       dataSource={rows}
       locale={{ emptyText: 'No follow-ups due' }}
       renderItem={(q) => (
-        <List.Item onClick={() => onOpen?.(q)} style={{ cursor: 'pointer' }}>
+        <List.Item className="fv2-quotationpipeline-98cb299646" onClick={() => onOpen?.(q)}>
           <List.Item.Meta
             title={`${q.reference_number} · ${q.customerName || ''}`}
             description={<NextFollowUp date={q.nextFollowUp} status={q.status} />}
@@ -336,25 +324,8 @@ export function QuotationPipelineBar({
   const status = quotation.status || 'DRAFT';
   const orders = Array.isArray(quotation.orders) ? quotation.orders : [];
   return (
-    <div
-      style={{
-        maxWidth: 1400,
-        margin: '12px auto 0',
-        padding: '12px 16px',
-        background: '#fff',
-        border: '1px solid #f0f0f0',
-        borderRadius: 10,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 16,
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
+    <div className="fv2-quotationpipeline-f3ca424164">
+      <div className="fv2-quotationpipeline-570868b349">
         <Space wrap size={[20, 8]} align="center">
           <QuotationStatusTag status={status} lostReason={quotation.lostReason} />
           <span>
@@ -408,7 +379,7 @@ export function QuotationPipelineBar({
         </Space>
       </div>
       {showLog && (
-        <div style={{ marginTop: 16 }}>
+        <div className="fv2-quotationpipeline-a1e1aeec95">
           <FollowUpHistory quotationId={quotation.quotationId} />
         </div>
       )}

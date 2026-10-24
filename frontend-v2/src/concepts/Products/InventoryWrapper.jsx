@@ -1,28 +1,9 @@
+import Loader from '../../components/Common/Loader';
+import './InventoryWrapper.styles.css';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import {
-  Table,
-  Input,
-  InputNumber,
-  Button,
-  Space,
-  Typography,
-  message,
-  Row,
-  Col,
-  Grid,
-  Pagination,
-  Tag,
-  Card,
-  Spin,
-  Tooltip,
-  Dropdown,
-  Menu,
-  Select,
-  Drawer,
-  Checkbox,
-  Empty,
-} from 'antd';
+import { Table, Input, InputNumber, Button, Space, Typography, Row, Col, Grid, Pagination, Tag, Card, Tooltip, Dropdown, Menu, Select, Drawer, Checkbox, Empty } from 'antd';
+import { toast } from 'sonner';
 import {
   SearchOutlined,
   PlusOutlined,
@@ -315,10 +296,10 @@ const InventoryWrapper = () => {
     if (!selectedProduct?.productId) return;
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
-      message.success('Product deleted successfully');
+      toast.success('Product deleted successfully');
       refetch();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to delete product');
+      toast.error(err?.data?.message || 'Failed to delete product');
     } finally {
       setDeleteModalVisible(false);
       setSelectedProduct(null);
@@ -332,17 +313,17 @@ const InventoryWrapper = () => {
           productId: selectedProduct.productId,
           quantity: values.quantity,
         }).unwrap();
-        message.success(`Added ${values.quantity} units`);
+        toast.success(`Added ${values.quantity} units`);
       } else {
         await removeStock({
           productId: selectedProduct.productId,
           quantity: values.quantity,
         }).unwrap();
-        message.success(`Removed ${values.quantity} units`);
+        toast.success(`Removed ${values.quantity} units`);
       }
       refetch();
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to update stock');
+      toast.error(err?.data?.message || 'Failed to update stock');
     } finally {
       setStockModalOpen(false);
       setSelectedProduct(null);
@@ -376,15 +357,9 @@ const InventoryWrapper = () => {
       width: 80,
       render: (images) => (
         <img
+          className="fv2-inventorywrapper-5e5c836375"
           src={parseImages(images)[0]}
           alt="Product"
-          style={{
-            width: 56,
-            height: 56,
-            objectFit: 'cover',
-            borderRadius: 8,
-            border: '1px solid #f0f0f0',
-          }}
         />
       ),
     },
@@ -483,18 +458,9 @@ const InventoryWrapper = () => {
   // ==================== RENDER ====================
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '60vh',
-          background: '#f9fafb',
-        }}
-      >
-        <Spin size="large" />
-        <Text style={{ marginTop: 16 }} type="secondary">
+      <div className="fv2-inventorywrapper-0ca073ffa6">
+        <Loader size="large" />
+        <Text className="fv2-inventorywrapper-43bba553d6" type="secondary">
           Loading inventory...
         </Text>
       </div>
@@ -503,7 +469,7 @@ const InventoryWrapper = () => {
 
   if (error) {
     return (
-      <Card style={{ marginTop: 24, textAlign: 'center' }}>
+      <Card className="fv2-inventorywrapper-b6c6d4eaba">
         <Empty description="Failed to load inventory data" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       </Card>
     );
@@ -520,13 +486,9 @@ const InventoryWrapper = () => {
 
         {/* Filter Controls - Unchanged */}
         <Card
+          className="fv2-inventorywrapper-69c3276ce1"
           bordered={false}
-          style={{
-            marginTop: 24,
-            borderRadius: 12,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-            background: 'white',
-          }}
+
           bodyStyle={{ padding: isMobile ? '16px' : '24px' }}
         >
           <Row gutter={[12, 16]} align="middle">
@@ -546,13 +508,14 @@ const InventoryWrapper = () => {
 
             <Col xs={24} sm={12} md={8} lg={5}>
               <Select
+                className="fv2-inventorywrapper-7ec5812436"
                 aria-label="Filter inventory by duplicate company code"
                 placeholder="Duplicate company codes"
                 size="large"
                 showSearch
                 allowClear
                 optionFilterProp="label"
-                style={{ width: '100%' }}
+
                 loading={loadingCompanyCodes}
                 status={companyCodesError ? 'error' : undefined}
                 value={companyCode}
@@ -570,10 +533,11 @@ const InventoryWrapper = () => {
 
             <Col xs={24} sm={12} md={8} lg={5}>
               <Select
+                className="fv2-inventorywrapper-7ec5812436"
                 aria-label="Filter inventory by brand"
                 placeholder="All brands"
                 size="large"
-                style={{ width: '100%' }}
+
                 showSearch
                 allowClear
                 optionFilterProp="label"
@@ -592,10 +556,11 @@ const InventoryWrapper = () => {
 
             <Col xs={12} sm={6} md={5} lg={4}>
               <InputNumber
+                className="fv2-inventorywrapper-7ec5812436"
                 placeholder="Low Stock ≤"
                 min={1}
                 size="large"
-                style={{ width: '100%' }}
+
                 value={lowStockThreshold}
                 onChange={(v) => {
                   setLowStockThreshold(v || 10);
@@ -606,10 +571,11 @@ const InventoryWrapper = () => {
 
             <Col xs={12} sm={6} md={5} lg={4}>
               <InputNumber
+                className="fv2-inventorywrapper-7ec5812436"
                 placeholder="Max Stock"
                 min={0}
                 size="large"
-                style={{ width: '100%' }}
+
                 value={maxStockFilter}
                 onChange={(v) => {
                   setMaxStockFilter(v);
@@ -619,11 +585,12 @@ const InventoryWrapper = () => {
             </Col>
 
             <Col xs={24} sm={12} md={6} lg={5}>
-              <Space.Compact style={{ width: '100%' }}>
+              <Space.Compact className="fv2-inventorywrapper-7ec5812436">
                 <InputNumber
+                  className="fv2-inventorywrapper-41921fbf22"
                   placeholder="Min ₹"
                   min={0}
-                  style={{ flex: 1 }}
+
                   value={priceRange[0]}
                   onChange={(v) => {
                     setPriceRange([v, priceRange[1]]);
@@ -631,9 +598,10 @@ const InventoryWrapper = () => {
                   }}
                 />
                 <InputNumber
+                  className="fv2-inventorywrapper-41921fbf22"
                   placeholder="Max ₹"
                   min={0}
-                  style={{ flex: 1 }}
+
                   value={priceRange[1]}
                   onChange={(v) => {
                     setPriceRange([priceRange[0], v]);
@@ -663,7 +631,10 @@ const InventoryWrapper = () => {
           </Row>
 
           {/* Action Bar */}
-          <div style={{ marginTop: 16, textAlign: isMobile ? 'center' : 'right' }}>
+          <div
+            className="fv2-inventorywrapper-43bba553d6"
+            style={{ textAlign: isMobile ? 'center' : 'right' }}
+          >
             <Space wrap size="middle">
               <Button
                 icon={<FilterOutlined />}
@@ -705,7 +676,7 @@ const InventoryWrapper = () => {
         />
 
         {/* Status Chips */}
-        <div style={{ margin: '24px 0' }}>
+        <div className="fv2-inventorywrapper-2ef09cfeb3">
           <Space wrap size={[8, 12]}>
             {[
               { key: 'all', label: 'All', count: counts.all, color: 'default' },
@@ -729,15 +700,10 @@ const InventoryWrapper = () => {
               },
             ].map((item) => (
               <Tag
+                className="fv2-inventorywrapper-afd14b33c2"
                 key={item.key}
                 color={activeTab === item.key ? item.color : 'default'}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  borderRadius: 20,
-                  fontWeight: activeTab === item.key ? 600 : 400,
-                }}
+                style={{ fontSize: 14, fontWeight: activeTab === item.key ? 600 : 400 }}
                 onClick={() => handleTabChange(item.key)}
               >
                 {item.label} ({item.count})
@@ -746,16 +712,7 @@ const InventoryWrapper = () => {
           </Space>
         </div>
 
-        <Card
-          bordered={false}
-          style={{
-            marginTop: 24,
-            borderRadius: 12,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-            background: 'white',
-            overflow: 'hidden',
-          }}
-        >
+        <Card className="fv2-inventorywrapper-1c9e4f9607" bordered={false}>
           <Table
             columns={columns}
             dataSource={filteredProducts}
@@ -765,7 +722,7 @@ const InventoryWrapper = () => {
               preserveSelectedRowKeys: true,
               onChange: (keys, rows) => {
                 if (keys.length > 500) {
-                  message.warning('Select at most 500 products at a time.');
+                  toast.warning('Select at most 500 products at a time.');
                   return;
                 }
                 const known = {
@@ -794,7 +751,7 @@ const InventoryWrapper = () => {
           />
         </Card>
 
-        <div style={{ marginTop: 24, padding: '16px 0', textAlign: 'center' }}>
+        <div className="fv2-inventorywrapper-5accf9a78d">
           <Pagination
             disabled={isFetching}
             current={currentPage}
@@ -814,7 +771,7 @@ const InventoryWrapper = () => {
           onClose={() => setAdvancedFilterOpen(false)}
           width={380}
         >
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Space className="fv2-inventorywrapper-7ec5812436" direction="vertical" size="middle">
             <Checkbox
               checked={duplicateCompanyCode}
               onChange={(e) => {

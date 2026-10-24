@@ -1,43 +1,58 @@
-import { Modal, Button } from 'react-bootstrap';
 import { DeleteOutlined } from '@ant-design/icons';
-import ProductDeleteModal from '../Inventory/ProductDeleteModal';
-const DeleteModal = ({ item, itemType, onConfirm, onCancel, isVisible, isLoading }) => {
-  if (itemType === 'Product')
-    return isVisible && item ? (
-      <ProductDeleteModal
-        products={[item]}
-        onConfirm={() => onConfirm(item)}
-        onCancel={onCancel}
-        isLoading={isLoading}
-      />
-    ) : null;
-  return (
-    <Modal show={isVisible} onHide={onCancel} centered backdrop="static" keyboard={false}>
-      <Modal.Body className="text-center p-4">
-        <span className="rounded-circle d-inline-flex p-2 bg-danger-transparent mb-3">
-          <DeleteOutlined />
-        </span>
-        <h4 className="fs-20 text-gray-9 fw-bold mb-2 mt-1">Delete {itemType}</h4>
-        <p className="text-gray-6 mb-0 fs-16">Are you sure you want to delete {itemType}?</p>
-        <div className="d-flex justify-content-center gap-2 mt-4">
-          <Button
-            variant="secondary"
-            onClick={onCancel}
-            className="px-3 py-2 fs-13 fw-medium shadow-none"
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => onConfirm(item)}
-            className="px-3 py-2 fs-13 fw-medium"
-          >
-            Yes, Delete
-          </Button>
-        </div>
-      </Modal.Body>
-    </Modal>
-  );
-};
+import ModalShell from './ModalShell';
+import ProductDeletionPreview from '../Inventory/ProductDeletionPreview';
+import useProductDeletionPreview from '../Inventory/useProductDeletionPreview';
 
-export default DeleteModal;
+/** Shared confirmation for records and checked single/bulk product deletion. */
+export default function DeleteModal({
+  item,
+  itemType,
+  products,
+  onConfirm,
+  onCancel,
+  isVisible,
+  isLoading = false,
+}) {
+  const isProduct = itemType === 'Product' || products !== undefined;
+  const targets = products ?? (item ? [item] : []);
+  const open = !!isVisible && (!isProduct || targets.length > 0);
+  const { report, failure, retry } = useProductDeletionPreview(targets, open && isProduct);
+  const blocked = isProduct && (!report?.canDelete || !!failure);
+  const title = isProduct
+    ? `Delete ${targets.length === 1 ? targets[0].name : `${targets.length} selected products`}?`
+    : `Delete ${itemType}`;
+
+  return (
+    <ModalShell
+      open={open}
+      title={
+        <>
+          <DeleteOutlined /> {title}
+        </>
+      }
+      centered
+      width={isProduct ? 850 : undefined}
+      onCancel={onCancel}
+      onOk={() => {
+        if (!blocked) onConfirm(products ?? item);
+      }}
+      confirmLoading={isLoading}
+      okText={isProduct ? 'Delete permanently' : 'Yes, Delete'}
+      okButtonProps={{ danger: true, disabled: blocked }}
+      maskClosable={false}
+      keyboard={false}
+    >
+      {isProduct ? (
+        <ProductDeletionPreview
+          products={targets}
+          report={report}
+          failure={failure}
+          onRetry={retry}
+          isLoading={isLoading}
+        />
+      ) : (
+        <p>Are you sure you want to delete {itemType}?</p>
+      )}
+    </ModalShell>
+  );
+}

@@ -1,18 +1,9 @@
+import Loader from '../Common/Loader';
+import ModalShell from '../Common/ModalShell';
+import './MergeProductsModal.styles.css';
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Button,
-  Checkbox,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Typography,
-  message,
-} from 'antd';
+import { Alert, Button, Checkbox, Input, InputNumber, Select, Space, Table, Typography } from 'antd';
+import { toast } from 'sonner';
 import {
   useMergeInventoryProductsMutation,
   usePreviewProductMergeMutation,
@@ -93,7 +84,7 @@ export default function MergeProductsModal({ products, onCancel, onMerged }) {
         ...(priceMode === 'custom' ? { sellingPrice } : {}),
         note,
       }).unwrap();
-      message.success(result.message);
+      toast.success(result.message);
       onMerged(result);
     } catch (error) {
       setFailure(error?.data?.message || 'Merge failed. Refresh the preview before trying again.');
@@ -122,7 +113,7 @@ export default function MergeProductsModal({ products, onCancel, onMerged }) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   return (
-    <Modal
+    <ModalShell
       open
       title="Merge two products"
       width={950}
@@ -149,10 +140,11 @@ export default function MergeProductsModal({ products, onCancel, onMerged }) {
         Choose the product to keep. The other product will be removed after its supported
         references, inventory history and keywords are transferred.
       </Typography.Paragraph>
-      <Space wrap style={{ marginBottom: 16 }}>
+      <Space className="fv2-mergeproductsmodal-23fee5c5f1" wrap>
         <Typography.Text strong>Keep product</Typography.Text>
         <Select
-          style={{ minWidth: 300, maxWidth: '100%' }}
+          className="fv2-mergeproductsmodal-29731825d8"
+
           value={keeperId}
           disabled={merging}
           onChange={(value) => {
@@ -181,8 +173,15 @@ export default function MergeProductsModal({ products, onCancel, onMerged }) {
           Download preview JSON
         </Button>
       </Space>
-      {failure && <Alert type="error" showIcon message={failure} style={{ marginBottom: 16 }} />}
-      <Spin spinning={loading}>
+      {failure && (
+        <Alert
+          className="fv2-mergeproductsmodal-23fee5c5f1"
+          type="error"
+          showIcon
+          message={failure}
+        />
+      )}
+      <Loader loading={loading}>
         {preview && (
           <>
             <Table
@@ -204,23 +203,24 @@ export default function MergeProductsModal({ products, onCancel, onMerged }) {
             />
             {preview.blockers.map((blocker, index) => (
               <Alert
+                className="fv2-mergeproductsmodal-d4e11c3f0a"
                 key={index}
                 type="error"
                 showIcon
                 message={blocker}
-                style={{ marginTop: 12 }}
               />
             ))}
-            <Space wrap style={{ marginTop: 20 }}>
+            <Space className="fv2-mergeproductsmodal-d7639af754" wrap>
               <Typography.Text strong>Final stock</Typography.Text>
               <Select
+                className="fv2-mergeproductsmodal-5cb645a539"
                 disabled={merging}
                 value={stockMode}
                 onChange={(value) => {
                   setStockMode(value);
                   setConfirmed(false);
                 }}
-                style={{ width: 230 }}
+
                 options={[
                   { value: 'keep', label: 'Keep selected product stock' },
                   { value: 'sum', label: 'Combine both stocks' },
@@ -243,16 +243,17 @@ export default function MergeProductsModal({ products, onCancel, onMerged }) {
               )}
               <Typography.Text strong>{finalQuantity ?? '—'} units</Typography.Text>
             </Space>
-            <Space wrap style={{ marginTop: 16, marginBottom: 16 }}>
+            <Space className="fv2-mergeproductsmodal-f0f1ac15cf" wrap>
               <Typography.Text strong>Final selling price</Typography.Text>
               <Select
+                className="fv2-mergeproductsmodal-5cb645a539"
                 disabled={merging}
                 value={priceMode}
                 onChange={(value) => {
                   setPriceMode(value);
                   setConfirmed(false);
                 }}
-                style={{ width: 230 }}
+
                 options={[
                   { value: 'keep', label: 'Keep selected product price' },
                   { value: 'source', label: 'Use removed product price' },
@@ -279,11 +280,9 @@ export default function MergeProductsModal({ products, onCancel, onMerged }) {
               showIcon
               message={`${preview.historyRecordsToTransfer} inventory history records will move to the kept product. Original history quantities and dates remain recorded. Keywords and images are combined. The kept product's name, internal code and conflicting metadata stay; missing metadata is filled from the other product.`}
             />
-            <details style={{ margin: '16px 0' }}>
+            <details className="fv2-mergeproductsmodal-76ad9cf060">
               <summary>Review {preview.differences.length} product field differences</summary>
-              <pre
-                style={{ maxHeight: 250, overflow: 'auto', whiteSpace: 'pre-wrap', marginTop: 8 }}
-              >
+              <pre className="fv2-mergeproductsmodal-9d0dad229b">
                 {JSON.stringify(preview.differences, null, 2)}
               </pre>
             </details>
@@ -305,24 +304,24 @@ export default function MergeProductsModal({ products, onCancel, onMerged }) {
               />
             )}
             <Input.TextArea
+              className="fv2-mergeproductsmodal-18121d02ea"
               value={note}
               disabled={merging}
               onChange={(event) => setNote(event.target.value)}
               maxLength={2000}
               placeholder="Merge note (optional)"
-              style={{ marginTop: 16 }}
             />
             <Checkbox
+              className="fv2-mergeproductsmodal-18121d02ea"
               checked={confirmed}
               disabled={merging || preview.blockers.length > 0}
               onChange={(event) => setConfirmed(event.target.checked)}
-              style={{ marginTop: 16 }}
             >
               I confirm these are the same product and have reviewed the final stock and price.
             </Checkbox>
           </>
         )}
-      </Spin>
-    </Modal>
+      </Loader>
+    </ModalShell>
   );
 }

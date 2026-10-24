@@ -26,7 +26,7 @@
   border: 1px solid black;
   padding: 8px; /* Slightly increased padding for better touch targets */
   vertical-align: middle;
-  font-size: 14px; /* Base font size for readability */
+  font-size: var(--fv2-font-14px); /* Base font size for readability */
 }
 
 /* Remove border for no-border class */
@@ -93,7 +93,7 @@
 
   .quotation-table th,
   .quotation-table td {
-    font-size: 12px; /* Smaller font size for mobile */
+    font-size: var(--fv2-font-12px); /* Smaller font size for mobile */
     padding: 6px; /* Reduced padding for compact display */
   }
 
@@ -129,7 +129,7 @@
 @media screen and (max-width: 480px) {
   .quotation-table th,
   .quotation-table td {
-    font-size: 10px; /* Further reduce font size for very small screens */
+    font-size: var(--fv2-font-10px); /* Further reduce font size for very small screens */
     padding: 4px; /* Further reduce padding */
   }
 
@@ -216,7 +216,7 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background-color: #f0f0f0;
+  background-color: var(--fv2-color-f0f0f0);
   display: flex;
   align-items: center;
   justify-content: center;

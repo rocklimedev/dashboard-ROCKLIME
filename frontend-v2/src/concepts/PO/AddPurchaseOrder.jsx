@@ -1,19 +1,11 @@
+import Loader from '../../components/Common/Loader';
+import ModalShell from '../../components/Common/ModalShell';
+import './AddPurchaseOrder.styles.css';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeftOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
-import {
-  Form,
-  Input,
-  Select,
-  Button,
-  Modal,
-  Alert,
-  Table,
-  Spin,
-  Typography,
-  InputNumber,
-  message,
-} from 'antd';
+import { Form, Input, Select, Button, Alert, Table, Typography, InputNumber } from 'antd';
+import { toast } from 'sonner';
 import { debounce } from 'lodash';
 import moment from 'moment';
 import DatePicker from 'react-datepicker';
@@ -140,7 +132,7 @@ const AddPurchaseOrder = () => {
     });
 
     if (po.vendorId && !vendors.some((v) => v.id === po.vendorId)) {
-      message.warning('Vendor for this PO no longer exists in the system.');
+      toast.warning('Vendor for this PO no longer exists in the system.');
     }
   }, [poData, isEditMode, products, vendors, form]);
 
@@ -158,22 +150,16 @@ const AddPurchaseOrder = () => {
       return {
         value: p.id || p.productId,
         label: (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              width: '100%',
-            }}
-          >
+          <div className="fv2-addpurchaseorder-f15ecc278b">
             <div>
-              <div style={{ fontWeight: 500 }}>
+              <div className="fv2-addpurchaseorder-99752499ab">
                 {p.name || p.productName || p.product_code || 'Unnamed'}
               </div>
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <Text className="fv2-addpurchaseorder-2de8f27e20" type="secondary">
                 {p.productCode || p.product_code || '—'}
               </Text>
             </div>
-            <Text strong style={{ color: '#52c41a' }}>
+            <Text className="fv2-addpurchaseorder-f8377128cc" strong>
               ₹{price.toLocaleString('en-IN')}
             </Text>
           </div>
@@ -189,18 +175,18 @@ const AddPurchaseOrder = () => {
       products.find((p) => (p.id || p.productId) === productId);
 
     if (!product) {
-      message.error('Product not found');
+      toast.error('Product not found');
       return;
     }
 
     if (formValues.items.some((i) => i.productId === productId)) {
-      message.warning('Product already added');
+      toast.warning('Product already added');
       return;
     }
 
     const unitPrice = getUnitPrice(product);
     if (unitPrice <= 0) {
-      message.error(`Product "${product.name}" has no valid price`);
+      toast.error(`Product "${product.name}" has no valid price`);
       return;
     }
 
@@ -249,7 +235,7 @@ const AddPurchaseOrder = () => {
       await form.validateFields();
 
       if (formValues.items.length === 0) {
-        message.error('Please add at least one product');
+        toast.error('Please add at least one product');
         return;
       }
 
@@ -269,10 +255,10 @@ const AddPurchaseOrder = () => {
 
       if (isEditMode) {
         await updatePO({ id, ...payload }).unwrap();
-        message.success('Purchase order updated successfully');
+        toast.success('Purchase order updated successfully');
       } else {
         await createPO(payload).unwrap();
-        message.success('Purchase order created successfully');
+        toast.success('Purchase order created successfully');
 
         // Reset form
         setFormValues({
@@ -287,13 +273,13 @@ const AddPurchaseOrder = () => {
 
       navigate('/purchase-manager');
     } catch (err) {
-      message.error(err?.data?.message || 'Failed to save purchase order');
+      toast.error(err?.data?.message || 'Failed to save purchase order');
     }
   };
 
   // Loading State
   if (isEditMode && (isLoadingPO || isLoadingProducts || isLoadingVendors)) {
-    return <Spin tip="Loading purchase order data..." size="large" />;
+    return <Loader tip="Loading purchase order data..." size="large" />;
   }
 
   if (poError) {
@@ -361,7 +347,7 @@ const AddPurchaseOrder = () => {
           />
 
           <div className="card-body">
-            <div style={{ marginBottom: 24, display: 'flex', gap: 12 }}>
+            <div className="fv2-addpurchaseorder-7cb166c43f">
               <Link to="/purchase-manager">
                 <Button icon={<ArrowLeftOutlined />}>Back</Button>
               </Link>
@@ -369,17 +355,18 @@ const AddPurchaseOrder = () => {
             </div>
 
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div className="fv2-addpurchaseorder-7e45f3e282">
                 {/* Vendor */}
                 <Form.Item
+                  className="fv2-addpurchaseorder-a331bf6008"
                   label="Vendor *"
                   name="vendorId"
                   rules={[{ required: true, message: 'Vendor is required' }]}
-                  style={{ flex: 1, minWidth: 300 }}
                 >
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="fv2-addpurchaseorder-5fb8f710e4">
                     <Select
-                      style={{ flex: 1 }}
+                      className="fv2-addpurchaseorder-b50e936d8d"
+
                       placeholder="Select vendor"
                       value={formValues.vendorId}
                       onChange={(v) => {
@@ -404,10 +391,10 @@ const AddPurchaseOrder = () => {
 
                 {/* Order Date */}
                 <Form.Item
+                  className="fv2-addpurchaseorder-bd45cfb70c"
                   label="Order Date *"
                   name="orderDate"
                   rules={[{ required: true, message: 'Order date is required' }]}
-                  style={{ flex: 1, minWidth: 220 }}
                 >
                   <DatePicker
                     selected={formValues.orderDate?.toDate()}
@@ -428,9 +415,9 @@ const AddPurchaseOrder = () => {
                 </Form.Item>
               </div>
 
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div className="fv2-addpurchaseorder-7e45f3e282">
                 {/* Expected Delivery */}
-                <Form.Item label="Expected Delivery" style={{ flex: 1, minWidth: 220 }}>
+                <Form.Item className="fv2-addpurchaseorder-bd45cfb70c" label="Expected Delivery">
                   <DatePicker
                     selected={formValues.expectDeliveryDate?.toDate()}
                     onChange={(date) =>
@@ -447,7 +434,7 @@ const AddPurchaseOrder = () => {
                 </Form.Item>
 
                 {/* Status */}
-                <Form.Item label="Status" name="status" style={{ flex: 1, minWidth: 180 }}>
+                <Form.Item className="fv2-addpurchaseorder-f1d2120304" label="Status" name="status">
                   <Select
                     disabled={!isEditMode}
                     value={formValues.status}
@@ -463,11 +450,12 @@ const AddPurchaseOrder = () => {
               </div>
 
               {/* Product Search */}
-              <div style={{ margin: '32px 0 16px' }}>
+              <div className="fv2-addpurchaseorder-b0a52f2a6b">
                 <Select
+                  className="fv2-addpurchaseorder-03387f9a9e"
                   showSearch
                   size="large"
-                  style={{ width: '100%' }}
+
                   placeholder="Search product by name or code..."
                   prefix={<SearchOutlined />}
                   value={null}
@@ -476,7 +464,13 @@ const AddPurchaseOrder = () => {
                   filterOption={false}
                   options={searchOptions}
                   notFoundContent={
-                    isSearching ? <Spin /> : searchTerm ? 'No products found' : 'Type to search...'
+                    isSearching ? (
+                      <Loader />
+                    ) : searchTerm ? (
+                      'No products found'
+                    ) : (
+                      'Type to search...'
+                    )
                   }
                   dropdownStyle={{ maxHeight: 420 }}
                   disabled={isLoadingProducts}
@@ -495,17 +489,18 @@ const AddPurchaseOrder = () => {
               />
 
               {/* Total */}
-              <div style={{ marginTop: 16, textAlign: 'right' }}>
+              <div className="fv2-addpurchaseorder-c7d8c4512e">
                 <Text strong>Total Amount: </Text>
-                <Text strong style={{ fontSize: 18 }}>
+                <Text className="fv2-addpurchaseorder-46caa01e0d" strong>
                   ₹{totalAmount}
                 </Text>
               </div>
 
               {/* Actions */}
-              <div style={{ marginTop: 32, textAlign: 'right' }}>
+              <div className="fv2-addpurchaseorder-2e8a7d4e0c">
                 <Button
-                  style={{ marginRight: 12 }}
+                  className="fv2-addpurchaseorder-976c6489b4"
+
                   onClick={() => navigate('/purchase-manager')}
                   disabled={creating || updating}
                 >
@@ -532,7 +527,7 @@ const AddPurchaseOrder = () => {
         isCreatingVendor={creatingVendor}
       />
 
-      <Modal
+      <ModalShell
         title="Clear Form?"
         open={showClearConfirm}
         onOk={() => {
@@ -551,7 +546,7 @@ const AddPurchaseOrder = () => {
         cancelText="Cancel"
       >
         <p>All entered data will be lost. Are you sure?</p>
-      </Modal>
+      </ModalShell>
     </div>
   );
 };

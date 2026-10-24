@@ -1,3 +1,4 @@
+import './QuotationCartDetails.styles.css';
 import { Button, Collapse, Input, InputNumber, Space, Typography } from 'antd';
 
 export default function QuotationCartDetails({ data, onChange, items, setItems }) {
@@ -13,14 +14,15 @@ export default function QuotationCartDetails({ data, onChange, items, setItems }
     );
   return (
     <Collapse
-      style={{ marginBottom: 16 }}
+      className="fv2-quotationcartdetails-3cc6da199d"
+
       items={[
         {
           key: 'details',
           label: 'Quotation details & adjustments',
           children: (
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <label style={{ width: '100%' }}>
+            <Space className="fv2-quotationcartdetails-fd0d807a35" direction="vertical">
+              <label className="fv2-quotationcartdetails-fd0d807a35">
                 Document title
                 <Input
                   value={data.documentTitle || ''}
@@ -35,14 +37,14 @@ export default function QuotationCartDetails({ data, onChange, items, setItems }
                   onChange={(event) => onChange('quotationDate', event.target.value)}
                 />
               </label>
-              <label style={{ width: '100%' }}>
+              <label className="fv2-quotationcartdetails-fd0d807a35">
                 Signature name
                 <Input
                   value={data.signatureName ?? ''}
                   onChange={(event) => onChange('signatureName', event.target.value)}
                 />
               </label>
-              <label style={{ width: '100%' }}>
+              <label className="fv2-quotationcartdetails-fd0d807a35">
                 Signature image
                 <Input
                   value={data.signatureImage || ''}

@@ -1,25 +1,9 @@
+import ModalShell from '../../components/Common/ModalShell';
+import './Catalogues.styles.css';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Avatar,
-  Button,
-  Card,
-  Empty,
-  Form,
-  Input,
-  List,
-  Modal,
-  Popconfirm,
-  Progress,
-  Segmented,
-  Select,
-  Skeleton,
-  Space,
-  Tag,
-  Typography,
-  Upload,
-  message,
-} from 'antd';
+import { Avatar, Button, Card, Empty, Form, Input, List, Popconfirm, Progress, Segmented, Select, Skeleton, Space, Tag, Typography, Upload } from 'antd';
+import { toast } from 'sonner';
 import {
   CloudUploadOutlined,
   DeleteOutlined,
@@ -94,7 +78,7 @@ function UploadModal({ open, onClose, brands, categories }) {
   };
 
   const submit = async (v) => {
-    if (!file) return message.error('Choose a PDF catalogue');
+    if (!file) return toast.error('Choose a PDF catalogue');
     try {
       setStep({ label: 'Reading the catalogue', percent: 0 });
       let parsed = { pages: [], cover: null, numPages: 0 };
@@ -103,7 +87,7 @@ function UploadModal({ open, onClose, brands, categories }) {
           setStep({ label: 'Reading pages for search', percent: p }),
         );
       } catch {
-        message.warning(
+        toast.warning(
           'Could not read the text of this PDF; it will open, but search inside it may not work.',
         );
       }
@@ -118,17 +102,17 @@ function UploadModal({ open, onClose, brands, categories }) {
       fd.append('pageCount', String(parsed.numPages || 0));
       fd.append('pages', JSON.stringify(parsed.pages));
       await upload(fd).unwrap();
-      message.success('Catalogue added');
+      toast.success('Catalogue added');
       reset();
       onClose();
     } catch (e) {
       setStep(null);
-      message.error(e?.data?.message || 'Upload failed');
+      toast.error(e?.data?.message || 'Upload failed');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       open={open}
       title="Add a brand catalogue"
       okText="Upload"
@@ -178,7 +162,7 @@ function UploadModal({ open, onClose, brands, categories }) {
           <Input placeholder="e.g. Grohe Bathroom Collection 2026" />
         </Form.Item>
         <Space.Compact block>
-          <Form.Item name="brandId" label="Brand" style={{ width: '50%', marginRight: 8 }}>
+          <Form.Item className="fv2-catalogues-1bf4f3aa3f" name="brandId" label="Brand">
             <Select
               showSearch
               allowClear
@@ -187,7 +171,7 @@ function UploadModal({ open, onClose, brands, categories }) {
               options={brands.map((b) => ({ value: b.id, label: b.brandName }))}
             />
           </Form.Item>
-          <Form.Item name="category" label="Type" style={{ width: '30%', marginRight: 8 }}>
+          <Form.Item className="fv2-catalogues-db589665f2" name="category" label="Type">
             <Select
               allowClear
               showSearch
@@ -203,7 +187,7 @@ function UploadModal({ open, onClose, brands, categories }) {
               ].map((c) => ({ value: c, label: c }))}
             />
           </Form.Item>
-          <Form.Item name="year" label="Year" style={{ width: '20%' }}>
+          <Form.Item className="fv2-catalogues-ab275572e1" name="year" label="Year">
             <Input placeholder="2026" />
           </Form.Item>
         </Space.Compact>
@@ -214,7 +198,7 @@ function UploadModal({ open, onClose, brands, categories }) {
           </div>
         )}
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }
 
@@ -231,7 +215,7 @@ function EditModal({ item, onClose, brands }) {
       });
   }, [item, form]);
   return (
-    <Modal
+    <ModalShell
       open={!!item}
       title="Edit catalogue"
       onCancel={onClose}
@@ -247,7 +231,7 @@ function EditModal({ item, onClose, brands }) {
             await save({ id: item.id, ...v }).unwrap();
             onClose();
           } catch (e) {
-            message.error(e?.data?.message || 'Could not save');
+            toast.error(e?.data?.message || 'Could not save');
           }
         }}
       >
@@ -269,7 +253,7 @@ function EditModal({ item, onClose, brands }) {
           <Input />
         </Form.Item>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 }
 
@@ -321,7 +305,7 @@ export default function Catalogues() {
       <div className="content">
         <div className="cat-head">
           <div>
-            <Title level={4} style={{ margin: 0 }}>
+            <Title className="fv2-catalogues-e26fa6be65" level={4}>
               Brand catalogues
             </Title>
             <Text type="secondary">Open any brand's real catalogue and search inside it.</Text>
@@ -339,6 +323,7 @@ export default function Catalogues() {
 
         <div className="cat-filters">
           <Input
+            className="fv2-catalogues-ef9d2c85cb"
             allowClear
             size="large"
             prefix={<SearchOutlined />}
@@ -349,7 +334,6 @@ export default function Catalogues() {
             }
             value={text}
             onChange={(e) => setText(e.target.value)}
-            style={{ flex: 1, minWidth: 260 }}
           />
           <Segmented
             size="large"
@@ -361,6 +345,7 @@ export default function Catalogues() {
             ]}
           />
           <Select
+            className="fv2-catalogues-813211784f"
             size="large"
             allowClear
             showSearch
@@ -368,16 +353,17 @@ export default function Catalogues() {
             placeholder="All brands"
             value={brandId}
             onChange={setBrandId}
-            style={{ width: 200 }}
+
             options={brands.map((b) => ({ value: b.id, label: b.brandName }))}
           />
           <Select
+            className="fv2-catalogues-5d7d01030a"
             size="large"
             allowClear
             placeholder="All types"
             value={category}
             onChange={setCategory}
-            style={{ width: 170 }}
+
             options={(data?.categories || []).map((c) => ({ value: c, label: c }))}
           />
         </div>
@@ -491,7 +477,9 @@ export default function Catalogues() {
                     {[c.category, c.year, c.pages ? `${c.pages} pages` : null]
                       .filter(Boolean)
                       .join(' · ')}
-                    {!c.textIndexed && <Tag style={{ marginLeft: 6 }}>no search text</Tag>}
+                    {!c.textIndexed && (
+                      <Tag className="fv2-catalogues-0b6e127c7b">no search text</Tag>
+                    )}
                   </div>
                 </div>
               </div>

@@ -1,0 +1,42 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-lowstockproductsmodal-a81cff9919) {
+  font-size: var(--fv2-font-12px);
+}
+
+:is(#fv2-style-priority, .fv2-lowstockproductsmodal-245947c981) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:is(#fv2-style-priority, .fv2-lowstockproductsmodal-1707f02106) {
+  color: var(--fv2-color-fa8c16);
+}
+
+:is(#fv2-style-priority, .fv2-lowstockproductsmodal-b727a4ca49) {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:is(#fv2-style-priority, .fv2-lowstockproductsmodal-c2469d9e17) {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--fv2-color-1677ff);
+}
+
+:is(#fv2-style-priority, .fv2-lowstockproductsmodal-f8f46c2f2b) {
+  font-size: var(--fv2-font-52px);
+  color: var(--fv2-color-bfbfbf);
+}
+
+:is(#fv2-style-priority, .fv2-lowstockproductsmodal-a1fa1e9f2d) {
+  font-size: var(--fv2-font-52px);
+  color: var(--fv2-color-52c41a);
+}
+
+:is(#fv2-style-priority, .fv2-lowstockproductsmodal-479f0b4ece) {
+  margin-bottom: 16px;
+}

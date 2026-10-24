@@ -1,0 +1,11 @@
+/* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+:is(#fv2-style-priority, .fv2-createproductmodal-d5a309e9eb) {
+  width: 100%;
+}
+
+:is(#fv2-style-priority, .fv2-createproductmodal-d330486e15) {
+  display: flex;
+  justify-content: end;
+  gap: 12px;
+  margin-top: 24px;
+}

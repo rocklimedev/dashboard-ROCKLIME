@@ -1,5 +1,8 @@
+import Loader from '../Common/Loader';
+import ModalShell from '../Common/ModalShell';
+import './LowStockProductsModal.styles.css';
 import React, { useMemo } from 'react';
-import { Modal, Table, Tag, Empty, Spin, Alert, Typography, Space } from 'antd';
+import { Table, Tag, Empty, Alert, Typography, Space } from 'antd';
 import {
   WarningOutlined,
   CheckCircleOutlined,
@@ -620,7 +623,7 @@ const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [],
 
             {productCode && (
               <div>
-                <Text type="secondary" style={{ fontSize: 12 }}>
+                <Text className="fv2-lowstockproductsmodal-a81cff9919" type="secondary">
                   {productCode}
                 </Text>
               </div>
@@ -628,7 +631,7 @@ const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [],
 
             {companyCode && (
               <div>
-                <Text type="secondary" style={{ fontSize: 12 }}>
+                <Text className="fv2-lowstockproductsmodal-a81cff9919" type="secondary">
                   {companyCode}
                 </Text>
               </div>
@@ -794,20 +797,10 @@ const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [],
   // ============================================================
 
   return (
-    <Modal
+    <ModalShell
       title={
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <WarningOutlined
-            style={{
-              color: '#fa8c16',
-            }}
-          />
+        <div className="fv2-lowstockproductsmodal-245947c981">
+          <WarningOutlined className="fv2-lowstockproductsmodal-1707f02106" />
 
           <span>Inventory / Low Stock Check</span>
         </div>
@@ -823,15 +816,8 @@ const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [],
           ====================================================== */}
 
       {isLoadingInventory ? (
-        <div
-          style={{
-            minHeight: 220,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Spin size="large" />
+        <div className="fv2-lowstockproductsmodal-b727a4ca49">
+          <Loader size="large" />
         </div>
       ) : isInventoryError ? (
         /* ====================================================
@@ -849,14 +835,9 @@ const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [],
           }
           action={
             <button
+              className="fv2-lowstockproductsmodal-c2469d9e17"
               type="button"
               onClick={handleRefresh}
-              style={{
-                border: 0,
-                background: 'transparent',
-                cursor: 'pointer',
-                color: '#1677ff',
-              }}
             >
               Retry
             </button>
@@ -868,14 +849,7 @@ const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [],
            ==================================================== */
 
         <Empty
-          image={
-            <DatabaseOutlined
-              style={{
-                fontSize: 52,
-                color: '#bfbfbf',
-              }}
-            />
-          }
+          image={<DatabaseOutlined className="fv2-lowstockproductsmodal-f8f46c2f2b" />}
           description={
             <div>
               <Text strong>No products selected</Text>
@@ -892,14 +866,7 @@ const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [],
            ==================================================== */
 
         <Empty
-          image={
-            <CheckCircleOutlined
-              style={{
-                fontSize: 52,
-                color: '#52c41a',
-              }}
-            />
-          }
+          image={<CheckCircleOutlined className="fv2-lowstockproductsmodal-a1fa1e9f2d" />}
           description={
             <div>
               <Text strong>No inventory issues found</Text>
@@ -917,6 +884,7 @@ const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [],
               ================================================== */}
 
           <Alert
+            className="fv2-lowstockproductsmodal-479f0b4ece"
             type="warning"
             showIcon
             icon={<WarningOutlined />}
@@ -933,9 +901,6 @@ const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [],
                 ? 'These products are currently low in stock, out of stock, or insufficient for the order quantity.'
                 : 'This order has not been created yet. Inventory is being checked against the products currently selected in the order.'
             }
-            style={{
-              marginBottom: 16,
-            }}
           />
 
           {/* ==================================================
@@ -960,7 +925,7 @@ const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [],
           />
         </>
       )}
-    </Modal>
+    </ModalShell>
   );
 };
 

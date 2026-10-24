@@ -1,3 +1,4 @@
+import './AppSwitcher.styles.css';
 import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, Dropdown, Tooltip } from 'antd';
@@ -15,13 +16,13 @@ export default function AppSwitcher() {
   const current = appForPath(location.pathname, apps, location.search);
 
   const panel = (
-    <div className="ant-dropdown-menu" style={{ padding: 0 }}>
+    <div className="ant-dropdown-menu fv2-appswitcher-91241a7909">
       <div className="app-switcher">
         <Link
           to="/"
           className={`app-switcher__item ${location.pathname === '/' ? 'is-current' : ''}`}
         >
-          <span className="app-switcher__icon" style={{ background: '#262626' }}>
+          <span className="app-switcher__icon fv2-appswitcher-1683dcff6d">
             <HomeOutlined />
           </span>
           Home
@@ -48,7 +49,7 @@ export default function AppSwitcher() {
         <Button
           type="text"
           aria-label="Apps"
-          icon={<AppstoreOutlined style={{ fontSize: 19 }} />}
+          icon={<AppstoreOutlined className="fv2-appswitcher-7aa2ed41f5" />}
         />
       </Tooltip>
     </Dropdown>

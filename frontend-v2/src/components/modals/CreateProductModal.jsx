@@ -1,6 +1,9 @@
+import ModalShell from '../Common/ModalShell';
+import './CreateProductModal.styles.css';
 // src/components/modals/CreateProductModal.jsx
 import React from 'react';
-import { Modal, Form, Input, InputNumber, Select, Button, message } from 'antd';
+import { Form, Input, InputNumber, Select } from 'antd';
+import { toast } from 'sonner';
 import { useCreateProductMutation } from '../../api/productApi';
 
 const { Option } = Select;
@@ -24,23 +27,26 @@ const CreateProductModal = ({ open, onClose, onSuccess }) => {
     try {
       const result = await createProduct(formData).unwrap();
 
-      message.success(`Product "${values.name}" created successfully!`);
+      toast.success(`Product "${values.name}" created successfully!`);
 
       form.resetFields();
       onSuccess?.(result?.product || result?.data || result); // Pass created product if needed
       onClose();
     } catch (err) {
       console.error(err);
-      message.error(err?.data?.message || 'Failed to create product');
+      toast.error(err?.data?.message || 'Failed to create product');
     }
   };
 
   return (
-    <Modal
+    <ModalShell
       title="Create Optional Product"
       open={open}
       onCancel={onClose}
-      footer={null}
+      onOk={() => form.submit()}
+      okText={<>Create Product</>}
+      onCancelButton={onClose}
+      confirmLoading={isLoading}
       destroyOnClose
       width={620}
     >
@@ -77,7 +83,7 @@ const CreateProductModal = ({ open, onClose, onSuccess }) => {
           label="Quantity"
           rules={[{ required: true, message: 'Quantity is required' }]}
         >
-          <InputNumber min={0} style={{ width: '100%' }} />
+          <InputNumber className="fv2-createproductmodal-d5a309e9eb" min={0} />
         </Form.Item>
 
         <Form.Item name="status" label="Status" rules={[{ required: true }]}>
@@ -87,22 +93,8 @@ const CreateProductModal = ({ open, onClose, onSuccess }) => {
             <Option value="out_of_stock">Out of Stock</Option>
           </Select>
         </Form.Item>
-
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'end',
-            gap: 12,
-            marginTop: 24,
-          }}
-        >
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="primary" htmlType="submit" loading={isLoading}>
-            Create Product
-          </Button>
-        </div>
       </Form>
-    </Modal>
+    </ModalShell>
   );
 };
 
