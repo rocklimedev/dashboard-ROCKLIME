@@ -2,7 +2,9 @@
 // in app_settings. Reads merge the saved value over the defaults, so a new
 // default field shows up without a migration.
 const sequelize = require('../../config/database');
-const { DEFAULTS } = require('../../migrations/20261016000100-app-settings');
+const { DEFAULTS: BASE_DEFAULTS } = require('../../migrations/20261016000100-app-settings');
+const { EXTRA_DEFAULTS, validateConfiguration } = require('./admin-configuration');
+const DEFAULTS = { ...BASE_DEFAULTS, ...EXTRA_DEFAULTS };
 
 const KEYS = Object.keys(DEFAULTS);
 const cache = new Map();
@@ -28,6 +30,7 @@ async function getSetting(key) {
 
 async function saveSetting(key, patch, userId) {
   if (!KEYS.includes(key)) throw Object.assign(new Error('Unknown setting'), { status: 404 });
+  validateConfiguration(key, patch);
   const current = await getSetting(key);
   const allowed = Object.keys(DEFAULTS[key]);
   const next = { ...current };

@@ -1,18 +1,15 @@
+import useApps from '../../apps/useApps';
 import './AppSwitcher.styles.css';
-import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, Dropdown, Tooltip } from 'antd';
 import { AppstoreOutlined, HomeOutlined } from '@ant-design/icons';
-import useCan, { useRoles } from '../../utils/useCan';
-import { appForPath, visibleApps } from '../../apps/registry';
+import { appForPath } from '../../apps/registry';
 import '../../apps/apps.css';
 
 /** Header button: every app in a grid, one click to switch. */
 export default function AppSwitcher() {
   const location = useLocation();
-  const can = useCan();
-  const roles = useRoles();
-  const apps = useMemo(() => visibleApps(can, roles), [can, roles]);
+  const apps = useApps();
   const current = appForPath(location.pathname, apps, location.search);
 
   const panel = (
@@ -27,7 +24,7 @@ export default function AppSwitcher() {
           </span>
           Home
         </Link>
-        {apps.map((app) => (
+        {apps.filter(app => !app.locked).map((app) => (
           <Link
             key={app.key}
             to={app.home}

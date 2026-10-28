@@ -1,3 +1,4 @@
+import useDocumentExportFilename from '../../utils/useDocumentExportFilename';
 import Loader from '../../components/Common/Loader';
 import './PODetails.styles.css';
 // Purchase order page: status, receiving, and the PO itself as the vendor receives it.
@@ -35,6 +36,7 @@ const STATUS = {
 };
 
 export default function PODetails() {
+  const documentExportFilename = useDocumentExportFilename();
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: po, isLoading, error } = useGetPurchaseOrderByIdQuery(id);
@@ -57,7 +59,7 @@ export default function PODetails() {
     setBusy('pdf');
     try {
       const { blob } = await fetchPoExport(id, exportOptions);
-      savePoExport(blob, `PO-${po.poNumber}.pdf`);
+      savePoExport(blob, documentExportFilename({ documentType: 'purchase', customerName: po.vendor?.vendorName || po.vendor?.name, documentNumber: po.poNumber, date: po.orderDate || po.createdAt }));
     } catch (e) {
       toast.error(e.message);
     } finally {
@@ -67,7 +69,7 @@ export default function PODetails() {
   const downloadExcel = async () => {
     setBusy('excel');
     try {
-      savePoExport(await buildPoExcel(po, exportOptions.hidden), `PO-${po.poNumber}.xlsx`);
+      savePoExport(await buildPoExcel(po, exportOptions.hidden), documentExportFilename({ documentType: 'purchase', customerName: po.vendor?.vendorName || po.vendor?.name, documentNumber: po.poNumber, date: po.orderDate || po.createdAt, extension: 'xlsx' }));
     } catch (e) {
       toast.error(e.message || 'Could not export Excel');
     } finally {

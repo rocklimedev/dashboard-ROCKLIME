@@ -56,7 +56,7 @@ async function pdf(req, res) {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
-      `inline; filename="Order-${filename.replace(/["\r\n/\\]/g, '-')}"`,
+      `inline; filename="${filename}"`,
     );
     res.setHeader('X-Quotation-Pages', encodeURIComponent(JSON.stringify(pageLabels)));
     res.send(buffer);

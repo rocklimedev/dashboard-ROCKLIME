@@ -301,6 +301,24 @@ const CartLayout = ({
     [navigate, onDocumentTypeChange, draftWorkspace, draftData, localCartItems],
   );
 
+  const handleDuplicateLocationItems = async (nextItems) => {
+    const changed = nextItems.filter(item => localCartItems.some(old => old.productId === item.productId && Number(old.quantity) !== Number(item.quantity)));
+    const applied = [];
+    try {
+      for (const item of changed) {
+        await updateCart({ userId, productId: item.productId, quantity: Number(item.quantity) }).unwrap();
+        applied.push(item);
+      }
+      setLocalCartItems(nextItems);
+    } catch (error) {
+      for (const item of applied) {
+        const old = localCartItems.find(p => p.productId === item.productId);
+        await updateCart({ userId, productId: item.productId, quantity: Number(old.quantity) }).unwrap().catch(() => {});
+      }
+      throw error;
+    }
+  };
+
   const handleUpdateQuantity = useCallback(
     async (productId, newQty) => {
       if (!userId || newQty < 1) return;
@@ -720,6 +738,7 @@ const CartLayout = ({
     handleRemoveItem,
     handleAssignItemToLocation,
     handleSetItemLocations,
+    handleDuplicateLocationItems,
     handleDiscountChange,
     handleDiscountTypeChange,
     handleTaxChange,

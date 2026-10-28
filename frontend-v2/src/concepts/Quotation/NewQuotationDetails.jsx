@@ -1,3 +1,4 @@
+import useDocumentExportFilename from '../../utils/useDocumentExportFilename';
 import Loader from '../../components/Common/Loader';
 import ModalShell from '../../components/Common/ModalShell';
 import './NewQuotationDetails.styles.css';
@@ -13,11 +14,12 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 import QuotationExportOrganizer from '../../components/Quotation/QuotationExportOrganizer';
-import { API_URL } from '../../store/config';
-import { token, downloadQuotationPdf } from '../../components/Quotation/quotationPdf';
+import { downloadQuotationPdf } from '../../components/Quotation/quotationPdf';
 import DocumentExportOptions from '../../components/Quotation/DocumentExportOptions';
 import QuotationDispatchModal from '../../components/Orders/QuotationDispatchModal';
 import {
+  useGetQuotationExportSettingsQuery,
+  useSaveQuotationExportSettingsMutation,
   useGetQuotationByIdQuery,
   useGetQuotationVersionsQuery,
   useCloneQuotationMutation,
@@ -31,7 +33,6 @@ import {
   hasRoomAssignments,
   addQuotationImages,
 } from '../../components/Quotation/hooks/quotationWorkbook';
-import { getSafeTitle } from '../../components/Quotation/hooks/exportHelpers';
 import QuotationPdfActions from '../../components/Quotation/QuotationPdfActions';
 import QuotationPdfFrame from '../../components/Quotation/QuotationPdfFrame';
 import { QuotationPipelineBar } from '../../components/Quotation/QuotationPipeline';
@@ -55,6 +56,7 @@ const asList = (data) => {
 const titleFor = (gender) => ({ male: 'Mr.', female: 'Ms.' })[(gender || '').toLowerCase()] || '';
 
 export default function NewQuotationsDetails() {
+  const documentExportFilename = useDocumentExportFilename();
   const { id } = useParams();
   const navigate = useNavigate();
   const can = useCan();
@@ -67,29 +69,34 @@ export default function NewQuotationsDetails() {
   const [pdfCover, setPdfCover] = useState(true);
   const [exportOptions, setExportOptions] = useState({ hidden: [] });
   const [organizerOpen, setOrganizerOpen] = useState(false);
-  const [savingSettings, setSavingSettings] = useState(false);
+  const [saveExportSettings, { isLoading: savingSettings }] = useSaveQuotationExportSettingsMutation();
+  const { currentData: exportSettingsData, error: exportSettingsError } =
+    useGetQuotationExportSettingsQuery({ id, version }, { refetchOnMountOrArgChange: true });
+  const hydratedSettings = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const pendingLabels = useRef(null);
   const [pages, setPages] = useState([]);
   const [pageOrder, setPageOrder] = useState(null);
   useEffect(() => {
-    let cancelled = false;
     pendingLabels.current = null;
     setPageOrder(null);
     setPages([]);
-    fetch(API_URL + '/quotation/' + id + '/export-settings?version=' + version, { headers: { Authorization: 'Bearer ' + token() } })
-      .then(async response => {
-        if (!response.ok) throw new Error('Could not load saved export settings');
-        return response.json();
-      }).then(({ settings }) => {
-        if (cancelled) return;
-        setPdfStyle(settings?.style || 'detailed');
-        setPdfCover(settings?.cover ?? true);
-        setExportOptions({ hidden: settings?.hidden || [] });
-        pendingLabels.current = settings?.pageLabels || null;
-      }).catch(error => { if (!cancelled) toast.error(error.message); });
-    return () => { cancelled = true; };
+    hydratedSettings.current = null;
   }, [id, version]);
+  useEffect(() => {
+    const key = `${id}:${version}`;
+    if (!exportSettingsData || hydratedSettings.current === key) return;
+    hydratedSettings.current = key;
+    const { settings } = exportSettingsData;
+    setPdfStyle(settings?.style || 'detailed');
+    setPdfCover(settings?.cover ?? true);
+    setExportOptions({ hidden: settings?.hidden || [] });
+    pendingLabels.current = settings?.pageLabels || null;
+  }, [id, version, exportSettingsData]);
+  useEffect(() => {
+    if (exportSettingsError)
+      toast.error(exportSettingsError.data?.message || 'Could not load saved export settings');
+  }, [exportSettingsError]);
   const onPagesChange = useCallback(
     (next) => {
       setPages((previous) => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next));
@@ -179,7 +186,7 @@ export default function NewQuotationsDetails() {
       );
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${getSafeTitle(shown)}_V${version}.xlsx`;
+      link.download = documentExportFilename({ customerName, documentNumber: shown.reference_number || id, date: shown.quotation_date || shown.createdAt, extension: 'xlsx' });
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setExcelOpen(false);
@@ -209,16 +216,13 @@ export default function NewQuotationsDetails() {
       <QuotationExportOrganizer open={organizerOpen} onClose={() => setOrganizerOpen(false)} pages={pages} floors={asList(shown.floors)}
         pageOrder={pageOrder} setPageOrder={setPageOrder} saving={savingSettings} downloading={downloading}
         onSave={async () => {
-          setSavingSettings(true);
           try {
-            const response = await fetch(API_URL + '/quotation/' + id + '/export-settings?version=' + version, {
-              method: 'PUT', headers: { Authorization: 'Bearer ' + token(), 'Content-Type': 'application/json' },
-              body: JSON.stringify({ style: pdfStyle, cover: pdfCover, hidden: exportOptions.hidden,
-                pageLabels: pageOrder ? [...new Set(pageOrder.map(pageId => pages.find(p => p.id === pageId)?.label.replace(/ \(continued \d+\)$/, '')).filter(Boolean))] : null }) });
-            if (!response.ok) throw new Error((await response.json()).message || 'Could not save settings');
+            await saveExportSettings({ id, version, settings: {
+              style: pdfStyle, cover: pdfCover, hidden: exportOptions.hidden,
+              pageLabels: pageOrder ? [...new Set(pageOrder.map(pageId => pages.find(p => p.id === pageId)?.label.replace(/ \(continued \d+\)$/, '')).filter(Boolean))] : null,
+            } }).unwrap();
             toast.success('Export settings saved');
-          } catch (error) { toast.error(error.message); }
-          finally { setSavingSettings(false); }
+          } catch (error) { toast.error(error?.data?.message || error.message || 'Could not save settings'); }
         }}
         onDownload={async () => {
           setDownloading(true);

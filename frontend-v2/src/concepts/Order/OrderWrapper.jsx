@@ -1,3 +1,4 @@
+import useDocumentExportFilename from '../../utils/useDocumentExportFilename';
 import ListToolbar from '../../components/Common/ListToolbar';
 import ListPagination from '../../components/Common/ListPagination';
 import './OrderWrapper.styles.css';
@@ -101,6 +102,7 @@ const label = (s) =>
     .replace(/^\w/, (c) => c.toUpperCase());
 
 const OrderWrapper = () => {
+  const documentExportFilename = useDocumentExportFilename();
   const navigate = useNavigate();
   const [params0] = useSearchParams();
   const [newOrderOpen, setNewOrderOpen] = useState(params0.get('new') === '1');
@@ -198,7 +200,7 @@ const OrderWrapper = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Order-${order.orderNo}.pdf`;
+      a.download = documentExportFilename({ documentType: 'order', customerName: order.customer?.displayName || order.customer?.name || order.customer?.companyName, documentNumber: order.orderNo, date: order.createdAt });
       document.body.appendChild(a);
       a.click();
       a.remove();

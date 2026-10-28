@@ -70,6 +70,44 @@ function lineAmounts(item) {
  * @param {number}  p.gstRate            e.g. 18
  * @param {boolean} p.interState         true → IGST, false → CGST + SGST
  */
+/**
+ * Which maths applies to a quotation.
+ *   discountMode 'generic'            → exclusive arithmetic; gstBasis is ignored
+ *   discountMode 'advanced' + 'inclusive' → advanced-inclusive (D1): GST is inside the price
+ *   discountMode 'advanced' + 'exclusive' → advanced-exclusive (D2): GST is added on top
+ *   discountMode 'advanced' + null        → not chosen yet; the user must pick first
+ * Generic and advanced-exclusive share the same arithmetic; they differ in the
+ * breakdown shown and in which inputs the form offers.
+ */
+const DISCOUNT_MODES = ['generic', 'advanced'];
+const GST_BASES = ['inclusive', 'exclusive'];
+function resolvePricingMode({ discountMode = 'generic', gstBasis = null } = {}) {
+  const mode = DISCOUNT_MODES.includes(discountMode) ? discountMode : 'generic';
+  if (mode === 'generic')
+    return { discountMode: 'generic', gstBasis: null, pricingMode: 'generic' };
+  if (!GST_BASES.includes(gstBasis))
+    return { discountMode: 'advanced', gstBasis: null, pricingMode: null };
+  return { discountMode: 'advanced', gstBasis, pricingMode: `advanced-${gstBasis}` };
+}
+
+/**
+ * Reads the pricing fields from a saved or incoming quotation. Quotations saved
+ * before discount modes existed have no discountMode, so they stay generic. A
+ * legacy gstInclusive boolean is used only when gstBasis was never sent.
+ */
+function pricingFromRecord(src = {}) {
+  const discountMode = src?.discountMode === 'advanced' ? 'advanced' : 'generic';
+  const legacy =
+    typeof src?.gstInclusive === 'boolean' ? (src.gstInclusive ? 'inclusive' : 'exclusive') : null;
+  const basis = src?.gstBasis ?? legacy;
+  const r = resolvePricingMode({ discountMode, gstBasis: basis });
+  return {
+    discountMode: r.discountMode,
+    gstBasis: r.gstBasis,
+    gstInclusive: r.gstBasis === 'inclusive',
+  };
+}
+
 function quotationTotals({
   items = [],
   extraDiscount = 0,
@@ -81,7 +119,17 @@ function quotationTotals({
   flatPrice = null,
   gstRate = 0,
   interState = false,
+  discountMode = 'generic',
+  gstBasis = null,
 } = {}) {
+  const resolved = resolvePricingMode({ discountMode, gstBasis });
+  if (resolved.pricingMode === null) {
+    throw Object.assign(new Error('Choose GST inclusive or exclusive for advanced discounting'), {
+      status: 400,
+    });
+  }
+  const inclusive = resolved.pricingMode === 'advanced-inclusive';
+
   const main = [];
   const optional = [];
   for (const it of items || []) (isOptional(it) ? optional : main).push(it);
@@ -109,15 +157,30 @@ function quotationTotals({
       ? (extraBase * num(extraDiscount)) / 100
       : num(extraDiscount),
   );
-  const taxableValue = r2(extraBase - extraDiscountAmount - num(additionalDiscount));
+  const afterDiscounts = r2(extraBase - extraDiscountAmount - num(additionalDiscount));
   const rate = num(gstRate);
-  const gstAmount = r2((taxableValue * rate) / 100);
+  let taxableValue;
+  let gstAmount;
+  let beforeRound;
+  let grandTotal;
+  let roundOff;
+  if (inclusive) {
+    // Price already contains GST: round the payable amount, then extract GST from it.
+    beforeRound = afterDiscounts;
+    grandTotal = Math.round(beforeRound);
+    roundOff = r2(grandTotal - beforeRound);
+    gstAmount = r2((grandTotal * rate) / (100 + rate));
+    taxableValue = r2(grandTotal - gstAmount);
+  } else {
+    taxableValue = afterDiscounts;
+    gstAmount = r2((taxableValue * rate) / 100);
+    beforeRound = r2(taxableValue + gstAmount);
+    grandTotal = Math.round(beforeRound);
+    roundOff = r2(grandTotal - beforeRound);
+  }
   const cgst = interState ? 0 : r2(gstAmount / 2);
   const sgst = interState ? 0 : r2(gstAmount - cgst);
   const igst = interState ? gstAmount : 0;
-  const beforeRound = r2(taxableValue + gstAmount);
-  const grandTotal = Math.round(beforeRound);
-  const roundOff = r2(grandTotal - beforeRound);
 
   const optionalLines = optional.map((it) => ({ ...it, ...lineAmounts(it) }));
   const optionalTotal = r2(optionalLines.reduce((s, l) => s + l.net, 0));
@@ -135,6 +198,10 @@ function quotationTotals({
     taxableValue,
     gstRate: rate,
     gstAmount,
+    gstInclusive: inclusive,
+    discountMode: resolved.discountMode,
+    gstBasis: resolved.gstBasis,
+    pricingMode: resolved.pricingMode,
     interState: Boolean(interState),
     cgst,
     sgst,
@@ -217,6 +284,8 @@ const inr = (v, { symbol = true, decimals = 2 } = {}) =>
 
 module.exports = {
   normalizeCharges,
+  resolvePricingMode,
+  pricingFromRecord,
   quotationTotals,
   lineAmounts,
   amountInWords,

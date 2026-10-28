@@ -1,5 +1,5 @@
 const { Order, Address, User, Customer } = require('../../models');
-const { quotationTotals, lineAmounts, r2 } = require('../../lib/quotationMath');
+const { quotationTotals, lineAmounts, r2, pricingFromRecord } = require('../../lib/quotationMath');
 const { remainingLines, batchQuotation, asList } = require('./dispatch-document');
 const generateOrderNumber = require('./order-number');
 
@@ -32,6 +32,7 @@ async function createQuotationOrder(quotation, history, input, userId, transacti
   );
   const totals = quotationTotals({
     ...source,
+    ...pricingFromRecord(source),
     items: remaining,
     shipping: source.shippingAmount,
     gstRate: source.gst,

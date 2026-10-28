@@ -1,3 +1,6 @@
+import { documentExportFilename } from '../../../utils/documentExportFilename';
+import { store } from '../../../store';
+import { settingsApi } from '../../../api/settingsApi';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import ExcelJS from 'exceljs';
@@ -517,10 +520,10 @@ export const exportToExcel = async ({
   ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
   /* ---------- 13. Save with custom filename ---------- */
-  const safeVersion = activeVersion === 'current' ? 'Latest' : activeVersion;
-  const safeTitle = getSafeTitle(quotation);
-  const titlePart = safeTitle ? `${safeTitle}_` : '';
-  const excelFilename = `${documentLabel === 'Dispatch' ? 'Dispatch_' : ''}${titlePart}V${safeVersion}.xlsx`;
+  const settingsRequest = store.dispatch(settingsApi.endpoints.getSettings.initiate());
+  let formats;
+  try { formats = (await settingsRequest.unwrap())?.data?.documentExports; } finally { settingsRequest.unsubscribe(); }
+  const excelFilename = documentExportFilename({ formats, customerName, documentNumber: quotation.reference_number || quotation.quotationId, date: quotation.quotation_date || quotation.createdAt, extension: 'xlsx' });
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {

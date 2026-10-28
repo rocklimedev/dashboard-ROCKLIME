@@ -75,6 +75,8 @@ const auth = async (req, res, next) => {
     if (!user.roles.length) {
       return res.status(403).json({ error: 'Unauthorized: Missing roles.' });
     }
+    const appLock = await require('./app-lock').checkAppLock(req, user);
+    if (appLock) return res.status(403).json({ message: 'This app is locked for your role.', app: appLock.key });
     // Fresh values from the database win over whatever the token carried.
     req.user = { ...decoded, ...user };
     next();

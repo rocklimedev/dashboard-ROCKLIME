@@ -1,7 +1,7 @@
 import ListToolbar from '../../components/Common/ListToolbar';
 import ListPagination from '../../components/Common/ListPagination';
 import './QuotationList.styles.css';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   useGetAllQuotationsQuery,
@@ -44,6 +44,11 @@ const { Text } = Typography;
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
+const positiveInteger = (value, fallback) => {
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number > 0 ? number : fallback;
+};
+
 const TABS = [
   { key: '', label: 'All' },
   { key: 'OPEN', label: 'Open', statuses: 'DRAFT,SENT,NEGOTIATION' },
@@ -62,8 +67,15 @@ const QuotationList = () => {
   const [params, setParams] = useSearchParams();
 
   // ==================== STATE ====================
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const currentPage = positiveInteger(params.get('page'), 1);
+  const pageSize = positiveInteger(params.get('pageSize'), 20);
+  const setCurrentPage = useCallback((page) => {
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set('page', String(page));
+      return next;
+    });
+  }, [setParams]);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [customerFilter, setCustomerFilter] = useState('');
@@ -79,12 +91,24 @@ const QuotationList = () => {
   const [pdfBusy, setPdfBusy] = useState(null);
 
   useEffect(() => {
+    if (params.get('page') === String(currentPage) &&
+        (!params.has('pageSize') || params.get('pageSize') === String(pageSize))) return;
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set('page', String(currentPage));
+      if (next.has('pageSize')) next.set('pageSize', String(pageSize));
+      return next;
+    }, { replace: true });
+  }, [params, currentPage, pageSize, setParams]);
+
+  useEffect(() => {
+    if (searchTerm === debouncedSearch) return;
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
       setCurrentPage(1);
     }, 400);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, debouncedSearch, setCurrentPage]);
 
   const formattedDateRange = useMemo(() => {
     if (!dateRange[0] || !dateRange[1]) return undefined;
@@ -125,15 +149,15 @@ const QuotationList = () => {
     const next = new URLSearchParams(params);
     if (key) next.set('tab', key);
     else next.delete('tab');
+    next.set('page', '1');
     setParams(next, { replace: true });
-    setCurrentPage(1);
   };
   const setMine = (v) => {
     const next = new URLSearchParams(params);
     if (v) next.set('mine', '1');
     else next.delete('mine');
+    next.set('page', '1');
     setParams(next, { replace: true });
-    setCurrentPage(1);
   };
 
   const count = (key) => {
@@ -522,8 +546,12 @@ const QuotationList = () => {
                 total={pagination.total}
                 showSizeChanger
                 onChange={(page, size) => {
-                  setCurrentPage(page);
-                  setPageSize(size);
+                  setParams((previous) => {
+                    const next = new URLSearchParams(previous);
+                    next.set('page', String(page));
+                    next.set('pageSize', String(size));
+                    return next;
+                  });
                 }}
               />
             </>

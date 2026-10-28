@@ -98,6 +98,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       gstInclusive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+      // 'generic' = today's discounting; 'advanced' = D1/D2 with the GST basis below
+      discountMode: { type: DataTypes.STRING(16), allowNull: false, defaultValue: 'generic' },
+      // 'inclusive' | 'exclusive' | null (not chosen). Only read when discountMode is 'advanced'.
+      gstBasis: { type: DataTypes.STRING(16), allowNull: true, defaultValue: null },
       gst: {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: true,

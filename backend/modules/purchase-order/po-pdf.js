@@ -1,3 +1,4 @@
+const { configuredDocumentExportFilename: documentExportFilename } = require('../../lib/documentExportFilename');
 // Purchase order PDF in the Chhabra Marble format (same look as the quotation).
 //
 //   buildPoPdf(poId)        → { buffer, filename }
@@ -516,7 +517,7 @@ async function renderPoPdf({
     });
   }
   doc.end();
-  return { buffer: await done, filename: `PO-${ref}.pdf`, totals: t };
+  return { buffer: await done, filename: await documentExportFilename({ documentType: 'purchase', customerName: vendor.vendorName || vendor.name, documentNumber: ref, date: po.orderDate || po.createdAt }), totals: t };
 }
 
 module.exports = { buildPoPdf, renderPoPdf };

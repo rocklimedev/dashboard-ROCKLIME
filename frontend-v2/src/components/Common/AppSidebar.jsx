@@ -1,13 +1,13 @@
+import useApps from '../../apps/useApps';
 import './AppSidebar.styles.css';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { ChevronsLeft } from 'react-feather';
 import { ArrowLeftOutlined, UserOutlined, SettingOutlined, ApiOutlined } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/img/logo.png';
 import logo_small from '../../assets/img/fav_icon.png';
-import useCan, { useRoles } from '../../utils/useCan';
-import { appForPath, visibleApps } from '../../apps/registry';
+import { appForPath } from '../../apps/registry';
 
 const LAST_APP = 'cm.app';
 const readLast = () => {
@@ -26,12 +26,10 @@ const readLast = () => {
  */
 export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
   const location = useLocation();
-  const can = useCan();
-  const roles = useRoles();
   const { auth } = useAuth();
   const personal = location.pathname.startsWith('/u/');
   const userId = auth?.user?.userId;
-  const apps = useMemo(() => visibleApps(can, roles), [can, roles]);
+  const apps = useApps();
   const current = personal
     ? {
         key: 'personal',
@@ -44,16 +42,17 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
             ]
           : [],
       }
-    : appForPath(location.pathname, apps, location.search, readLast());
+    : appForPath(location.pathname, apps.filter(app => !app.locked), location.search, readLast());
 
+  const currentKey = current?.key;
   useEffect(() => {
-    if (!current || personal) return;
+    if (!currentKey || personal) return;
     try {
-      sessionStorage.setItem(LAST_APP, current.key);
+      sessionStorage.setItem(LAST_APP, currentKey);
     } catch {
       /* private mode */
     }
-  }, [current, personal]);
+  }, [currentKey, personal]);
 
   const here = `${location.pathname}${location.search}`;
   const items = current?.items || [];

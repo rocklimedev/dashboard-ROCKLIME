@@ -5,7 +5,7 @@ const sequelize = require('../../config/database');
 const stock = require('../stock/stock.service');
 const { getSetting } = require('../settings/settings.service');
 const { enrichQuotation, renderQuotationPdf } = require('../quotations/quotation-pdf');
-const { quotationTotals } = require('../../lib/quotationMath');
+const { quotationTotals, pricingFromRecord } = require('../../lib/quotationMath');
 const {
   asList,
   remainingLines,
@@ -73,11 +73,9 @@ exports.create = async (req, res) => {
     const transport = transportFields(req.body);
     if (transport.error) return res.status(400).json({ message: transport.error });
     if (!(await can(req.user, 'orders', 'view')) || !(await can(req.user, 'orders', 'write')))
-      return res
-        .status(403)
-        .json({
-          message: 'Quotation dispatch requires orders → view and orders → write permissions.',
-        });
+      return res.status(403).json({
+        message: 'Quotation dispatch requires orders → view and orders → write permissions.',
+      });
     const result = await sequelize.transaction(async (t) => {
       const quotation = await Quotation.findByPk(req.params.id, {
         transaction: t,
@@ -141,7 +139,13 @@ exports.create = async (req, res) => {
       );
       const documentSnapshot = await enrichQuotation(q, items);
       documentSnapshot.companyState = (await getSetting('company')).state;
-      const totals = quotationTotals({ ...q, items, shipping: q.shippingAmount, gstRate: q.gst });
+      const totals = quotationTotals({
+        ...q,
+        ...pricingFromRecord(q),
+        items,
+        shipping: q.shippingAmount,
+        gstRate: q.gst,
+      });
       const saved = await OrderDispatch.create(
         {
           quotationId: quotation.quotationId,

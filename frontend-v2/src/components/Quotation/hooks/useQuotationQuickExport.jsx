@@ -1,13 +1,15 @@
+import useDocumentExportFilename from '../../../utils/useDocumentExportFilename';
 import './useQuotationQuickExport.styles.css';
 // src/components/Quotation/hooks/useQuotationQuickExport.js
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { createRoot } from 'react-dom/client';
 
-import { exportToPDF, exportToExcel, getSafeTitle } from './exportHelpers';
+import { exportToPDF, exportToExcel } from './exportHelpers';
 import { QuotationPagesRenderer } from '../QuotationPagesRenderer';
 
 export const useQuotationQuickExport = () => {
+  const documentExportFilename = useDocumentExportFilename();
   const [exportingId, setExportingId] = useState(null);
   const hiddenContainerRef = useRef(null);
 
@@ -143,9 +145,8 @@ export const useQuotationQuickExport = () => {
       await new Promise((r) => setTimeout(r, 1200));
 
       // 7. Prepare filename
-      const safeTitle = getSafeTitle(quotation);
       const ref = quotation.reference_number || id;
-      const filename = `${safeTitle}_${ref}_v1.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      const filename = documentExportFilename({ customerName, documentNumber: ref, date: quotation.quotation_date || quotation.createdAt, extension: format === 'pdf' ? 'pdf' : 'xlsx' });
 
       // 8. Export logic...
       const pages = printArea.querySelectorAll('.page');

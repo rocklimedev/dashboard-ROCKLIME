@@ -1,3 +1,4 @@
+const { configuredDocumentExportFilename: documentExportFilename } = require('../../lib/documentExportFilename');
 // Server-side quotation PDF in the Chhabra Marble format (real text, same
 // figures as the screens).
 //
@@ -564,6 +565,8 @@ async function renderQuotationPdf(
     flatPrice: quotation.flatPrice,
     gstRate: quotation.gst,
     interState,
+    discountMode: quotation.discountMode,
+    gstBasis: quotation.gstBasis ?? (quotation.gstInclusive ? 'inclusive' : null),
   });
   const { groups, hasAreas } = groupByArea(totals.lines);
   const qDate = quotation.quotation_date || quotation.createdAt;
@@ -1256,7 +1259,7 @@ async function renderQuotationPdf(
     buffer,
     totals,
     pageLabels,
-    filename: `${ref}${versionNo > 1 ? `-rev${versionNo - 1}` : ''}.pdf`,
+    filename: await documentExportFilename({ documentType: documentLabel === 'Order' ? 'order' : 'quotation', customerName: customer.displayName || customer.name || customer.companyName, documentNumber: ref, date: qDate }),
   };
 }
 

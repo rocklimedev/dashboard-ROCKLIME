@@ -1,18 +1,14 @@
-import { useMemo } from 'react';
+import useApps from './useApps';
 import { Link } from 'react-router-dom';
 import { LockFilled } from '@ant-design/icons';
 import { useGetBiginStatusQuery } from '../api/crmApi';
-import useCan, { useRoles } from '../utils/useCan';
-import { visibleApps } from './registry';
 import './apps.css';
 
 /** The first screen after login: the apps, as icons with their names. */
 export default function AppsHome() {
-  const can = useCan();
-  const roles = useRoles();
-  const apps = useMemo(() => visibleApps(can, roles), [can, roles]);
+  const apps = useApps();
   const { data: zoho } = useGetBiginStatusQuery(undefined, {
-    skip: !apps.some((app) => app.key === 'crm'),
+    skip: !apps.some((app) => app.key === 'crm' && !app.locked),
     refetchOnMountOrArgChange: true,
     pollingInterval: 30000,
   });
@@ -22,7 +18,7 @@ export default function AppsHome() {
       <div className="content">
         <nav className="app-icons" aria-label="Apps">
           {apps.map((app) => {
-            const locked = app.key === 'crm' && !zoho?.connected;
+            const locked = app.locked || (app.key === 'crm' && !zoho?.connected);
             const AppLink = locked ? 'span' : Link;
             return (
               <AppLink
@@ -31,10 +27,10 @@ export default function AppsHome() {
                 className={`app-icon${locked ? ' app-icon--locked' : ''}`}
                 title={
                   locked
-                    ? 'Zoho is disconnected. Please connect from Connectors to continue.'
+                    ? app.locked ? 'This app is locked for your role.' : 'Zoho is disconnected. Please connect from Connectors to continue.'
                     : app.description
                 }
-                aria-label={locked ? 'CRM — locked until Zoho is connected' : app.name}
+                aria-label={locked ? `${app.name} — locked` : app.name}
               >
                 <span className="app-icon__visual">
                   <span className="app-icon__logo" style={{ background: 'transparent' }}>

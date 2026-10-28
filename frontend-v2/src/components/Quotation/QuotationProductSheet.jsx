@@ -1,3 +1,4 @@
+import { duplicateQuotationLocation } from './duplicateQuotationLocation';
 import Loader from '../Common/Loader';
 import './QuotationProductSheet.styles.css';
 import { lineAmounts } from '../../utils/quotationMath';
@@ -24,6 +25,7 @@ import { toast } from 'sonner';
 import {
   DeleteOutlined,
   EditOutlined,
+  CopyOutlined,
   PlusOutlined,
   SearchOutlined,
   ScissorOutlined,
@@ -73,7 +75,7 @@ const lineTotal = (p, qtyOverride) => {
 };
 
 /* ───────────────────────── Tab label with rename / delete ───────────────────────── */
-function TabLabel({ text, onEdit, onDelete }) {
+function TabLabel({ text, onEdit, onDelete, onDuplicate }) {
   // Only the icons swallow the click, so the label text still
   // bubbles up to the Tabs and switches the tab.
   const handle = (fn) => (e) => {
@@ -87,6 +89,7 @@ function TabLabel({ text, onEdit, onDelete }) {
       <Tooltip title="Rename">
         <EditOutlined className="fv2-quotationproductsheet-2e0996d2d9" onClick={handle(onEdit)} />
       </Tooltip>
+      <Tooltip title="Duplicate"><CopyOutlined aria-label="Duplicate" className="fv2-quotationproductsheet-2e0996d2d9" onClick={handle(onDuplicate)} /></Tooltip>
       <Tooltip title="Delete">
         <DeleteOutlined
           className="fv2-quotationproductsheet-cc5cfcaf91"
@@ -261,7 +264,24 @@ function ProductRow({
         />
       </td>
 
-      <td className="qs-cell qs-readonly">₹{Number(product.sellingPrice || 0).toFixed(2)}</td>
+      <td className="qs-cell">
+        <div className="qs-readonly">₹{Number(product.sellingPrice || 0).toFixed(2)}</div>
+        <div className="fv2-quotationproductsheet-66320b3253">
+          <label className="fv2-quotationproductsheet-9eff771cb8">Flat price / unit ₹</label>
+          <InputNumber
+            className="fv2-quotationproductsheet-77fad1958e"
+            size="small"
+            min={0}
+            precision={2}
+            value={product.flatPrice}
+            placeholder="Optional"
+            aria-label="Flat price / unit ₹"
+            onChange={(value) =>
+              onChangeSectionQty(product.productId, null, null, { flatPrice: value })
+            }
+          />
+        </div>
+      </td>
 
       <td className="qs-cell">
         <Space.Compact>
@@ -292,7 +312,6 @@ function ProductRow({
         </Space.Compact>
         {[
           ['additionalDiscount', 'Additional discount / unit ₹'],
-          ['flatPrice', 'Flat price / unit ₹'],
         ].map(([field, label]) => (
           <div className="fv2-quotationproductsheet-66320b3253" key={field}>
             <label className="fv2-quotationproductsheet-9eff771cb8">{label}</label>
@@ -956,6 +975,14 @@ export default function QuotationProductSheet({
     [formData.products],
   );
 
+  const duplicateLocation = (floorId, roomId = null) => {
+    setFormData(previous => {
+      const result = duplicateQuotationLocation(previous.floors, previous.products, floorId, roomId, uuidv4);
+      return { ...previous, floors: result.floors, products: result.products };
+    });
+    toast.success(roomId ? 'Room duplicated with its products' : 'Floor duplicated with its rooms and products');
+  };
+
   // ─── Tabs ────────────────────────────────────────────────────────
   // Only ONE Unassigned tab exists, at the top level. Each floor tab
   // shows just its rooms. Floor and room tabs carry rename/delete icons.
@@ -997,6 +1024,7 @@ export default function QuotationProductSheet({
             <TabLabel
               text={`🏢 ${floor.floorName}`}
               onEdit={() => onEditFloor?.(floor)}
+              onDuplicate={() => duplicateLocation(floor.floorId)}
               onDelete={() => onDeleteFloor?.(floor)}
             />
           ),
@@ -1027,6 +1055,7 @@ export default function QuotationProductSheet({
             <TabLabel
               text={`🛏️ ${room.roomName}${roomProducts.length ? ` (${roomProducts.length})` : ''}`}
               onEdit={() => onEditRoom?.(floor.floorId, room)}
+              onDuplicate={() => duplicateLocation(floor.floorId, room.roomId)}
               onDelete={() => onDeleteRoom?.(floor.floorId, room)}
             />
           ),
@@ -1053,7 +1082,8 @@ export default function QuotationProductSheet({
           <TabLabel
             text={`🏢 ${floor.floorName}${total ? ` (${total})` : ''}`}
             onEdit={() => onEditFloor?.(floor)}
-            onDelete={() => onDeleteFloor?.(floor)}
+            onDuplicate={() => duplicateLocation(floor.floorId)}
+              onDelete={() => onDeleteFloor?.(floor)}
           />
         ),
         children: (

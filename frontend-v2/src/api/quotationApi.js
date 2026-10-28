@@ -44,6 +44,25 @@ export const quotationApi = baseApi.injectEndpoints({
       providesTags: ['Quotations'],
     }),
 
+    getQuotationExportSettings: builder.query({
+      query: ({ id, version = 'current' }) => ({
+        url: `/quotation/${id}/export-settings`,
+        params: { version },
+      }),
+      providesTags: (result, error, { id, version = 'current' }) => [
+        { type: 'Quotations', id: `export-settings-${id}-${version}` },
+      ],
+    }),
+    saveQuotationExportSettings: builder.mutation({
+      query: ({ id, version = 'current', settings }) => ({
+        url: `/quotation/${id}/export-settings`,
+        method: 'PUT',
+        params: { version },
+        body: settings,
+      }),
+      invalidatesTags: (result, error, { id, version = 'current' }) =>
+        error ? [] : [{ type: 'Quotations', id: `export-settings-${id}-${version}` }],
+    }),
     getQuotationDispatches: builder.query({
       query: (id) => `/quotation/${id}/dispatches`,
       providesTags: ['OrderDispatches'],
@@ -154,6 +173,8 @@ export const quotationApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetQuotationExportSettingsQuery,
+  useSaveQuotationExportSettingsMutation,
   useGetQuotationDispatchesQuery,
   useCreateQuotationDispatchMutation,
   useGetDispatchDetailsQuery,

@@ -1,4 +1,5 @@
 import './Cart.styles.css';
+import { duplicateQuotationLocation } from '../Quotation/duplicateQuotationLocation';
 // src/components/POS-NEW/Cart.jsx
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
@@ -39,6 +40,7 @@ import {
   CheckCircleOutlined,
   PlusOutlined,
   EditOutlined,
+  CopyOutlined,
   HomeOutlined,
 } from '@ant-design/icons';
 import styled from 'styled-components';
@@ -127,6 +129,7 @@ const CartTab = ({
   onCartOrderChange,
   handleAssignOptionToParent,
   handleSetItemLocations,
+  handleDuplicateLocationItems,
 
   quotationData = { floors: [] },
   handleQuotationChange = () => {},
@@ -550,6 +553,22 @@ const CartTab = ({
       });
     }
   };
+
+  const [duplicatingLocation, setDuplicatingLocation] = useState(false);
+  const duplicateLocation = async (floorId, roomId = null) => {
+    if (duplicatingLocation) return;
+    setDuplicatingLocation(true);
+    try {
+      const result = duplicateQuotationLocation(quotationData.floors || [], safeCartItems, floorId, roomId, uuidv4);
+      await handleDuplicateLocationItems(result.products);
+      handleQuotationChange('floors', result.floors);
+      setActiveFloorId(result.floorId);
+      setActiveRoomId(result.roomId || null);
+      toast.success(roomId ? 'Room duplicated with its products' : 'Floor duplicated with its rooms and products');
+    } catch (error) { toast.error(error?.data?.message || error.message || 'Could not duplicate location'); }
+    finally { setDuplicatingLocation(false); }
+  };
+  const duplicateButton = (floorId, roomId) => <Button size="small" type="text" icon={<CopyOutlined />} aria-label={roomId ? 'Duplicate room' : 'Duplicate floor'} title={roomId ? 'Duplicate room with products' : 'Duplicate floor with rooms and products'} disabled={duplicatingLocation} onClick={event => { event.stopPropagation(); duplicateLocation(floorId, roomId); }} />;
 
   const addFloor = (values) => {
     const current = quotationData.floors || [];
@@ -1022,7 +1041,7 @@ const CartTab = ({
   };
 
   /* ── Floor tabs (plain labels — no more droppables) ── */
-  const floorTabItems = useMemo(() => {
+  const floorTabItems = (() => {
     const items = layoutTree.floors.map((f) => {
       const count = f.rooms.reduce((s, r) => s + r.items.length, 0);
       return {
@@ -1031,6 +1050,7 @@ const CartTab = ({
           <Space size={4}>
             <HomeOutlined />
             <span>{f.floorName}</span>
+            {duplicateButton(f.floorId)}
             <Tag className="fv2-cart-07aa95ea7b">{count}</Tag>
           </Space>
         ),
@@ -1052,10 +1072,10 @@ const CartTab = ({
     });
 
     return items;
-  }, [layoutTree]);
+  })();
 
   /* ── Room tabs (plain labels — only real rooms, no floor-level "Unassigned") ── */
-  const roomTabItems = useMemo(() => {
+  const roomTabItems = (() => {
     if (!activeFloorNode) return [];
 
     return activeFloorNode.rooms.map((r) => ({
@@ -1063,12 +1083,13 @@ const CartTab = ({
       label: (
         <Space size={4}>
           <span>{r.roomName}</span>
+          {duplicateButton(activeFloorNode?.floorId || implicitFloor?.floorId, r.roomId)}
           <Tag className="fv2-cart-07aa95ea7b">{r.items.length}</Tag>
         </Space>
       ),
       closable: true,
     }));
-  }, [activeFloorNode]);
+  })();
 
   return (
     <>
@@ -1153,6 +1174,7 @@ const CartTab = ({
                             label: (
                               <Space size={4}>
                                 <span>{r.roomName}</span>
+                                {duplicateButton(implicitFloor.floorId, r.roomId)}
                                 <Tag className="fv2-cart-07aa95ea7b">{r.items.length}</Tag>
                               </Space>
                             ),

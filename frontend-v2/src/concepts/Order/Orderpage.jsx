@@ -1,3 +1,4 @@
+import useDocumentExportFilename from '../../utils/useDocumentExportFilename';
 import Loader from '../../components/Common/Loader';
 import './Orderpage.styles.css';
 import React, { useState, useMemo, useEffect } from 'react';
@@ -77,6 +78,7 @@ const ACTIVITY_TAG_COLOR = {
 };
 
 const OrderPage = () => {
+  const documentExportFilename = useDocumentExportFilename();
   const { id } = useParams();
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -103,7 +105,7 @@ const OrderPage = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Order-${order.orderNo}.pdf`;
+      link.download = documentExportFilename({ documentType: 'order', customerName: customer.displayName || customer.name || order.customer?.displayName || order.customer?.name || order.customer?.companyName, documentNumber: order.orderNo, date: order.createdAt });
       document.body.appendChild(link);
       link.click();
       link.remove();

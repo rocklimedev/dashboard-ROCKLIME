@@ -15,7 +15,27 @@ const AppsHome = lazy(() => import('../../apps/AppsHome'));
 const CompanySettings = lazy(() => import('../../concepts/Settings/CompanySettings'));
 const AccountsPage = lazy(() => import('../../concepts/Accounts/AccountsPage'));
 
+const DocumentFormats = lazy(() =>
+  import('../../concepts/Settings/AdminConfiguration').then((m) => ({
+    default: m.DocumentFormats,
+  })),
+);
+const OrganiseApps = lazy(() =>
+  import('../../concepts/Settings/AdminConfiguration').then((m) => ({ default: m.OrganiseApps })),
+);
 export const otherRoutes = [
+  {
+    path: '/settings/document-formats',
+    name: 'Document formats',
+    isSidebarActive: false,
+    element: <DocumentFormats />,
+  },
+  {
+    path: '/settings/apps',
+    name: 'Organise apps',
+    isSidebarActive: false,
+    element: <OrganiseApps />,
+  },
   { path: '/apps', name: 'Apps', isSidebarActive: false, element: <AppsHome /> },
   {
     path: '/settings/company',

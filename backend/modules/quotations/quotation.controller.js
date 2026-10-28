@@ -1,3 +1,4 @@
+const { configuredDocumentExportFilename: documentExportFilename } = require('../../lib/documentExportFilename');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 const { Op } = require('sequelize');
@@ -7,7 +8,12 @@ const QuotationItem = require('./models/quotation-item.model'); // MongoDB model
 const QuotationVersion = require('./models/quotation-version.model');
 const { ActivityLog } = require('../../models');
 const logActivity = require('../../utils/activityLogger');
-const { normalizeCharges, lineAmounts, quotationTotals } = require('../../lib/quotationMath');
+const {
+  normalizeCharges,
+  lineAmounts,
+  quotationTotals,
+  pricingFromRecord,
+} = require('../../lib/quotationMath');
 const { sendNotification } = require('../engagement/notification.controller');
 const pipeline = require('./pipeline');
 
@@ -276,6 +282,7 @@ function calculateTotals(
     extraDiscountType,
     shipping: shippingAmount,
     gstRate: gst,
+    ...pricingFromRecord(adjustments),
   });
   return {
     subTotal: t.mrpValue,
@@ -359,7 +366,9 @@ exports.createQuotation = async (req, res) => {
       flatPrice = null,
       shippingAmount = 0,
       gst = 0,
-      gstInclusive = false,
+      gstInclusive,
+      discountMode,
+      gstBasis,
       customerId,
       quotation_date,
       due_date,
@@ -480,8 +489,16 @@ exports.createQuotation = async (req, res) => {
       Number(extraDiscount),
       extraDiscountType,
       Number(shippingAmount),
-      gstInclusive ? 0 : Number(gst),
-      { miscellaneousChargeItems, miscellaneousCharges, additionalDiscount, flatPrice },
+      Number(gst),
+      {
+        miscellaneousChargeItems,
+        miscellaneousCharges,
+        additionalDiscount,
+        flatPrice,
+        discountMode,
+        gstBasis,
+        gstInclusive,
+      },
     );
     // ─── Generate unique reference number ───
     const reference_number = await generateQuotationNumber(t);
@@ -512,8 +529,8 @@ exports.createQuotation = async (req, res) => {
         additionalDiscount: Number(additionalDiscount) || 0,
         flatPrice: flatPrice == null || flatPrice === '' ? null : Number(flatPrice),
         shippingAmount: Number(shippingAmount) || 0,
-        gstInclusive: gstInclusive === true,
-        gst: gstInclusive ? 0 : Number(gst) || 0,
+        ...pricingFromRecord({ discountMode, gstBasis, gstInclusive }),
+        gst: Number(gst) || 0,
         gstAmount: totals.gstAmount,
         roundOff: totals.roundOff,
         finalAmount: totals.finalAmount,
@@ -552,8 +569,8 @@ exports.createQuotation = async (req, res) => {
 
         financials: {
           totalAmount: totals.finalAmount,
-          gstInclusive: gstInclusive === true,
-        gst: gstInclusive ? 0 : Number(gst) || 0,
+          ...pricingFromRecord({ discountMode, gstBasis, gstInclusive }),
+          gst: Number(gst) || 0,
           gstAmount: totals.gstAmount,
           discount: Number(extraDiscount) || 0,
           discountType: extraDiscountType,
@@ -578,6 +595,7 @@ exports.createQuotation = async (req, res) => {
     });
   } catch (error) {
     await t.rollback().catch(() => {});
+    if (error.status === 400) return res.status(400).json({ message: error.message });
 
     return res.status(500).json({
       error: 'Failed to create quotation',
@@ -607,7 +625,9 @@ exports.updateQuotation = async (req, res) => {
       flatPrice = null,
       shippingAmount = 0,
       gst = 0,
-      gstInclusive = false,
+      gstInclusive,
+      discountMode,
+      gstBasis,
       ...quotationData
     } = req.body;
 
@@ -658,6 +678,8 @@ exports.updateQuotation = async (req, res) => {
           'shippingAmount',
           'gst',
           'gstInclusive',
+          'discountMode',
+          'gstBasis',
           'gstAmount',
           'roundOff',
           'finalAmount',
@@ -782,8 +804,16 @@ exports.updateQuotation = async (req, res) => {
       Number(extraDiscount),
       extraDiscountType,
       Number(shippingAmount),
-      gstInclusive ? 0 : Number(gst),
-      { miscellaneousChargeItems, miscellaneousCharges, additionalDiscount, flatPrice },
+      Number(gst),
+      {
+        miscellaneousChargeItems,
+        miscellaneousCharges,
+        additionalDiscount,
+        flatPrice,
+        discountMode,
+        gstBasis,
+        gstInclusive,
+      },
     );
 
     await Quotation.update(
@@ -804,8 +834,8 @@ exports.updateQuotation = async (req, res) => {
         additionalDiscount: Number(additionalDiscount) || 0,
         flatPrice: flatPrice == null || flatPrice === '' ? null : Number(flatPrice),
         shippingAmount: Number(shippingAmount) || 0,
-        gstInclusive: gstInclusive === true,
-        gst: gstInclusive ? 0 : Number(gst) || 0,
+        ...pricingFromRecord({ discountMode, gstBasis, gstInclusive }),
+        gst: Number(gst) || 0,
         gstAmount: totals.gstAmount,
         roundOff: totals.roundOff,
         finalAmount: totals.finalAmount,
@@ -1113,6 +1143,8 @@ exports.exportQuotation = async (req, res) => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Quotation');
 
     const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+    const exportCustomer = quotation.customer ||
+      (quotation.customerId ? await Customer.findByPk(quotation.customerId) : null);
 
     res.setHeader(
       'Content-Type',
@@ -1120,7 +1152,7 @@ exports.exportQuotation = async (req, res) => {
     );
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename=Quotation_${quotation.reference_number || id}${version ? `_v${version}` : ''}.xlsx`,
+      `attachment; filename="${await documentExportFilename({ customerName: exportCustomer?.displayName || exportCustomer?.name || exportCustomer?.companyName, documentNumber: quotation.reference_number || id, date: quotation.quotation_date || quotation.createdAt, extension: 'xlsx' })}"`,
     );
     res.send(buffer);
   } catch (error) {
@@ -1280,7 +1312,7 @@ exports.cloneQuotation = async (req, res) => {
         additionalDiscount: original.additionalDiscount,
         flatPrice: original.flatPrice,
         shippingAmount: Number(original.shippingAmount) || 0,
-        gstInclusive: original.gstInclusive === true,
+        ...pricingFromRecord(original),
         gst: Number(original.gst) || 0,
         gstAmount: totals.gstAmount,
         roundOff: totals.roundOff,
@@ -1340,6 +1372,7 @@ exports.cloneQuotation = async (req, res) => {
     });
   } catch (error) {
     await t.rollback().catch(() => {});
+    if (error.status === 400) return res.status(400).json({ message: error.message });
 
     return res.status(500).json({
       error: 'Failed to clone quotation',

@@ -51,7 +51,6 @@ import {
   BarChartOutlined,
   FilePdfOutlined,
   FieldTimeOutlined,
-  UserOutlined,
   BankOutlined,
   SafetyOutlined,
   BookOutlined,
@@ -311,6 +310,8 @@ export const APPS = [
         adminOnly: true,
         icon: <BankOutlined />,
       },
+      { label: 'Document formats', to: '/settings/document-formats', adminOnly: true, icon: <FilePdfOutlined /> },
+      { label: 'Organise apps', to: '/settings/apps', adminOnly: true, icon: <AppstoreOutlined /> },
       {
         section: 'Customers',
         label: 'All customers',
@@ -358,11 +359,26 @@ export const APPS = [
 export const HOME_PATHS = ['/', '/apps', '/search'];
 
 /** Apps and menu items this user may open. */
-export function visibleApps(can, roles = []) {
+export function configuredApps(configuration, roles = []) {
+  const admin = roles.some(r => ADMIN_ROLES.includes(r));
+  const entries = configuration?.entries || [];
+  const registry = [...APPS, ...entries.filter(e => e.custom && !APPS.some(a => a.key === e.key)).map(e => ({
+    ...e, icon: <AppstoreOutlined />, match: [e.home.split('?')[0]],
+    items: [{ label: e.name, to: e.home, module: e.module, icon: <AppstoreOutlined /> }],
+  }))];
+  return registry.map(app => {
+    const saved = entries.find(e => e.key === app.key);
+    return { ...app, name: saved?.name || app.name, locked: !admin && (saved?.enabled === false || saved?.lockedRoles?.some(r => roles.includes(r))) };
+  }).sort((a, b) => {
+    const rank = key => { const i = entries.findIndex(e => e.key === key); return i < 0 ? entries.length + APPS.findIndex(a => a.key === key) : i; };
+    return rank(a.key) - rank(b.key);
+  });
+}
+export function visibleApps(can, roles = [], configuration) {
   const admin = roles.some((r) => ADMIN_ROLES.includes(r));
   const allowed = (x) =>
     (!x.adminOnly || admin) && (!x.module || can(x.module, x.action || 'view'));
-  return APPS.map((app) => {
+  return configuredApps(configuration, roles).map((app) => {
     const items = app.items.filter((i) =>
       allowed({ ...i, module: i.module || app.module, action: i.action }),
     );

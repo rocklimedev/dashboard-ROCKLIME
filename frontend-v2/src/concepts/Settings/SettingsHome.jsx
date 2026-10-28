@@ -1,13 +1,11 @@
 import { Button, Card, Col, Empty, Row } from 'antd';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/Common/PageHeader';
-import useCan, { useRoles } from '../../utils/useCan';
-import { visibleApps } from '../../apps/registry';
+import useApps from '../../apps/useApps';
+
 
 export default function SettingsHome() {
-  const can = useCan();
-  const roles = useRoles();
-  const sections = visibleApps(can, roles).find((app) => app.key === 'settings')?.items || [];
+  const sections = useApps().find((app) => app.key === 'settings')?.items || [];
   return (
     <div className="page-wrapper">
       <div className="content">

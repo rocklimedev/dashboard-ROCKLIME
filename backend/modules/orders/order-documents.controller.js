@@ -1,3 +1,4 @@
+const { configuredDocumentExportFilename: documentExportFilename } = require('../../lib/documentExportFilename');
 const {
   path,
   axios,
@@ -367,7 +368,7 @@ exports.downloadOrder = async (req, res) => {
     await finished;
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=Order-${data.orderNo}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename="${await documentExportFilename({ documentType: 'order', customerName: data.customer?.displayName || data.customer?.name || data.customer?.companyName, documentNumber: data.orderNo, date: data.createdAt })}"`);
     return res.send(Buffer.concat(chunks));
   } catch (err) {
     if (res.headersSent) return res.end();

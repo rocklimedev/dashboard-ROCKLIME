@@ -3,7 +3,13 @@ import ModalShell from '../../components/Common/ModalShell';
 import './AddQuntation.styles.css';
 // src/components/Quotation/AddQuotation.jsx
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { normalizeCharges, lineAmounts, quotationTotals } from '../../utils/quotationMath';
+import {
+  normalizeCharges,
+  lineAmounts,
+  quotationTotals,
+  resolvePricingMode,
+  pricingFromRecord,
+} from '../../utils/quotationMath';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Input,
@@ -196,7 +202,8 @@ const AddQuotation = () => {
     quotation_date: null,
     due_date: null,
     gst: 0,
-    gstInclusive: false,
+    discountMode: 'generic', // 'generic' | 'advanced'
+    gstBasis: null, // advanced only: 'inclusive' | 'exclusive' | null (not chosen)
     shippingAmount: 0,
     miscellaneousChargeItems: [],
     additionalDiscount: 0,
@@ -314,7 +321,8 @@ const AddQuotation = () => {
       flatPrice: existingQuotation.flatPrice == null ? null : safeNum(existingQuotation.flatPrice),
       shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
       gst: safeNum(existingQuotation.gst, 0),
-      gstInclusive: existingQuotation.gstInclusive === true,
+      discountMode: pricingFromRecord(existingQuotation).discountMode,
+      gstBasis: pricingFromRecord(existingQuotation).gstBasis,
       extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
       extraDiscountType: existingQuotation.extraDiscountType || 'fixed',
       signature_name: existingQuotation.signature_name || '',
@@ -724,6 +732,23 @@ const AddQuotation = () => {
 
   // Same maths as the server and the PDF (utils/quotationMath)
   const calculations = useMemo(() => {
+    // Advanced discounting cannot be calculated until the user chooses inclusive or exclusive.
+    if (
+      resolvePricingMode({ discountMode: formData.discountMode, gstBasis: formData.gstBasis })
+        .pricingMode === null
+    ) {
+      return {
+        mainSubtotal: 0,
+        mainLineDiscount: 0,
+        extraDiscAmt: 0,
+        shipping: 0,
+        taxableValue: 0,
+        roundOff: 0,
+        gstAmount: 0,
+        finalAmount: 0,
+        needsGstBasis: true,
+      };
+    }
     const t = quotationTotals({
       miscellaneousChargeItems: formData.miscellaneousChargeItems,
       additionalDiscount: formData.additionalDiscount,
@@ -738,7 +763,9 @@ const AddQuotation = () => {
       shipping: safeNum(formData.shippingAmount),
       extraDiscount: safeNum(formData.extraDiscount),
       extraDiscountType: formData.extraDiscountType || 'percent',
-      gstRate: formData.gstInclusive ? 0 : safeNum(formData.gst),
+      gstRate: safeNum(formData.gst),
+      discountMode: formData.discountMode,
+      gstBasis: formData.gstBasis,
     });
     return {
       mainSubtotal: t.goodsValue,
@@ -749,6 +776,7 @@ const AddQuotation = () => {
       roundOff: t.roundOff,
       gstAmount: t.gstAmount,
       finalAmount: t.grandTotal,
+      needsGstBasis: false,
     };
   }, [
     mainProducts,
@@ -757,7 +785,8 @@ const AddQuotation = () => {
     formData.flatPrice,
     formData.shippingAmount,
     formData.gst,
-    formData.gstInclusive,
+    formData.discountMode,
+    formData.gstBasis,
     formData.extraDiscount,
     formData.extraDiscountType,
   ]);
@@ -766,6 +795,8 @@ const AddQuotation = () => {
   const handleSubmit = async () => {
     if ((formData.miscellaneousChargeItems || []).some((charge) => !charge.name?.trim()))
       return toast.error('Please enter a name for each miscellaneous charge');
+    if (formData.discountMode === 'advanced' && !formData.gstBasis)
+      return toast.error('Choose GST inclusive or exclusive for advanced discounting');
     if (!formData.customerId) return toast.error('Please select a customer');
     if (formData.products.length === 0) return toast.error('Please add at least one product');
 
@@ -854,8 +885,10 @@ const AddQuotation = () => {
       additionalDiscount: safeNum(formData.additionalDiscount),
       flatPrice: formData.flatPrice == null ? null : safeNum(formData.flatPrice),
       shippingAmount: safeNum(formData.shippingAmount),
-      gstInclusive: formData.gstInclusive,
-      gst: formData.gstInclusive ? 0 : safeNum(formData.gst),
+      discountMode: formData.discountMode,
+      gstBasis: formData.discountMode === 'advanced' ? formData.gstBasis : null,
+      gstInclusive: formData.discountMode === 'advanced' && formData.gstBasis === 'inclusive',
+      gst: safeNum(formData.gst),
       extraDiscount: safeNum(formData.extraDiscount),
       extraDiscountType: formData.extraDiscountType || 'fixed',
       signature_name: formData.signature_name || '',
@@ -1299,41 +1332,61 @@ const AddQuotation = () => {
 
               <Col xs={24} sm={12}>
                 <Card className="fv2-addquntation-904354e8f8" size="small">
-                  <Form.Item label="GST inclusive in product prices">
+                  <Form.Item label="Discount mode">
                     <Select
-                      value={formData.gstInclusive}
+                      value={formData.discountMode}
                       onChange={(value) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          gstInclusive: value,
-                          gst: value ? 0 : prev.gst,
-                        }))
+                        setFormData((prev) => ({ ...prev, discountMode: value }))
                       }
                       options={[
-                        { value: true, label: 'True' },
-                        { value: false, label: 'False' },
+                        { value: 'generic', label: 'Generic (GST added on top)' },
+                        { value: 'advanced', label: 'Advanced' },
                       ]}
                     />
                   </Form.Item>
-                  {!formData.gstInclusive && (
-                    <Form.Item label="Global GST (%)">
-                      <InputNumber
-                        className="fv2-addquntation-0159f17c20"
-                        min={0}
-                        max={100}
-                        precision={2}
-                        value={formData.gst}
-                        addonAfter="%"
-                        onChange={(v) => setFormData((prev) => ({ ...prev, gst: v ?? 0 }))}
+                  {formData.discountMode === 'advanced' && (
+                    <Form.Item
+                      label="GST basis of product prices"
+                      help={
+                        formData.gstBasis ? undefined : 'Choose one to calculate this quotation'
+                      }
+                      validateStatus={formData.gstBasis ? undefined : 'warning'}
+                    >
+                      <Select
+                        placeholder="Choose inclusive or exclusive"
+                        value={formData.gstBasis ?? undefined}
+                        onChange={(value) => setFormData((prev) => ({ ...prev, gstBasis: value }))}
+                        options={[
+                          {
+                            value: 'inclusive',
+                            label: 'Inclusive: GST is inside the product price',
+                          },
+                          { value: 'exclusive', label: 'Exclusive: GST is added on top' },
+                        ]}
                       />
                     </Form.Item>
                   )}
+                  <Form.Item label="Global GST (%)">
+                    <InputNumber
+                      className="fv2-addquntation-0159f17c20"
+                      min={0}
+                      max={100}
+                      precision={2}
+                      value={formData.gst}
+                      addonAfter="%"
+                      onChange={(v) => setFormData((prev) => ({ ...prev, gst: v ?? 0 }))}
+                    />
+                  </Form.Item>
                 </Card>
               </Col>
               <Col xs={24} sm={12}>
                 <Card className="fv2-addquntation-904354e8f8" size="small">
                   <Statistic
-                    title="GST Amount"
+                    title={
+                      formData.discountMode === 'advanced' && formData.gstBasis === 'inclusive'
+                        ? 'GST included in total'
+                        : 'GST Amount'
+                    }
                     value={calculations.gstAmount}
                     precision={2}
                     prefix="₹"
