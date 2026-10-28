@@ -3,7 +3,7 @@ import ModalShell from '../../components/Common/ModalShell';
 import './NewQuotationDetails.styles.css';
 // Quotation page: status and follow-ups at the top, then the quotation itself,
 // shown as the same PDF the customer receives (the Chhabra Marble format).
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Space, Typography, Alert, Select, Tag, Checkbox, Table } from 'antd';
 import { toast } from 'sonner';
@@ -12,6 +12,9 @@ import { Helmet } from 'react-helmet';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
+import QuotationExportOrganizer from '../../components/Quotation/QuotationExportOrganizer';
+import { API_URL } from '../../store/config';
+import { token, downloadQuotationPdf } from '../../components/Quotation/quotationPdf';
 import DocumentExportOptions from '../../components/Quotation/DocumentExportOptions';
 import QuotationDispatchModal from '../../components/Orders/QuotationDispatchModal';
 import {
@@ -63,11 +66,40 @@ export default function NewQuotationsDetails() {
   const [pdfStyle, setPdfStyle] = useState('detailed');
   const [pdfCover, setPdfCover] = useState(true);
   const [exportOptions, setExportOptions] = useState({ hidden: [] });
+  const [organizerOpen, setOrganizerOpen] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const pendingLabels = useRef(null);
   const [pages, setPages] = useState([]);
   const [pageOrder, setPageOrder] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    pendingLabels.current = null;
+    setPageOrder(null);
+    setPages([]);
+    fetch(API_URL + '/quotation/' + id + '/export-settings?version=' + version, { headers: { Authorization: 'Bearer ' + token() } })
+      .then(async response => {
+        if (!response.ok) throw new Error('Could not load saved export settings');
+        return response.json();
+      }).then(({ settings }) => {
+        if (cancelled) return;
+        setPdfStyle(settings?.style || 'detailed');
+        setPdfCover(settings?.cover ?? true);
+        setExportOptions({ hidden: settings?.hidden || [] });
+        pendingLabels.current = settings?.pageLabels || null;
+      }).catch(error => { if (!cancelled) toast.error(error.message); });
+    return () => { cancelled = true; };
+  }, [id, version]);
   const onPagesChange = useCallback(
-    (next) =>
-      setPages((previous) => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next)),
+    (next) => {
+      setPages((previous) => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next));
+      if (pendingLabels.current && next.length) {
+        const roomLabels = [...new Set(pendingLabels.current.map(label => label.replace(/ \(continued \d+\)$/, '')))];
+        const restored = roomLabels.flatMap(label => next.filter(page => page.label.replace(/ \(continued \d+\)$/, '') === label).map(page => page.id));
+        setPageOrder(restored.length ? restored : null);
+        pendingLabels.current = null;
+      }
+    },
     [],
   );
   const resetPages = () => {
@@ -174,6 +206,26 @@ export default function NewQuotationsDetails() {
 
   return (
     <>
+      <QuotationExportOrganizer open={organizerOpen} onClose={() => setOrganizerOpen(false)} pages={pages} floors={asList(shown.floors)}
+        pageOrder={pageOrder} setPageOrder={setPageOrder} saving={savingSettings} downloading={downloading}
+        onSave={async () => {
+          setSavingSettings(true);
+          try {
+            const response = await fetch(API_URL + '/quotation/' + id + '/export-settings?version=' + version, {
+              method: 'PUT', headers: { Authorization: 'Bearer ' + token(), 'Content-Type': 'application/json' },
+              body: JSON.stringify({ style: pdfStyle, cover: pdfCover, hidden: exportOptions.hidden,
+                pageLabels: pageOrder ? [...new Set(pageOrder.map(pageId => pages.find(p => p.id === pageId)?.label.replace(/ \(continued \d+\)$/, '')).filter(Boolean))] : null }) });
+            if (!response.ok) throw new Error((await response.json()).message || 'Could not save settings');
+            toast.success('Export settings saved');
+          } catch (error) { toast.error(error.message); }
+          finally { setSavingSettings(false); }
+        }}
+        onDownload={async () => {
+          setDownloading(true);
+          try { await downloadQuotationPdf(id, { version: pdfVersion, style: pdfStyle, cover: pdfCover, exportOptions, pageOrder }); }
+          catch (error) { toast.error(error.message); }
+          finally { setDownloading(false); }
+        }} />
       <QuotationDispatchModal
         open={dispatchOpen}
         quotation={quotation}
@@ -335,7 +387,7 @@ export default function NewQuotationsDetails() {
                     ]}
                   />
                 )}
-                <DocumentExportOptions
+                <DocumentExportOptions onExpand={() => setOrganizerOpen(true)}
                   pdfOnly
                   hasRooms={hasRoomAssignments(items)}
                   exportOptions={exportOptions}

@@ -9,6 +9,7 @@ router.use(auth);
 router.use(
   guardModule('quotations', [
     { method: 'POST', path: /^\/export\//, action: 'view' },
+    { method: 'PUT', path: /^\/[^/]+\/export-settings$/, action: 'view' },
     { method: 'POST', path: /^\/[^/]+\/share$/, action: 'view' },
     { method: 'POST', path: /^\/preview-pdf$/, action: 'view' },
     { method: 'POST', path: /^\/[^/]+\/restore\//, action: 'edit' },
@@ -25,6 +26,8 @@ router.post('/preview-pdf', quotationController.previewDraftPdf);
 // ✅ Get all quotations (Admins, Managers & Sales Team)
 router.get('/', quotationController.getAllQuotations);
 
+router.get('/:id/export-settings', require('./quotation-settings.controller').handle);
+router.put('/:id/export-settings', require('./quotation-settings.controller').handle);
 router.get('/:id/dispatches', quotationDispatch.list);
 router.post('/:id/dispatches', quotationDispatch.create);
 

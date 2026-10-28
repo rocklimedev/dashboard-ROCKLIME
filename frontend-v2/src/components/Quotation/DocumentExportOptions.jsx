@@ -12,6 +12,7 @@ export default function DocumentExportOptions({
   documentLabel = 'quotation',
   pdfOnly = false,
   hasRooms = true,
+  onExpand,
 }) {
   const resetPages = () => setPageOrder(null);
   const selectedPages = pageOrder ?? pages.map((page) => page.id);
@@ -61,7 +62,7 @@ export default function DocumentExportOptions({
             )}
           </div>
           <Divider className="fv2-documentexportoptions-f558ec376e" />
-          <Text strong>PDF pages — include & order</Text>
+          {onExpand && <Button block onClick={onExpand}>Expand view</Button>}<Text strong>PDF pages — include & order</Text>
           <div>
             <Text type="secondary">
               {hasRooms ? 'Room pages' : 'Pages'} appear after the preview loads. Excluding pages
