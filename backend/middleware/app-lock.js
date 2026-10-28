@@ -12,6 +12,11 @@ const APP_MODULES = {
   settings: 'settings',
 };
 const API_APPS = {
+  customers: 'settings',
+  roles: 'settings',
+  permission: 'settings',
+  'role-permissions': 'settings',
+  activity: 'settings',
   quotation: 'quotations',
   order: 'orders',
   'purchase-orders': 'purchase',

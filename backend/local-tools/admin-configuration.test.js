@@ -26,14 +26,9 @@ test('formats select document type and date format and sanitize filenames', () =
     'Test Customer - SO-10 - 28-Oct-2026.pdf',
   );
 });
-test('invalid templates and registries are rejected; Admin Console stays available', () => {
+test('invalid templates and registries are rejected', () => {
   for (const value of ['{customer}', '{number}/{date}', '{number} - {unknown}'])
     assert.throws(() => validateConfiguration('documentExports', { quotation: value }));
-  assert.throws(() =>
-    validateConfiguration('apps', {
-      entries: [{ key: 'settings', name: 'Admin', lockedRoles: ['SALES'] }],
-    }),
-  );
   assert.throws(() =>
     validateConfiguration('apps', {
       entries: [
@@ -80,4 +75,12 @@ test('API locks distinguish Accounts from Orders and cover purchase orders and t
     'purchase',
   );
   assert.equal(await checkAppLock({ originalUrl: '/api/settings' }, user), null);
+});
+
+test('Admin Console can be disabled or locked while administrators retain recovery access', async () => {
+  registry = [{ key: 'settings', name: 'Admin Console', enabled: false, lockedRoles: ['SALES'] }];
+  assert.doesNotThrow(() => validateConfiguration('apps', { entries: registry }));
+  assert.equal((await checkAppLock({ originalUrl: '/api/customers' }, { roles: ['SALES'] })).key, 'settings');
+  assert.equal(await checkAppLock({ originalUrl: '/api/customers' }, { roles: ['ADMIN'] }), null);
+  assert.equal(await checkAppLock({ originalUrl: '/api/settings' }, { roles: ['SALES'] }), null);
 });

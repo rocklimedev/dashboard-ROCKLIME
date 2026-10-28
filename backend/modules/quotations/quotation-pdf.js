@@ -1,4 +1,6 @@
-const { configuredDocumentExportFilename: documentExportFilename } = require('../../lib/documentExportFilename');
+const {
+  configuredDocumentExportFilename: documentExportFilename,
+} = require('../../lib/documentExportFilename');
 // Server-side quotation PDF in the Chhabra Marble format (real text, same
 // figures as the screens).
 //
@@ -395,8 +397,7 @@ function groupByArea(lines) {
         if (q) rows.push({ ...shareAmounts(l, q), area: name(loc) });
       }
       const assigned = locs.reduce((s, loc) => s + (Number(loc.assignedQuantity) || 0), 0);
-      if (l.qty - assigned > 0)
-        rows.push({ ...shareAmounts(l, l.qty - assigned), area: null });
+      if (l.qty - assigned > 0) rows.push({ ...shareAmounts(l, l.qty - assigned), area: null });
     } else {
       rows.push({ ...l, area: name(locs[0] || l) });
     }
@@ -872,7 +873,7 @@ async function renderQuotationPdf(
     const subtotal = [
       !hidden.has('mrp') && `MRP ${whole(group.mrp)}`,
       !hidden.has('discount') && `Discount ${whole(group.discount)}`,
-      !hidden.has('total') && `Subtotal (excl. GST) ${whole(group.net)}`,
+      !hidden.has('total') && `Subtotal ${whole(group.net)}`,
     ]
       .filter(Boolean)
       .join('     ');
@@ -942,7 +943,7 @@ async function renderQuotationPdf(
       { label: 'Items', x: M + 200, w: 60, align: 'center' },
       { label: 'MRP value', x: M + 260, w: 85, align: 'right' },
       { label: 'Discount', x: M + 345, w: 80, align: 'right' },
-      { label: 'Net amount', sub: '(excl. GST)', x: M + 425, w: 90.28, align: 'right' },
+      { label: 'Net amount', x: M + 425, w: 90.28, align: 'right' },
     ]
       .map((c, index) => ({ ...c, index }))
       .filter((c) => !hidden.has([null, 'qty', 'mrp', 'discount', 'total'][c.index]));
@@ -1003,7 +1004,7 @@ async function renderQuotationPdf(
       ...(!hidden.has('discount') && totals.extraDiscountAmount
         ? [['Extra discount', `−${whole(totals.extraDiscountAmount)}`, { color: RED }]]
         : []),
-      ['Net amount (excl. GST)', whole(totals.taxableValue), { bold: true }],
+      ['Net amount', whole(totals.taxableValue), { bold: true }],
       ...(totals.gstRate
         ? [
             [
@@ -1259,7 +1260,12 @@ async function renderQuotationPdf(
     buffer,
     totals,
     pageLabels,
-    filename: await documentExportFilename({ documentType: documentLabel === 'Order' ? 'order' : 'quotation', customerName: customer.displayName || customer.name || customer.companyName, documentNumber: ref, date: qDate }),
+    filename: await documentExportFilename({
+      documentType: documentLabel === 'Order' ? 'order' : 'quotation',
+      customerName: customer.displayName || customer.name || customer.companyName,
+      documentNumber: ref,
+      date: qDate,
+    }),
   };
 }
 

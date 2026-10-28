@@ -51,8 +51,6 @@ function validateConfiguration(key, patch) {
           (!app.adminOnly && !/^[a-zA-Z][a-zA-Z0-9_-]{0,49}$/.test(app.module || '')))
       )
         invalid('Custom apps require an internal page and permission module');
-      if (app.key === 'settings' && (app.enabled === false || app.lockedRoles.length))
-        invalid('Admin Console must remain available');
     }
   }
 }

@@ -190,7 +190,6 @@ export function OrganiseApps() {
               render: (_, entry, index) => (
                 <Switch
                   checked={entry.enabled !== false}
-                  disabled={entry.key === 'settings'}
                   onChange={(enabled) => update(index, { enabled })}
                 />
               ),
@@ -203,7 +202,6 @@ export function OrganiseApps() {
                   style={{ width: '100%' }}
                   mode="multiple"
                   placeholder="Choose roles"
-                  disabled={entry.key === 'settings'}
                   value={entry.lockedRoles || []}
                   options={[...new Set([...roles, ...(entry.lockedRoles || [])])].map((role) => ({
                     label: role,

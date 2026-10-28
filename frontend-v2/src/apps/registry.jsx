@@ -131,7 +131,7 @@ export const APPS = [
   {
     key: 'operations',
     name: 'Operations',
-    description: 'Dispatch, receiving, live stock, product tools and imports',
+    description: 'Dispatch, receiving, live stock and imports',
     color: '#08979c',
     icon: <img className="cm-app-icon-image" src={operationsIcon} alt="" aria-hidden="true" />,
     module: 'inventory',
@@ -178,14 +178,7 @@ export const APPS = [
       { label: 'Movements', to: '/inventory/list?tab=movements', icon: <SwapOutlined /> },
       { label: 'Godowns', to: '/inventory/list?tab=godowns', icon: <BankOutlined /> },
       {
-        section: 'Product tools & imports',
-        label: 'Product tools',
-        to: '/inventory/products',
-        module: 'products',
-        action: 'edit',
-        icon: <ToolOutlined />,
-      },
-      {
+        section: 'Imports',
         label: 'Bulk import',
         to: '/inventory/import',
         module: 'products',
@@ -224,13 +217,14 @@ export const APPS = [
   {
     key: 'catalogue',
     name: 'Catalogue',
-    description: 'Products, brands and categories',
+    description: 'Products, inventory, brands and categories',
     color: '#531dab',
     icon: <img className="cm-app-icon-image" src={catalogueIcon} alt="" aria-hidden="true" />,
     module: 'products',
     home: '/category-selector',
     match: [
       '/catalogues',
+      '/inventory/products',
       '/category-selector',
       '/store/',
       '/meta/',
@@ -239,6 +233,13 @@ export const APPS = [
     ],
     items: [
       { label: 'Products', to: '/category-selector', icon: <AppstoreOutlined /> },
+      {
+        label: 'Inventory',
+        to: '/inventory/products',
+        module: 'products',
+        action: 'edit',
+        icon: <ToolOutlined />,
+      },
       { label: 'Brand catalogues', to: '/catalogues', icon: <BookOutlined /> },
       { label: 'Add product', to: '/product/add', action: 'write', icon: <PlusCircleOutlined /> },
       {

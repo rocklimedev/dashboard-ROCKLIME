@@ -18,7 +18,7 @@ const InventoryWrapper = lazy(() => import('../../concepts/Products/InventoryWra
 export const productRoutes = [
   {
     path: '/inventory/products',
-    name: 'Product Tools',
+    name: 'Inventory',
     isSidebarActive: false,
     element: <InventoryWrapper />,
   },
