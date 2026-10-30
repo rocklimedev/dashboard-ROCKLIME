@@ -407,12 +407,17 @@ function groupByArea(lines) {
     if (locs.length > 1) {
       for (const loc of locs) {
         const q = Number(loc.assignedQuantity) || 0;
-        if (q) rows.push({ ...shareAmounts(l, q), area: name(loc) });
+        if (q)
+          rows.push({
+            ...shareAmounts(l, q),
+            priority: loc.priority ?? l.priority,
+            area: name(loc),
+          });
       }
       const assigned = locs.reduce((s, loc) => s + (Number(loc.assignedQuantity) || 0), 0);
       if (l.qty - assigned > 0) rows.push({ ...shareAmounts(l, l.qty - assigned), area: null });
     } else {
-      rows.push({ ...l, area: name(locs[0] || l) });
+      rows.push({ ...l, priority: locs[0]?.priority ?? l.priority, area: name(locs[0] || l) });
     }
   }
   const order = [];
@@ -428,7 +433,9 @@ function groupByArea(lines) {
   // unassigned items go last
   const named = order.filter(Boolean);
   const groups = [...named, ...(by[''] ? [''] : [])].map((k) => {
-    const rs = by[k];
+    // The editor saves sequence on each location; split products can have a
+    // different position in each room. Keep incoming order for equal priorities.
+    const rs = by[k].sort((a, b) => Number(a.priority ?? 0) - Number(b.priority ?? 0));
     const mrp = rs.reduce((s, r) => s + r.gross, 0);
     const net = rs.reduce((s, r) => s + r.net, 0);
     return {
@@ -484,7 +491,8 @@ function itemColumns(withImages, hidden = new Set()) {
 
 function discLabel(r) {
   if (r.d2DiscountPercent != null) {
-    if (r.flatPrice != null || String(r.discountType || 'percent').toLowerCase() !== 'percent') return 'Net';
+    if (r.flatPrice != null || String(r.discountType || 'percent').toLowerCase() !== 'percent')
+      return 'Net';
     return `${r.d2DiscountPercent.toFixed(2)}%`;
   }
   if (!r.discount) return r.price && r.rate < r.price ? 'Net' : '—';
@@ -628,11 +636,17 @@ async function renderQuotationPdf(
     const shade = doc.linearGradient(0, A4.h * 0.55, 0, A4.h);
     shade.stop(0, '#000000', 0).stop(1, '#000000', 0.55);
     doc.rect(0, A4.h * 0.55, A4.w, A4.h * 0.45).fill(shade);
+    const coverLogo = { x: 50, y: 50, height: 36 };
     try {
-      doc.image(LOGO_WHITE, 50, 50, { height: 36 });
+      doc.image(LOGO_WHITE, coverLogo.x, coverLogo.y, { height: coverLogo.height });
     } catch {
       text(doc, brand, 50, 54, { size: 18, bold: true, color: '#ffffff' });
     }
+    // Share the logo bounds so the indicator stays centered on both text lines.
+    doc.save();
+    doc.circle(A4.w - coverLogo.x - 5, coverLogo.y + coverLogo.height / 2, 5)
+      .fill(totals.gstInclusive ? '#16a34a' : RED);
+    doc.restore();
     const nameSize = client.length > 26 ? 22 : 28;
     const ny = A4.h - 102;
     const tag = `${documentLabel.toUpperCase()} FOR`;
@@ -736,16 +750,6 @@ async function renderQuotationPdf(
     const glance = [
       ['Products', String(totals.lines.length)],
       ...(hasAreas ? [['Areas', String(groups.length)]] : []),
-      ...(!hidden.has('discount') && !hidden.has('mrp')
-        ? [
-            [
-              'You saved',
-              totals.mrpValue
-                ? `${Math.round(((totals.lineDiscount + totals.extraDiscountAmount) / totals.mrpValue) * 100)}% on MRP`
-                : '—',
-            ],
-          ]
-        : []),
       ['Valid until', fmtDate(validTill)],
       ...(!hidden.has('total') ? [['Grand total', whole(totals.grandTotal)]] : []),
     ];
@@ -998,18 +1002,30 @@ async function renderQuotationPdf(
         ? [[`Discount (${avg}% average)`, `−${whole(totals.lineDiscount)}`, { color: RED }]]
         : []),
       ...(totals.freight ? [['Freight / installation', whole(totals.freight)]] : []),
-      ...normalizeCharges(totals.miscellaneousChargeItems).map(
-        (row) => [row.name, whole(row.amount)],
-      ),
+      ...normalizeCharges(totals.miscellaneousChargeItems).map((row) => [
+        row.name,
+        whole(row.amount),
+      ]),
       ...(Number(quotation.additionalDiscount)
-        ? [['Additional discount', `−${whole(totals.additionalDiscountAmount ?? quotation.additionalDiscount)}`]]
+        ? [
+            [
+              'Additional discount',
+              `−${whole(totals.additionalDiscountAmount ?? quotation.additionalDiscount)}`,
+            ],
+          ]
         : []),
       ...(quotation.flatPrice != null ? [['Flat goods price', whole(totals.goodsValue)]] : []),
       ...(!hidden.has('discount') && totals.extraDiscountAmount
         ? [['Extra discount', `−${whole(totals.extraDiscountAmount)}`, { color: RED }]]
         : []),
       ...(totals.taxableRoundingAdjustment
-        ? [['Taxable rounding', `${totals.taxableRoundingAdjustment < 0 ? '−' : '+'}${paise(Math.abs(totals.taxableRoundingAdjustment))}`, { color: MUTED }]]
+        ? [
+            [
+              'Taxable rounding',
+              `${totals.taxableRoundingAdjustment < 0 ? '−' : '+'}${paise(Math.abs(totals.taxableRoundingAdjustment))}`,
+              { color: MUTED },
+            ],
+          ]
         : []),
       ...(totals.gstInclusive
         ? [
@@ -1034,27 +1050,29 @@ async function renderQuotationPdf(
     const bx = A4.w - M - 240;
     const calculationRows = totals.gstInclusive
       ? [
-          ['Amount including GST', paise(totals.beforeRound)],
-          ['Rounded payable amount', paise(totals.grandTotal)],
+          ['Total before rounding', paise(totals.beforeRound)],
+          ['Amount including GST', paise(totals.grandTotal)],
           ['GST included in total', paise(totals.gstAmount)],
         ]
-      : totals.gstExcluded ? [
-          ['Amount excluding GST', paise(totals.taxableValue)],
-          ['GST added', paise(totals.gstAmount)],
-          ['Rounded payable amount', paise(totals.grandTotal)],
-        ] : [
-          [
-            `GST added @ ${totals.gstRate}%`,
-            paise(totals.gstAmount),
-            `${paise(totals.taxableValue)} × ${totals.gstRate} / 100`,
-          ],
-          [
-            'Total before rounding',
-            paise(totals.beforeRound),
-            `${paise(totals.taxableValue)} + ${paise(totals.gstAmount)}`,
-          ],
-          ['Rounded payable amount', paise(totals.grandTotal)],
-        ];
+      : totals.gstExcluded
+        ? [
+            ['Amount excluding GST', paise(totals.taxableValue)],
+            // [`GST (${totals.gstRate}%)`, paise(totals.gstAmount)],
+            // ['Amount including GST', paise(totals.grandTotal)],
+          ]
+        : [
+            [
+              `GST (${totals.gstRate}%)`,
+              paise(totals.gstAmount),
+              `${paise(totals.taxableValue)} × ${totals.gstRate} / 100`,
+            ],
+            [
+              'Total before rounding',
+              paise(totals.beforeRound),
+              `${paise(totals.taxableValue)} + ${paise(totals.gstAmount)}`,
+            ],
+            ['Amount including GST', paise(totals.grandTotal)],
+          ];
     const calculationHeight =
       46 + calculationRows.reduce((sum, row) => sum + 18 + (row[2] ? 8 : 0), 0);
     if (y + Math.max(lines.length * 18 + 80, calculationHeight) > bottom) y = newPage();
@@ -1108,7 +1126,7 @@ async function renderQuotationPdf(
     // Align the matching red total bars across the two columns.
     y = barsY;
     doc.roundedRect(M, y + 2, 240, 36, 4).fill(RED);
-    label(doc, totals.gstInclusive ? 'GST included' : 'GST added', M + 12, y + 17, {
+    label(doc, `GST (${totals.gstRate}%)`, M + 12, y + 17, {
       color: '#ffffff',
       size: 8,
     });

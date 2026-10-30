@@ -11,6 +11,39 @@ require.cache[service] = {
 const { renderQuotationPdf, groupByArea } = require('../modules/quotations/quotation-pdf');
 const { quotationTotals } = require('../lib/quotationMath');
 
+test('PDF room rows follow saved location sequence independently for split products', () => {
+  const items = [
+    { productId: 'a', quantity: 2, price: 100, priority: 0, locations: [
+      { roomName: 'Master', assignedQuantity: 1, priority: 1 },
+      { roomName: 'Parents', assignedQuantity: 1, priority: 0 },
+    ] },
+    { productId: 'b', quantity: 2, price: 100, priority: 1, locations: [
+      { roomName: 'Master', assignedQuantity: 1, priority: 0 },
+      { roomName: 'Parents', assignedQuantity: 1, priority: 1 },
+    ] },
+    { productId: 'c', quantity: 1, price: 100, priority: 1 },
+    { productId: 'd', quantity: 1, price: 100, priority: 0 },
+  ];
+  const { groups } = groupByArea(quotationTotals({ items }).lines);
+  assert.deepEqual(groups.map(group => group.rows.map(row => row.productId)), [
+    ['b', 'a'], ['a', 'b'], ['d', 'c'],
+  ]);
+});
+
+test('PDF single-location rows prefer location sequence and preserve ties', () => {
+  const items = [
+    { productId: 'a', quantity: 1, price: 100, priority: 0, locations: [
+      { roomName: 'Master', assignedQuantity: 1, priority: 1 },
+    ] },
+    { productId: 'b', quantity: 1, price: 100, priority: 9, locations: [
+      { roomName: 'Master', assignedQuantity: 1, priority: 0 },
+    ] },
+    { productId: 'c', quantity: 1, price: 100, priority: 1, roomName: 'Master' },
+  ];
+  const { groups } = groupByArea(quotationTotals({ items }).lines);
+  assert.deepEqual(groups[0].rows.map(row => row.productId), ['b', 'a', 'c']);
+});
+
 test('room shares allocate calculated discounts once for percentage, fixed and flat prices', () => {
   for (const adjustments of [
     { discount: 50, discountType: 'percent' },
