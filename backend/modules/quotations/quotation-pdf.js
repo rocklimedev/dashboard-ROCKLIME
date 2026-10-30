@@ -18,12 +18,25 @@ const { quotationProducts } = require('../../lib/quotationProducts');
 const {
   normalizeCharges,
   quotationTotals,
+  pricingFromRecord,
   r2,
   amountInWords,
   inr,
   isOptional,
 } = require('../../lib/quotationMath');
 const { getSetting } = require('../settings/settings.service');
+const { resolveGstRate } = require('../../lib/quotationPricing');
+
+function quotationPdfTotals(quotation, items, interState, settings) {
+  return quotationTotals({
+    ...quotation,
+    ...pricingFromRecord(quotation),
+    items,
+    shipping: quotation.shippingAmount,
+    gstRate: resolveGstRate(quotation.gst, settings),
+    interState,
+  });
+}
 
 const models = () => require('../../models');
 const ASSETS = path.join(__dirname, '../../assets');
@@ -470,6 +483,10 @@ function itemColumns(withImages, hidden = new Set()) {
 }
 
 function discLabel(r) {
+  if (r.d2DiscountPercent != null) {
+    if (r.flatPrice != null || String(r.discountType || 'percent').toLowerCase() !== 'percent') return 'Net';
+    return `${r.d2DiscountPercent.toFixed(2)}%`;
+  }
   if (!r.discount) return r.price && r.rate < r.price ? 'Net' : '—';
   if (String(r.discountType || 'percent').toLowerCase() !== 'percent') return 'Net';
   const p = Number(r.discountPercent) || 0;
@@ -555,20 +572,7 @@ async function renderQuotationPdf(
   const interState = Boolean(
     site?.state && company.state && norm(site.state) !== norm(company.state),
   );
-  const totals = quotationTotals({
-    items,
-    extraDiscount: quotation.extraDiscount,
-    extraDiscountType: quotation.extraDiscountType,
-    shipping: quotation.shippingAmount,
-    miscellaneousCharges: quotation.miscellaneousCharges,
-    miscellaneousChargeItems: quotation.miscellaneousChargeItems,
-    additionalDiscount: quotation.additionalDiscount,
-    flatPrice: quotation.flatPrice,
-    gstRate: quotation.gst,
-    interState,
-    discountMode: quotation.discountMode,
-    gstBasis: quotation.gstBasis ?? (quotation.gstInclusive ? 'inclusive' : null),
-  });
+  const totals = quotationPdfTotals(quotation, items, interState, settings);
   const { groups, hasAreas } = groupByArea(totals.lines);
   const qDate = quotation.quotation_date || quotation.createdAt;
   const validDays = Number(settings.validityDays) || 15;
@@ -735,7 +739,7 @@ async function renderQuotationPdf(
       ...(!hidden.has('discount') && !hidden.has('mrp')
         ? [
             [
-              'You save',
+              'You saved',
               totals.mrpValue
                 ? `${Math.round(((totals.lineDiscount + totals.extraDiscountAmount) / totals.mrpValue) * 100)}% on MRP`
                 : '—',
@@ -994,30 +998,29 @@ async function renderQuotationPdf(
         ? [[`Discount (${avg}% average)`, `−${whole(totals.lineDiscount)}`, { color: RED }]]
         : []),
       ...(totals.freight ? [['Freight / installation', whole(totals.freight)]] : []),
-      ...normalizeCharges(quotation.miscellaneousChargeItems ?? quotation.miscellaneousCharges).map(
+      ...normalizeCharges(totals.miscellaneousChargeItems).map(
         (row) => [row.name, whole(row.amount)],
       ),
       ...(Number(quotation.additionalDiscount)
-        ? [['Additional discount', `−${whole(quotation.additionalDiscount)}`]]
+        ? [['Additional discount', `−${whole(totals.additionalDiscountAmount ?? quotation.additionalDiscount)}`]]
         : []),
-      ...(quotation.flatPrice != null ? [['Flat goods price', whole(quotation.flatPrice)]] : []),
+      ...(quotation.flatPrice != null ? [['Flat goods price', whole(totals.goodsValue)]] : []),
       ...(!hidden.has('discount') && totals.extraDiscountAmount
         ? [['Extra discount', `−${whole(totals.extraDiscountAmount)}`, { color: RED }]]
         : []),
-      ['Net amount', whole(totals.taxableValue), { bold: true }],
-      ...(totals.gstRate
+      ...(totals.taxableRoundingAdjustment
+        ? [['Taxable rounding', `${totals.taxableRoundingAdjustment < 0 ? '−' : '+'}${paise(Math.abs(totals.taxableRoundingAdjustment))}`, { color: MUTED }]]
+        : []),
+      ...(totals.gstInclusive
         ? [
-            [
-              `${interState ? 'IGST' : 'GST'} @ ${totals.gstRate}%`,
-              whole(totals.gstAmount),
-              {
-                sub: interState
-                  ? null
-                  : `CGST ${totals.gstRate / 2}% + SGST ${totals.gstRate / 2}%`,
-              },
-            ],
+            ['Grand total (includes GST)', whole(totals.grandTotal), { bold: true }],
+            ['Taxable value', whole(totals.taxableValue)],
+            ['GST included in total', whole(totals.gstAmount)],
           ]
-        : [['GST', 'Not included']]),
+        : [
+            ['Amount exclusive of GST', whole(totals.taxableValue), { bold: true }],
+            [`GST @ ${totals.gstRate}%`, whole(totals.gstAmount)],
+          ]),
       ...(Math.abs(totals.roundOff) >= 0.01
         ? [
             [
@@ -1029,16 +1032,42 @@ async function renderQuotationPdf(
         : []),
     ];
     const bx = A4.w - M - 240;
-    if (y + lines.length * 18 + 80 > bottom) y = newPage();
-    for (const [k, v, o = {}] of lines) {
-      text(doc, k, bx + 6, y, {
+    const calculationRows = totals.gstInclusive
+      ? [
+          ['Amount including GST', paise(totals.beforeRound)],
+          ['Rounded payable amount', paise(totals.grandTotal)],
+          ['GST included in total', paise(totals.gstAmount)],
+        ]
+      : totals.gstExcluded ? [
+          ['Amount excluding GST', paise(totals.taxableValue)],
+          ['GST added', paise(totals.gstAmount)],
+          ['Rounded payable amount', paise(totals.grandTotal)],
+        ] : [
+          [
+            `GST added @ ${totals.gstRate}%`,
+            paise(totals.gstAmount),
+            `${paise(totals.taxableValue)} × ${totals.gstRate} / 100`,
+          ],
+          [
+            'Total before rounding',
+            paise(totals.beforeRound),
+            `${paise(totals.taxableValue)} + ${paise(totals.gstAmount)}`,
+          ],
+          ['Rounded payable amount', paise(totals.grandTotal)],
+        ];
+    const calculationHeight =
+      46 + calculationRows.reduce((sum, row) => sum + 18 + (row[2] ? 8 : 0), 0);
+    if (y + Math.max(lines.length * 18 + 80, calculationHeight) > bottom) y = newPage();
+    // Both columns use the same totals typography, colours and row spacing.
+    const totalsRow = (x, rowY, k, v, o = {}) => {
+      text(doc, k, x + 6, rowY, {
         size: 9,
         bold: o.bold,
         color: o.color || INK,
         width: 150,
         lineBreak: false,
       });
-      text(doc, v, bx + 150, y, {
+      text(doc, v, x + 150, rowY, {
         size: 9,
         bold: o.bold,
         color: o.color && o.color !== RED ? o.color : o.color === RED ? RED : INK,
@@ -1046,13 +1075,51 @@ async function renderQuotationPdf(
         align: 'right',
         lineBreak: false,
       });
-      y += 13;
+      rowY += 13;
       if (o.sub) {
-        text(doc, o.sub, bx + 6, y - 1, { size: 6.5, color: MUTED, width: 150, lineBreak: false });
-        y += 8;
+        text(doc, o.sub, x + 6, rowY - 1, {
+          size: 6.5,
+          color: MUTED,
+          width: o.subWidth || 150,
+          lineBreak: false,
+        });
+        rowY += 8;
       }
-      y += 5;
+      return rowY + 5;
+    };
+    const calculationRowsHeight = calculationHeight - 46;
+    const totalsRowsHeight = lines.reduce((sum, row) => sum + 18 + (row[2]?.sub ? 8 : 0), 0);
+    const totalsStartY = y;
+    // Keep the GST rows together immediately above their bar, even when the
+    // neighbouring totals column contains more rows.
+    const barsY = totalsStartY + Math.max(totalsRowsHeight, calculationRowsHeight);
+    let calculationY = barsY - calculationRowsHeight;
+    for (const [name, amount, formula] of calculationRows) {
+      calculationY = totalsRow(M, calculationY, name, amount, {
+        sub: formula,
+        subWidth: 228,
+        bold: name === 'Taxable value',
+      });
     }
+    y = totalsStartY;
+    for (const [k, v, o = {}] of lines) {
+      y = totalsRow(bx, y, k, v, o);
+    }
+    // Align the matching red total bars across the two columns.
+    y = barsY;
+    doc.roundedRect(M, y + 2, 240, 36, 4).fill(RED);
+    label(doc, totals.gstInclusive ? 'GST included' : 'GST added', M + 12, y + 17, {
+      color: '#ffffff',
+      size: 8,
+    });
+    text(doc, whole(totals.gstAmount), M + 90, y + 10, {
+      size: 17,
+      bold: true,
+      color: '#ffffff',
+      width: 140,
+      align: 'right',
+      lineBreak: false,
+    });
     doc.roundedRect(bx, y + 2, 240, 36, 4).fill(RED);
     label(doc, 'Grand total', bx + 12, y + 17, { color: '#ffffff', size: 8 });
     text(doc, whole(totals.grandTotal), bx + 90, y + 10, {
@@ -1069,7 +1136,7 @@ async function renderQuotationPdf(
     y += heightOf(doc, words, 296, { size: 7.5 }) + 6;
     const saved = totals.lineDiscount + totals.extraDiscountAmount;
     if (saved > 0 && !hidden.has('discount') && !hidden.has('mrp')) {
-      text(doc, `You save ${whole(saved)} on the MRP of ${whole(totals.mrpValue)}`, bx - 60, y, {
+      text(doc, `You saved ${whole(saved)} on the MRP of ${whole(totals.mrpValue)}`, bx - 60, y, {
         size: 8,
         bold: true,
         color: RED,
@@ -1078,7 +1145,7 @@ async function renderQuotationPdf(
       });
       y += 14;
     }
-    y += 12;
+    y = Math.max(y, calculationY) + 12;
   }
 
   if (totals.optionalLines.length) {
@@ -1286,6 +1353,7 @@ async function buildDraftQuotationPdf(draft, { style = 'detailed', cover = null 
 }
 
 module.exports = {
+  quotationPdfTotals,
   groupByArea,
   enrichQuotation,
   buildQuotationPdf,

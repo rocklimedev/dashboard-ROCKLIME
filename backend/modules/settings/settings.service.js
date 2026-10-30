@@ -5,6 +5,8 @@ const sequelize = require('../../config/database');
 const { DEFAULTS: BASE_DEFAULTS } = require('../../migrations/20261016000100-app-settings');
 const { EXTRA_DEFAULTS, validateConfiguration } = require('./admin-configuration');
 const DEFAULTS = { ...BASE_DEFAULTS, ...EXTRA_DEFAULTS };
+const { seed, validatePresets } = require('./quotation-presets');
+DEFAULTS.quotation = { ...DEFAULTS.quotation, discountPresets: null };
 
 const KEYS = Object.keys(DEFAULTS);
 const cache = new Map();
@@ -24,6 +26,7 @@ async function getSetting(key) {
     saved = {};
   }
   const value = { ...DEFAULTS[key], ...saved };
+  if (key === 'quotation' && value.discountPresets == null) value.discountPresets = seed(value);
   cache.set(key, { at: Date.now(), value });
   return value;
 }
@@ -31,6 +34,8 @@ async function getSetting(key) {
 async function saveSetting(key, patch, userId) {
   if (!KEYS.includes(key)) throw Object.assign(new Error('Unknown setting'), { status: 404 });
   validateConfiguration(key, patch);
+  if (key === 'quotation' && patch.discountPresets !== undefined)
+    validatePresets(patch.discountPresets);
   const current = await getSetting(key);
   const allowed = Object.keys(DEFAULTS[key]);
   const next = { ...current };

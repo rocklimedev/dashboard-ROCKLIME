@@ -5,8 +5,9 @@ import './OrderTotal.styles.css';
 // changed right here when the form passes onGstChange / onShippingChange.
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { InputNumber, Select, Typography } from 'antd';
+import { Alert, InputNumber, Select, Typography } from 'antd';
 import { quotationTotals, inr } from '../../utils/quotationMath';
+import { useGetSettingsQuery } from '../../api/settingsApi';
 
 const { Text } = Typography;
 const GST_RATES = [0, 5, 12, 18, 28];
@@ -55,42 +56,62 @@ const OrderTotal = React.memo(
     miscellaneousChargeItems = null,
     additionalDiscount = 0,
     flatPrice = null,
-    gstInclusive = false,
-    onGstInclusiveChange,
+    discountMode = 'generic',
+    gstBasis = null,
+    onPricingChange,
     onGstChange,
     onShippingChange,
+    showGstCalculation = false,
   }) => {
+    const { data: settingsResponse } = useGetSettingsQuery(undefined, { skip: !onPricingChange });
+    const presets = settingsResponse?.data?.quotation?.discountPresets || [];
     const n = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
-    const t = useMemo(
-      () =>
-        quotationTotals({
-          items: items || [{ price: n(subTotal) - n(discount), quantity: 1 }],
-          miscellaneousChargeItems,
-          additionalDiscount,
-          flatPrice,
-          shipping: n(shipping),
-          extraDiscount: n(extraDiscount),
-          extraDiscountType,
-          gstRate: gstInclusive ? 0 : n(gst),
-          interState,
-        }),
-      [
-        subTotal,
-        discount,
-        extraDiscount,
-        extraDiscountType,
-        shipping,
-        gst,
-        gstInclusive,
-        interState,
-        items,
+    const t = useMemo(() => {
+      if (discountMode === 'advanced' && !gstBasis)
+        return {
+          goodsValue: 0,
+          freight: 0,
+          miscellaneousChargeItems: [],
+          extraDiscountAmount: 0,
+          taxableValue: 0,
+          gstRate: n(gst),
+          cgst: 0,
+          sgst: 0,
+          igst: 0,
+          gstAmount: 0,
+          roundOff: 0,
+          grandTotal: 0,
+        };
+      return quotationTotals({
+        items: items || [{ price: n(subTotal) - n(discount), quantity: 1 }],
         miscellaneousChargeItems,
         additionalDiscount,
         flatPrice,
-      ],
-    );
-    const avg = n(subTotal) ? Math.round((n(discount) / n(subTotal)) * 100) : 0;
-    const half = t.gstRate / 2;
+        shipping: n(shipping),
+        extraDiscount: n(extraDiscount),
+        extraDiscountType,
+        gstRate: n(gst),
+        discountMode,
+        gstBasis,
+        interState,
+      });
+    }, [
+      subTotal,
+      discount,
+      extraDiscount,
+      extraDiscountType,
+      shipping,
+      gst,
+      discountMode,
+      gstBasis,
+      interState,
+      items,
+      miscellaneousChargeItems,
+      additionalDiscount,
+      flatPrice,
+    ]);
+    const displayedDiscount = items ? t.lineDiscount : n(discount);
+    const avg = n(subTotal) ? Math.round((displayedDiscount / n(subTotal)) * 100) : 0;
 
     return (
       <div>
@@ -102,16 +123,16 @@ const OrderTotal = React.memo(
         <Line
           label="Item discounts"
           sub={avg ? `${avg}% average` : null}
-          value={n(discount)}
+          value={displayedDiscount}
           negative
         />
         <Line label="Goods value" value={t.goodsValue} />
-        {flatPrice != null && <Line label="Flat goods price" value={n(flatPrice)} />}
+        {flatPrice != null && <Line label="Flat goods price" value={t.goodsValue} />}
         {t.miscellaneousChargeItems.map((charge, index) => (
           <Line key={index} label={charge.name} value={charge.amount} />
         ))}
         {n(additionalDiscount) !== 0 && (
-          <Line label="Additional discount" value={n(additionalDiscount)} negative />
+          <Line label="Additional discount" value={t.additionalDiscountAmount ?? n(additionalDiscount)} negative />
         )}
         <Line
           label="Freight / installation"
@@ -135,37 +156,109 @@ const OrderTotal = React.memo(
           value={t.extraDiscountAmount}
           negative
         />
-        {onGstInclusiveChange && (
+        {onPricingChange && (
           <div>
-            <Text>GST inclusive in product prices</Text>{' '}
             <Select
-              aria-label="GST inclusive in product prices"
-              value={gstInclusive}
-              onChange={onGstInclusiveChange}
+              placeholder="Import discount preset"
+              value={undefined}
+              options={presets.map((p) => ({ value: p.id, label: p.name }))}
+              onChange={(id) => {
+                const p = presets.find((p) => p.id === id);
+                if (!p) return;
+                onPricingChange('discountMode', p.discountMode);
+                onPricingChange('gstBasis', p.gstBasis);
+                onGstChange?.(p.gstRate);
+              }}
+            />
+            <Text>Discount mode</Text>{' '}
+            <Select
+              value={discountMode}
+              onChange={(v) => onPricingChange('discountMode', v)}
               options={[
-                { value: true, label: 'True' },
-                { value: false, label: 'False' },
+                { value: 'generic', label: 'Generic' },
+                { value: 'advanced', label: 'Advanced' },
               ]}
             />
+            {discountMode === 'advanced' && (
+              <Select
+                placeholder="Choose GST basis"
+                value={gstBasis}
+                onChange={(v) => onPricingChange('gstBasis', v)}
+                options={[
+                  { value: 'inclusive', label: 'Inclusive' },
+                  { value: 'exclusive', label: 'Exclusive' },
+                ]}
+              />
+            )}
           </div>
         )}
+        {discountMode === 'advanced' && !gstBasis && (
+          <Alert
+            type="warning"
+            message="Choose GST inclusive or exclusive for advanced discounting"
+          />
+        )}
+        {t.gstInclusive && (
+          <Line label="GST included in total" value={t.gstAmount} control={gstControl()} />
+        )}
+        {t.taxableRoundingAdjustment !== 0 && t.taxableRoundingAdjustment != null && (
+          <Line label="Taxable rounding" value={t.taxableRoundingAdjustment} negative={t.taxableRoundingAdjustment < 0} muted />
+        )}
         <Line label="Taxable value" value={t.taxableValue} strong />
-        {interState ? (
-          <Line label={`IGST ${t.gstRate}%`} value={t.igst} control={gstControl()} />
-        ) : (
-          <>
-            <Line label={`CGST ${half}%`} value={t.cgst} control={gstControl()} />
-            <Line label={`SGST ${half}%`} value={t.sgst} />
-          </>
+        {!t.gstInclusive && (
+          <Line label={`GST ${t.gstRate}%`} value={t.gstAmount} control={gstControl()} />
         )}
         <Line label="Round off" value={t.roundOff} muted negative={t.roundOff < 0} />
+        {showGstCalculation && !(discountMode === 'advanced' && !gstBasis) && (
+          <section className="quotation-gst-calculation" aria-label="GST calculation">
+            <Text strong>GST calculation · {t.gstInclusive ? 'Inclusive' : 'Exclusive'}</Text>
+            <Text type="secondary">
+              {t.gstExcluded
+                ? 'Exclusive discounts retain full precision internally. Display rounding does not change the final payable amount.'
+                : t.gstInclusive
+                ? 'GST is included in the price. The payable amount is rounded before GST is extracted.'
+                : 'GST is added to the amount after discounts and charges.'}
+              {discountMode === 'generic' && ' Generic discount mode uses exclusive GST.'}
+            </Text>
+            {t.gstExcluded ? (
+              <>
+                <div>D2 = 100 − (100 − D1) ÷ (1 + {t.gstRate} ÷ 100)</div>
+                {t.lines.map((line, index) => (
+                  <div key={index}>
+                    {line.name || `Item ${index + 1}`}: D1 {line.d1DiscountPercent.toFixed(2)}% → D2 {line.d2DiscountPercent.toFixed(2)}% · {inr(line.net)}
+                  </div>
+                ))}
+                <div>Exclusive subtotal: {inr(t.taxableValue)}</div>
+                <div>GST {t.gstRate}%: {inr(t.gstAmount)}</div>
+                <div>Final payable including GST: {inr(t.grandTotal)}</div>
+              </>
+            ) : t.gstInclusive ? (
+              <>
+                <div>Amount including GST: {inr(t.beforeRound)}</div>
+                <div>Rounded payable amount: {inr(t.grandTotal)}</div>
+                <div>Included GST = {inr(t.grandTotal)} × {t.gstRate} ÷ (100 + {t.gstRate}) = {inr(t.gstAmount)}</div>
+                <div>Taxable value = {inr(t.grandTotal)} − {inr(t.gstAmount)} = {inr(t.taxableValue)}</div>
+              </>
+            ) : (
+              <>
+                <div>Taxable value after discounts and charges: {inr(t.taxableValue)}</div>
+                <div>GST = {inr(t.taxableValue)} × {t.gstRate} ÷ 100 = {inr(t.gstAmount)}</div>
+                <div>Total before rounding = {inr(t.taxableValue)} + {inr(t.gstAmount)} = {inr(t.beforeRound)}</div>
+                <div>Rounded payable amount: {inr(t.grandTotal)}</div>
+              </>
+            )}
+            <Text type="secondary">
+              {`GST ${t.gstRate}%: ${inr(t.gstAmount)}`}
+            </Text>
+          </section>
+        )}
         <div className="fv2-ordertotal-196763f7ac">
           <span className="fv2-ordertotal-7f63929170">Grand total</span>
           <span className="fv2-ordertotal-53ea192b55">{inr(t.grandTotal)}</span>
         </div>
-        {n(discount) + t.extraDiscountAmount > 0 && (
+        {displayedDiscount + t.extraDiscountAmount > 0 && (
           <Text className="fv2-ordertotal-e8acd27b53" type="secondary">
-            Customer saves {inr(n(discount) + t.extraDiscountAmount)} on MRP
+            Customer saves {inr(displayedDiscount + t.extraDiscountAmount)} on MRP
           </Text>
         )}
         {n(optionalTotal) > 0 && (
@@ -177,7 +270,7 @@ const OrderTotal = React.memo(
     );
 
     function gstControl() {
-      return onGstChange && !gstInclusive ? (
+      return onGstChange ? (
         <Select
           className="fv2-ordertotal-8226c438fd"
           size="small"
@@ -205,6 +298,7 @@ OrderTotal.propTypes = {
   optionalTotal: PropTypes.number,
   onGstChange: PropTypes.func,
   onShippingChange: PropTypes.func,
+  showGstCalculation: PropTypes.bool,
 };
 
 export default OrderTotal;

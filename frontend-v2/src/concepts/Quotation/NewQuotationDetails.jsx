@@ -39,6 +39,8 @@ import { QuotationPipelineBar } from '../../components/Quotation/QuotationPipeli
 import { orderStateFromQuotation } from '../../components/Quotation/convertToOrder';
 import useCan from '../../utils/useCan';
 
+
+
 dayjs.extend(relativeTime);
 const { Title, Text } = Typography;
 
@@ -210,7 +212,6 @@ export default function NewQuotationsDetails() {
     );
 
   const pdfVersion = version !== 'current' ? version : null;
-
   return (
     <>
       <QuotationExportOrganizer open={organizerOpen} onClose={() => setOrganizerOpen(false)} pages={pages} floors={asList(shown.floors)}

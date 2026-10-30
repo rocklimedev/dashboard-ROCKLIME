@@ -1,3 +1,4 @@
+import { useGetSettingsQuery } from '../../api/settingsApi';
 import Loader from '../../components/Common/Loader';
 import ModalShell from '../../components/Common/ModalShell';
 import './AddQuntation.styles.css';
@@ -201,7 +202,7 @@ const AddQuotation = () => {
     document_title: '',
     quotation_date: null,
     due_date: null,
-    gst: 0,
+    gst: null,
     discountMode: 'generic', // 'generic' | 'advanced'
     gstBasis: null, // advanced only: 'inclusive' | 'exclusive' | null (not chosen)
     shippingAmount: 0,
@@ -221,6 +222,14 @@ const AddQuotation = () => {
   };
 
   const [formData, setFormData] = useState(initialFormData);
+  const { data: settingsResponse } = useGetSettingsQuery();
+  const quotationDefaults = settingsResponse?.data?.quotation;
+  useEffect(() => {
+    if (!isEditMode && quotationDefaults)
+      setFormData((prev) =>
+        prev.gst == null ? { ...prev, gst: quotationDefaults.defaultGstRate } : prev,
+      );
+  }, [isEditMode, quotationDefaults]);
 
   // Saved quotations come from the API, never a browser draft.
   const initializedQuotation = useRef(null);
@@ -776,6 +785,10 @@ const AddQuotation = () => {
       roundOff: t.roundOff,
       gstAmount: t.gstAmount,
       finalAmount: t.grandTotal,
+      beforeRound: t.beforeRound,
+      gstInclusive: t.gstInclusive,
+      gstExcluded: t.gstExcluded,
+      pricingLines: t.lines,
       needsGstBasis: false,
     };
   }, [
@@ -1248,7 +1261,9 @@ const AddQuotation = () => {
             <Row gutter={[16, 16]}>
               {[
                 ['additionalDiscount', 'Additional discount (₹)'],
-                ['flatPrice', 'Flat goods price before GST (₹, optional)'],
+                ['flatPrice', formData.discountMode === 'advanced'
+                  ? 'Flat goods price including GST (₹, optional)'
+                  : 'Flat goods price before GST (₹, optional)'],
               ].map(([field, label]) => (
                 <Col xs={24} sm={8} key={field}>
                   <Form.Item label={label}>
@@ -1332,6 +1347,26 @@ const AddQuotation = () => {
 
               <Col xs={24} sm={12}>
                 <Card className="fv2-addquntation-904354e8f8" size="small">
+                  <Form.Item label="Import discount preset">
+                    <Select
+                      placeholder="Choose a preset"
+                      value={undefined}
+                      options={(quotationDefaults?.discountPresets || []).map((p) => ({
+                        value: p.id,
+                        label: p.name,
+                      }))}
+                      onChange={(id) => {
+                        const p = quotationDefaults.discountPresets.find((p) => p.id === id);
+                        if (p)
+                          setFormData((prev) => ({
+                            ...prev,
+                            discountMode: p.discountMode,
+                            gstBasis: p.gstBasis,
+                            gst: p.gstRate,
+                          }));
+                      }}
+                    />
+                  </Form.Item>
                   <Form.Item label="Discount mode">
                     <Select
                       value={formData.discountMode}
@@ -1414,6 +1449,45 @@ const AddQuotation = () => {
                 </Card>
               </Col>
 
+              {!calculations.needsGstBasis && (
+                <Col xs={24}>
+                  <Card size="small" title={`GST calculation · ${calculations.gstInclusive ? 'Inclusive' : 'Exclusive'}`}>
+                    <p>
+                      <Text type="secondary">
+                        {calculations.gstExcluded
+                          ? 'D2 retains full precision internally and displays two decimals. Both modes keep the same final payable amount.'
+                          : calculations.gstInclusive
+                          ? 'GST is included in the price. The payable amount is rounded before GST is extracted.'
+                          : 'GST is added to the taxable value after discounts and charges.'}
+                        {formData.discountMode === 'generic' && ' Generic discount mode uses exclusive GST.'}
+                      </Text>
+                    </p>
+                    {calculations.gstExcluded ? (
+                      <>
+                        <p>D2 = 100 − (100 − D1) ÷ (1 + {safeNum(formData.gst)} ÷ 100)</p>
+                        {calculations.pricingLines.map((line, index) => (
+                          <p key={index}>{line.name || `Item ${index + 1}`}: D1 {line.d1DiscountPercent.toFixed(2)}% → D2 {line.d2DiscountPercent.toFixed(2)}% · ₹{line.net.toFixed(2)}</p>
+                        ))}
+                        <p>Exclusive subtotal: ₹{calculations.taxableValue.toFixed(2)}</p>
+                        <p>GST {safeNum(formData.gst)}%: ₹{calculations.gstAmount.toFixed(2)}</p>
+                        <p>Final payable including GST: ₹{calculations.finalAmount.toFixed(2)}</p>
+                      </>
+                    ) : calculations.gstInclusive ? (
+                      <>
+                        <p>Amount including GST: ₹{calculations.beforeRound.toFixed(2)} → rounded payable: ₹{calculations.finalAmount.toFixed(2)}</p>
+                        <p>Included GST = ₹{calculations.finalAmount.toFixed(2)} × {safeNum(formData.gst)} ÷ (100 + {safeNum(formData.gst)}) = ₹{calculations.gstAmount.toFixed(2)}</p>
+                        <p>Taxable value = ₹{calculations.finalAmount.toFixed(2)} − ₹{calculations.gstAmount.toFixed(2)} = ₹{calculations.taxableValue.toFixed(2)}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>GST = ₹{calculations.taxableValue.toFixed(2)} × {safeNum(formData.gst)} ÷ 100 = ₹{calculations.gstAmount.toFixed(2)}</p>
+                        <p>Total before rounding = ₹{calculations.taxableValue.toFixed(2)} + ₹{calculations.gstAmount.toFixed(2)} = ₹{calculations.beforeRound.toFixed(2)}</p>
+                        <p>Rounded payable: ₹{calculations.finalAmount.toFixed(2)}</p>
+                      </>
+                    )}
+                  </Card>
+                </Col>
+              )}
               {calculations.optionalPotential > 0 && (
                 <Col xs={24}>
                   <Card className="fv2-addquntation-d3339c9e51" size="small">

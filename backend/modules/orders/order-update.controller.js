@@ -367,6 +367,8 @@ exports.updateOrderById = async (req, res) => {
     // RECALCULATE TOTALS
     // ─────────────────────────────────────
     const calcInput = {
+      discountMode: updates.discountMode ?? order.discountMode,
+      gstBasis: updates.gstBasis === undefined ? order.gstBasis : updates.gstBasis,
       products: updates.products ?? order.products ?? [],
 
       shipping: updates.shipping ?? order.shipping ?? 0,

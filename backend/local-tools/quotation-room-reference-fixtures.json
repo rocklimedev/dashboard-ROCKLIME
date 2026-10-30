@@ -1,0 +1,1158 @@
+[
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 1,
+    "productId": "FU-LI-30844",
+    "quantity": 1,
+    "price": 4498.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 2249.0,
+      "net": 2249.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 1905.81,
+      "net": 1905.81
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 2,
+    "productId": "FU-LI-30869",
+    "quantity": 1,
+    "price": 1798.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 899.0,
+      "net": 899.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 761.82,
+      "net": 761.82
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 3,
+    "productId": "FU-LI-30868",
+    "quantity": 1,
+    "price": 4298.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 2149.0,
+      "net": 2149.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 1821.07,
+      "net": 1821.07
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 4,
+    "productId": "29124000",
+    "quantity": 1,
+    "price": 62130.0,
+    "inclusive": {
+      "label": "58%",
+      "rate": 26094.6,
+      "net": 26094.6
+    },
+    "exclusive": {
+      "label": "64.41%",
+      "rate": 22112.07,
+      "net": 22112.07
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 5,
+    "productId": "35600000",
+    "quantity": 1,
+    "price": 17870.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 8041.5,
+      "net": 8041.5
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 6815.62,
+      "net": 6815.62
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 6,
+    "productId": "19409001",
+    "quantity": 1,
+    "price": 38200.0,
+    "inclusive": {
+      "label": "57%",
+      "rate": 16426.0,
+      "net": 16426.0
+    },
+    "exclusive": {
+      "label": "63.56%",
+      "rate": 13920.08,
+      "net": 13920.08
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 7,
+    "productId": "32635000",
+    "quantity": 1,
+    "price": 14200.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 6390.0,
+      "net": 6390.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 5415.88,
+      "net": 5415.88
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 8,
+    "productId": "3948000H",
+    "quantity": 1,
+    "price": 21950.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 10536.0,
+      "net": 10536.0
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 8929.26,
+      "net": 8929.26
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 9,
+    "productId": "19808001",
+    "quantity": 1,
+    "price": 4240.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 1908.0,
+      "net": 1908.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 1617.14,
+      "net": 1617.14
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 10,
+    "productId": "29800000",
+    "quantity": 1,
+    "price": 2700.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 1215.0,
+      "net": 1215.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 1029.78,
+      "net": 1029.78
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 11,
+    "productId": "26352000",
+    "quantity": 1,
+    "price": 4130.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 1858.5,
+      "net": 1858.5
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 1575.18,
+      "net": 1575.18
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 12,
+    "productId": "2201100M",
+    "quantity": 3,
+    "price": 2080.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 936.0,
+      "net": 2808.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 793.31,
+      "net": 2379.94
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 13,
+    "productId": "WL-SG-10990",
+    "quantity": 1,
+    "price": 13498.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 6749.0,
+      "net": 6749.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 5719.11,
+      "net": 5719.11
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 14,
+    "productId": "WL-SG-11067",
+    "quantity": 1,
+    "price": 194998.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 97499.0,
+      "net": 97499.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 82620.65,
+      "net": 82620.65
+    }
+  },
+  {
+    "room": "01 MASTER BATHROOM",
+    "no": 15,
+    "productId": "SN-WC-21142",
+    "quantity": 1,
+    "price": 109998.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 54999.0,
+      "net": 54999.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 46606.15,
+      "net": 46606.15
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 1,
+    "productId": "FU-LI-30844",
+    "quantity": 1,
+    "price": 4498.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 2249.0,
+      "net": 2249.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 1905.81,
+      "net": 1905.81
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 2,
+    "productId": "FU-LI-30869",
+    "quantity": 1,
+    "price": 1798.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 899.0,
+      "net": 899.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 761.82,
+      "net": 761.82
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 3,
+    "productId": "FU-LI-30868",
+    "quantity": 1,
+    "price": 4298.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 2149.0,
+      "net": 2149.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 1821.07,
+      "net": 1821.07
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 4,
+    "productId": "35600000",
+    "quantity": 1,
+    "price": 17870.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 8041.5,
+      "net": 8041.5
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 6815.62,
+      "net": 6815.62
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 5,
+    "productId": "32635000",
+    "quantity": 1,
+    "price": 14200.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 6390.0,
+      "net": 6390.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 5415.88,
+      "net": 5415.88
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 6,
+    "productId": "19808001",
+    "quantity": 1,
+    "price": 4240.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 1908.0,
+      "net": 1908.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 1617.14,
+      "net": 1617.14
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 7,
+    "productId": "29800000",
+    "quantity": 1,
+    "price": 2700.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 1215.0,
+      "net": 1215.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 1029.78,
+      "net": 1029.78
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 8,
+    "productId": "26352000",
+    "quantity": 1,
+    "price": 4130.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 1858.5,
+      "net": 1858.5
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 1575.18,
+      "net": 1575.18
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 9,
+    "productId": "2201100M",
+    "quantity": 3,
+    "price": 2080.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 936.0,
+      "net": 2808.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 793.31,
+      "net": 2379.94
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 10,
+    "productId": "26664000",
+    "quantity": 1,
+    "price": 21200.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 9540.0,
+      "net": 9540.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 8085.68,
+      "net": 8085.68
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 11,
+    "productId": "WL-SG-10990",
+    "quantity": 1,
+    "price": 13498.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 6749.0,
+      "net": 6749.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 5719.11,
+      "net": 5719.11
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 12,
+    "productId": "13261000",
+    "quantity": 1,
+    "price": 8800.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 3960.0,
+      "net": 3960.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 3356.32,
+      "net": 3356.32
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 13,
+    "productId": "19381000",
+    "quantity": 1,
+    "price": 13800.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 6210.0,
+      "net": 6210.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 5263.32,
+      "net": 5263.32
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 14,
+    "productId": "39125001",
+    "quantity": 1,
+    "price": 12450.0,
+    "inclusive": {
+      "label": "59%",
+      "rate": 5104.5,
+      "net": 5104.5
+    },
+    "exclusive": {
+      "label": "65.25%",
+      "rate": 4326.37,
+      "net": 4326.37
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 15,
+    "productId": "101001SH00",
+    "quantity": 1,
+    "price": 26200.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 12576.0,
+      "net": 12576.0
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 10658.16,
+      "net": 10658.16
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 16,
+    "productId": "101037SH00",
+    "quantity": 1,
+    "price": 7800.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 3744.0,
+      "net": 3744.0
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 3173.04,
+      "net": 3173.04
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 17,
+    "productId": "WL-SG-11085",
+    "quantity": 1,
+    "price": 79998.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 39999.0,
+      "net": 39999.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 33895.15,
+      "net": 33895.15
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 18,
+    "productId": "3916500I",
+    "quantity": 1,
+    "price": 10200.0,
+    "inclusive": {
+      "label": "Net",
+      "rate": 4500.0,
+      "net": 4500.0
+    },
+    "exclusive": {
+      "label": "Net",
+      "rate": 4500.0,
+      "net": 4500.0
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 19,
+    "productId": "38732000",
+    "quantity": 1,
+    "price": 4300.0,
+    "inclusive": {
+      "label": "Net",
+      "rate": 1900.0,
+      "net": 1900.0
+    },
+    "exclusive": {
+      "label": "Net",
+      "rate": 1900.0,
+      "net": 1900.0
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 20,
+    "productId": "13262000",
+    "quantity": 1,
+    "price": 10000.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 4500.0,
+      "net": 4500.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 3814.0,
+      "net": 3814.0
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 21,
+    "productId": "29049000",
+    "quantity": 1,
+    "price": 1730.0,
+    "inclusive": {
+      "label": "Net",
+      "rate": 1680.0,
+      "net": 1680.0
+    },
+    "exclusive": {
+      "label": "Net",
+      "rate": 1423.79,
+      "net": 1423.79
+    }
+  },
+  {
+    "room": "02 PARENTS BATHROOM",
+    "no": 22,
+    "productId": "29119000",
+    "quantity": 1,
+    "price": 57130.0,
+    "inclusive": {
+      "label": "Net",
+      "rate": 57072.0,
+      "net": 57072.0
+    },
+    "exclusive": {
+      "label": "Net",
+      "rate": 48366.26,
+      "net": 48366.26
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 1,
+    "productId": "32635000",
+    "quantity": 1,
+    "price": 14200.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 6390.0,
+      "net": 6390.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 5415.88,
+      "net": 5415.88
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 2,
+    "productId": "29800000",
+    "quantity": 1,
+    "price": 2700.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 1215.0,
+      "net": 1215.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 1029.78,
+      "net": 1029.78
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 3,
+    "productId": "26075GN0",
+    "quantity": 1,
+    "price": 174150.0,
+    "inclusive": {
+      "label": "58%",
+      "rate": 73143.0,
+      "net": 73143.0
+    },
+    "exclusive": {
+      "label": "64.41%",
+      "rate": 61979.98,
+      "net": 61979.98
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 4,
+    "productId": "29192GF1",
+    "quantity": 1,
+    "price": 62000.0,
+    "inclusive": {
+      "label": "58%",
+      "rate": 26040.0,
+      "net": 26040.0
+    },
+    "exclusive": {
+      "label": "64.41%",
+      "rate": 22065.8,
+      "net": 22065.8
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 5,
+    "productId": "3970900H",
+    "quantity": 1,
+    "price": 14000.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 6720.0,
+      "net": 6720.0
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 5695.2,
+      "net": 5695.2
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 6,
+    "productId": "27513GN1",
+    "quantity": 1,
+    "price": 10000.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 4500.0,
+      "net": 4500.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 3814.0,
+      "net": 3814.0
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 7,
+    "productId": "22041GN0",
+    "quantity": 3,
+    "price": 6000.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 2700.0,
+      "net": 8100.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 2288.4,
+      "net": 6865.2
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 8,
+    "productId": "105536SH00",
+    "quantity": 1,
+    "price": 36270.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 17409.6,
+      "net": 17409.6
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 14754.64,
+      "net": 14754.64
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 9,
+    "productId": "39577001",
+    "quantity": 1,
+    "price": 8730.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 4190.4,
+      "net": 4190.4
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 3551.36,
+      "net": 3551.36
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 10,
+    "productId": "38732GN0",
+    "quantity": 1,
+    "price": 12950.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 6475.0,
+      "net": 6475.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 5486.91,
+      "net": 5486.91
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 11,
+    "productId": "3916500I",
+    "quantity": 1,
+    "price": 10200.0,
+    "inclusive": {
+      "label": "Net",
+      "rate": 4500.0,
+      "net": 4500.0
+    },
+    "exclusive": {
+      "label": "Net",
+      "rate": 4500.0,
+      "net": 4500.0
+    }
+  },
+  {
+    "room": "03 DAUGHTER BATHROOM",
+    "no": 12,
+    "productId": "19917GN0",
+    "quantity": 1,
+    "price": 3710.0,
+    "inclusive": {
+      "label": "40%",
+      "rate": 2226.0,
+      "net": 2226.0
+    },
+    "exclusive": {
+      "label": "49.15%",
+      "rate": 1886.53,
+      "net": 1886.53
+    }
+  },
+  {
+    "room": "04 SON'S BATHROOM",
+    "no": 1,
+    "productId": "3970900H",
+    "quantity": 1,
+    "price": 14000.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 6720.0,
+      "net": 6720.0
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 5695.2,
+      "net": 5695.2
+    }
+  },
+  {
+    "room": "04 SON'S BATHROOM",
+    "no": 2,
+    "productId": "39577001",
+    "quantity": 1,
+    "price": 8730.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 4190.4,
+      "net": 4190.4
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 3551.36,
+      "net": 3551.36
+    }
+  },
+  {
+    "room": "04 SON'S BATHROOM",
+    "no": 3,
+    "productId": "FFAS4956-601440BF0",
+    "quantity": 1,
+    "price": 104530.0,
+    "inclusive": {
+      "label": "45%",
+      "rate": 57491.5,
+      "net": 57491.5
+    },
+    "exclusive": {
+      "label": "53.39%",
+      "rate": 48721.43,
+      "net": 48721.43
+    }
+  },
+  {
+    "room": "04 SON'S BATHROOM",
+    "no": 4,
+    "productId": "FFAS1304-101440BF0",
+    "quantity": 1,
+    "price": 24200.0,
+    "inclusive": {
+      "label": "45%",
+      "rate": 13310.0,
+      "net": 13310.0
+    },
+    "exclusive": {
+      "label": "53.39%",
+      "rate": 11279.62,
+      "net": 11279.62
+    }
+  },
+  {
+    "room": "04 SON'S BATHROOM",
+    "no": 5,
+    "productId": "FU-HU-26877",
+    "quantity": 1,
+    "price": 6498.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 3249.0,
+      "net": 3249.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 2753.2,
+      "net": 2753.2
+    }
+  },
+  {
+    "room": "04 SON'S BATHROOM",
+    "no": 6,
+    "productId": "FFASTS28-000441BF0",
+    "quantity": 1,
+    "price": 3730.0,
+    "inclusive": {
+      "label": "45%",
+      "rate": 2051.5,
+      "net": 2051.5
+    },
+    "exclusive": {
+      "label": "53.39%",
+      "rate": 1738.55,
+      "net": 1738.55
+    }
+  },
+  {
+    "room": "04 SON'S BATHROOM",
+    "no": 7,
+    "productId": "1024362430",
+    "quantity": 3,
+    "price": 1680.0,
+    "inclusive": {
+      "label": "45%",
+      "rate": 924.0,
+      "net": 2772.0
+    },
+    "exclusive": {
+      "label": "53.39%",
+      "rate": 783.05,
+      "net": 2349.14
+    }
+  },
+  {
+    "room": "04 SON'S BATHROOM",
+    "no": 8,
+    "productId": "38732KF0",
+    "quantity": 1,
+    "price": 14550.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 7275.0,
+      "net": 7275.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 6164.83,
+      "net": 6164.83
+    }
+  },
+  {
+    "room": "04 SON'S BATHROOM",
+    "no": 9,
+    "productId": "3916500I",
+    "quantity": 1,
+    "price": 10200.0,
+    "inclusive": {
+      "label": "Net",
+      "rate": 4500.0,
+      "net": 4500.0
+    },
+    "exclusive": {
+      "label": "Net",
+      "rate": 4500.0,
+      "net": 4500.0
+    }
+  },
+  {
+    "room": "04 SON'S BATHROOM",
+    "no": 10,
+    "productId": "3957100H",
+    "quantity": 1,
+    "price": 36270.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 17409.6,
+      "net": 17409.6
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 14754.64,
+      "net": 14754.64
+    }
+  },
+  {
+    "room": "05 GUEST/POWDER WASHROOM",
+    "no": 1,
+    "productId": "39577001",
+    "quantity": 1,
+    "price": 8730.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 4190.4,
+      "net": 4190.4
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 3551.36,
+      "net": 3551.36
+    }
+  },
+  {
+    "room": "05 GUEST/POWDER WASHROOM",
+    "no": 2,
+    "productId": "FU-HU-13176",
+    "quantity": 1,
+    "price": 20998.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 10499.0,
+      "net": 10499.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 8896.85,
+      "net": 8896.85
+    }
+  },
+  {
+    "room": "05 GUEST/POWDER WASHROOM",
+    "no": 3,
+    "productId": "19917AL0",
+    "quantity": 1,
+    "price": 3710.0,
+    "inclusive": {
+      "label": "40%",
+      "rate": 2226.0,
+      "net": 2226.0
+    },
+    "exclusive": {
+      "label": "49.15%",
+      "rate": 1886.53,
+      "net": 1886.53
+    }
+  },
+  {
+    "room": "05 GUEST/POWDER WASHROOM",
+    "no": 4,
+    "productId": "27513AL1",
+    "quantity": 1,
+    "price": 10000.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 4500.0,
+      "net": 4500.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 3814.0,
+      "net": 3814.0
+    }
+  },
+  {
+    "room": "05 GUEST/POWDER WASHROOM",
+    "no": 5,
+    "productId": "22041AL0",
+    "quantity": 5,
+    "price": 6000.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 2700.0,
+      "net": 13500.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 2288.4,
+      "net": 11442.0
+    }
+  },
+  {
+    "room": "05 GUEST/POWDER WASHROOM",
+    "no": 6,
+    "productId": "38732AL0",
+    "quantity": 1,
+    "price": 12950.0,
+    "inclusive": {
+      "label": "50%",
+      "rate": 6475.0,
+      "net": 6475.0
+    },
+    "exclusive": {
+      "label": "57.63%",
+      "rate": 5486.91,
+      "net": 5486.91
+    }
+  },
+  {
+    "room": "05 GUEST/POWDER WASHROOM",
+    "no": 7,
+    "productId": "3916500I",
+    "quantity": 1,
+    "price": 10200.0,
+    "inclusive": {
+      "label": "Net",
+      "rate": 4500.0,
+      "net": 4500.0
+    },
+    "exclusive": {
+      "label": "Net",
+      "rate": 4500.0,
+      "net": 4500.0
+    }
+  },
+  {
+    "room": "05 GUEST/POWDER WASHROOM",
+    "no": 8,
+    "productId": "3957100H",
+    "quantity": 1,
+    "price": 36270.0,
+    "inclusive": {
+      "label": "52%",
+      "rate": 17409.6,
+      "net": 17409.6
+    },
+    "exclusive": {
+      "label": "59.32%",
+      "rate": 14754.64,
+      "net": 14754.64
+    }
+  },
+  {
+    "room": "05 GUEST/POWDER WASHROOM",
+    "no": 9,
+    "productId": "29802000",
+    "quantity": 1,
+    "price": 2700.0,
+    "inclusive": {
+      "label": "55%",
+      "rate": 1215.0,
+      "net": 1215.0
+    },
+    "exclusive": {
+      "label": "61.86%",
+      "rate": 1029.78,
+      "net": 1029.78
+    }
+  }
+]

@@ -1,7 +1,7 @@
 // Quotation / order money maths — ONE definition used by the server, the
 // screens and the PDF so they always show the same figures.
-// Screen copy: frontend-v2/src/utils/quotationMath.js. Keep it identical to the
-// server copy (local-tools/quotation-math-check.js compares them).
+// The front end keeps a generated copy in frontend-v2/src/utils/quotationMath.js;
+// run local-tools/sync-quotation-math.js (quotation-math-check.js verifies it).
 //
 //   MRP value            Σ price × qty            (main items only)
 // − Line discounts       per line: % of the line, or a fixed amount per piece
@@ -16,19 +16,19 @@
 // ± Round off            to the nearest rupee, shown on the document
 // = Grand total
 
-export const r2 = (v) => Math.round((Number(v) + Number.EPSILON) * 100) / 100;
+const r2 = (v) => Math.round((Number(v) + Number.EPSILON) * 100) / 100;
 const num = (v, d = 0) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : d;
 };
 
-export const isOptional = (item) =>
+const isOptional = (item) =>
   Boolean(item?.isOption) ||
   Boolean(item?.isOptionFor) ||
   (item?.optionType && item.optionType !== 'main');
 
 /** Normalize named quotation charges, including older amount-only quotations. */
-export function normalizeCharges(value) {
+function normalizeCharges(value) {
   if (Array.isArray(value))
     return value.map((row) => ({
       name: String(row?.name || 'Miscellaneous charges').trim() || 'Miscellaneous charges',
@@ -39,7 +39,7 @@ export function normalizeCharges(value) {
 
 /** Additional discount is per unit. A non-null flat price
  * replaces the ordinary discounted unit price; zero is a valid override. */
-export function lineAmounts(item) {
+function lineAmounts(item) {
   const qty = num(item.quantity ?? item.qty, 1);
   const price = num(item.price ?? item.sellingPrice, 0);
   const disc = num(item.discount, 0);
@@ -74,14 +74,15 @@ export function lineAmounts(item) {
  * Which maths applies to a quotation.
  *   discountMode 'generic'            → exclusive arithmetic; gstBasis is ignored
  *   discountMode 'advanced' + 'inclusive' → advanced-inclusive (D1): GST is inside the price
- *   discountMode 'advanced' + 'exclusive' → advanced-exclusive (D2): GST is added on top
+ *   discountMode 'advanced' + 'exclusive' → D2 = 100 - (100 - D1) / (1 + GST/100)
  *   discountMode 'advanced' + null        → not chosen yet; the user must pick first
- * Generic and advanced-exclusive share the same arithmetic; they differ in the
- * breakdown shown and in which inputs the form offers.
+ * Advanced-exclusive keeps derived D2 at full precision, then adds GST
+ * once to the exclusive subtotal. Flat prices use the same inclusive input
+ * basis as D1 and are extracted to exclusive amounts before GST is added.
  */
 const DISCOUNT_MODES = ['generic', 'advanced'];
 const GST_BASES = ['inclusive', 'exclusive'];
-export function resolvePricingMode({ discountMode = 'generic', gstBasis = null } = {}) {
+function resolvePricingMode({ discountMode = 'generic', gstBasis = null } = {}) {
   const mode = DISCOUNT_MODES.includes(discountMode) ? discountMode : 'generic';
   if (mode === 'generic')
     return { discountMode: 'generic', gstBasis: null, pricingMode: 'generic' };
@@ -95,11 +96,11 @@ export function resolvePricingMode({ discountMode = 'generic', gstBasis = null }
  * before discount modes existed have no discountMode, so they stay generic. A
  * legacy gstInclusive boolean is used only when gstBasis was never sent.
  */
-export function pricingFromRecord(src = {}) {
+function pricingFromRecord(src = {}) {
   const discountMode = src?.discountMode === 'advanced' ? 'advanced' : 'generic';
   const legacy =
     typeof src?.gstInclusive === 'boolean' ? (src.gstInclusive ? 'inclusive' : 'exclusive') : null;
-  const basis = src?.gstBasis ?? legacy;
+  const basis = src?.gstBasis === undefined ? legacy : src.gstBasis;
   const r = resolvePricingMode({ discountMode, gstBasis: basis });
   return {
     discountMode: r.discountMode,
@@ -108,7 +109,7 @@ export function pricingFromRecord(src = {}) {
   };
 }
 
-export function quotationTotals({
+function quotationTotals({
   items = [],
   extraDiscount = 0,
   extraDiscountType = 'percent',
@@ -129,6 +130,41 @@ export function quotationTotals({
     });
   }
   const inclusive = resolved.pricingMode === 'advanced-inclusive';
+  const exclusive = resolved.pricingMode === 'advanced-exclusive';
+  const rate = num(gstRate);
+  const gstFactor = 1 + rate / 100;
+  // Both modes represent the same commercial price. Use one inclusive source
+  // for adjustments and final rounding; displayed D2 precision must not reprice it.
+  const sourceTotals = exclusive ? quotationTotals({
+    items, extraDiscount, extraDiscountType, shipping, miscellaneousCharges,
+    miscellaneousChargeItems, additionalDiscount, flatPrice, gstRate, interState,
+    discountMode: 'advanced', gstBasis: 'inclusive',
+  }) : null;
+  const priceLine = (it) => {
+    const a = lineAmounts(it);
+    const hasFlatPrice = it.flatPrice != null && it.flatPrice !== '';
+    if (!exclusive) {
+      if (!inclusive || !hasFlatPrice) return a;
+      const discount = r2(a.gross - num(it.flatPrice) * a.qty);
+      return { ...a, discount, discountPercent: a.gross ? r2(discount / a.gross * 100) : 0 };
+    }
+    const d1 = a.gross ? (hasFlatPrice
+      ? (a.gross - num(it.flatPrice) * a.qty) / a.gross * 100
+      : (a.discount / a.gross) * 100) : 0;
+    const d2 = 100 - (100 - d1) / gstFactor;
+    const converted = { ...a, net: r2(a.net / gstFactor), rate: a.qty ? r2(a.net / gstFactor / a.qty) : 0 };
+    const net = converted.net;
+    return {
+      ...a,
+      discount: r2(a.gross * d2 / 100),
+      discountPercent: d2,
+      d1DiscountPercent: d1,
+      d2DiscountPercent: d2,
+      gstExcludedAmount: r2(a.net - net),
+      net,
+      rate: converted.rate,
+    };
+  };
 
   const main = [];
   const optional = [];
@@ -138,27 +174,57 @@ export function quotationTotals({
   let lineDiscount = 0;
   let netValue = 0;
   const lines = main.map((it) => {
-    const a = lineAmounts(it);
+    const a = priceLine(it);
     mrpValue += a.gross;
     lineDiscount += a.discount;
     netValue += a.net;
     return { ...it, ...a };
   });
+  // Allocate only the paise lost by independently rounding displayed line
+  // amounts. This keeps their sum equal to the converted aggregate.
+  const reconcileLines = (rows, target) => {
+    if (!rows.length) return;
+    const difference = r2(target - rows.reduce((sum, row) => sum + row.net, 0));
+    if (!difference) return;
+    const step = difference > 0 ? 0.01 : -0.01;
+    let cents = Math.round(Math.abs(difference) * 100);
+    const eligible = rows.filter((row) => row.qty).sort((a, b) => Math.abs(b.net) - Math.abs(a.net));
+    if (!eligible.length) return;
+    let index = 0;
+    while (cents > 0) {
+      const row = eligible[index++ % eligible.length];
+      // Spread the residual rather than pushing one small line below zero.
+      if (row.net >= 0 && row.net + step < -0.000001 && target >= 0) continue;
+      row.net = r2(row.net + step);
+      row.discount = r2(row.discount - step);
+      row.gstExcludedAmount = r2(row.gstExcludedAmount - step);
+      row.rate = row.qty ? r2(row.net / row.qty) : 0;
+      cents--;
+    }
+  };
+  if (exclusive) {
+    reconcileLines(lines, r2(sourceTotals.lines.reduce((sum, row) => sum + row.net, 0) / gstFactor));
+    netValue = lines.reduce((sum, row) => sum + row.net, 0);
+    lineDiscount = lines.reduce((sum, row) => sum + row.discount, 0);
+  }
   mrpValue = r2(mrpValue);
   lineDiscount = r2(lineDiscount);
   // A quotation flat price replaces the goods subtotal before quotation adjustments and GST.
-  const goodsValue = r2(flatPrice != null && flatPrice !== '' ? num(flatPrice) : netValue);
-  const freight = r2(num(shipping));
-  const chargeItems = normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges);
+  const goodsValue = r2(flatPrice != null && flatPrice !== ''
+    ? num(flatPrice) / (exclusive ? gstFactor : 1) : netValue);
+  const freight = r2(num(shipping) / (exclusive ? gstFactor : 1));
+  const chargeItems = normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges)
+    .map((row) => exclusive ? { ...row, amount: r2(row.amount / gstFactor) } : row);
   const chargesAmount = r2(chargeItems.reduce((sum, row) => sum + row.amount, 0));
   const extraBase = r2(goodsValue + freight + chargesAmount);
-  const extraDiscountAmount = r2(
+  const extraDiscountAmount = exclusive ? r2(sourceTotals.extraDiscountAmount / gstFactor) : r2(
     (extraDiscountType || 'percent').toLowerCase() === 'percent'
       ? (extraBase * num(extraDiscount)) / 100
       : num(extraDiscount),
   );
-  const afterDiscounts = r2(extraBase - extraDiscountAmount - num(additionalDiscount));
-  const rate = num(gstRate);
+  const additionalDiscountAmount = exclusive ? r2(num(additionalDiscount) / gstFactor) : num(additionalDiscount);
+  const afterDiscounts = exclusive ? r2(sourceTotals.beforeRound / gstFactor)
+    : r2(extraBase - extraDiscountAmount - additionalDiscountAmount);
   let taxableValue;
   let gstAmount;
   let beforeRound;
@@ -171,6 +237,12 @@ export function quotationTotals({
     roundOff = r2(grandTotal - beforeRound);
     gstAmount = r2((grandTotal * rate) / (100 + rate));
     taxableValue = r2(grandTotal - gstAmount);
+  } else if (exclusive) {
+    taxableValue = afterDiscounts;
+    beforeRound = sourceTotals.beforeRound;
+    gstAmount = r2(beforeRound - taxableValue);
+    grandTotal = sourceTotals.grandTotal;
+    roundOff = sourceTotals.roundOff;
   } else {
     taxableValue = afterDiscounts;
     gstAmount = r2((taxableValue * rate) / 100);
@@ -182,7 +254,8 @@ export function quotationTotals({
   const sgst = interState ? 0 : r2(gstAmount - cgst);
   const igst = interState ? gstAmount : 0;
 
-  const optionalLines = optional.map((it) => ({ ...it, ...lineAmounts(it) }));
+  const optionalLines = optional.map((it) => ({ ...it, ...priceLine(it) }));
+  if (exclusive) reconcileLines(optionalLines, r2(sourceTotals.optionalTotal / gstFactor));
   const optionalTotal = r2(optionalLines.reduce((s, l) => s + l.net, 0));
 
   return {
@@ -199,9 +272,15 @@ export function quotationTotals({
     gstRate: rate,
     gstAmount,
     gstInclusive: inclusive,
+    ...(inclusive ? { gstIncludedInTotal: gstAmount } : {}),
     discountMode: resolved.discountMode,
     gstBasis: resolved.gstBasis,
     pricingMode: resolved.pricingMode,
+    ...(exclusive ? {
+      gstExcluded: true,
+      additionalDiscountAmount,
+      taxableRoundingAdjustment: r2(afterDiscounts - (extraBase - extraDiscountAmount - additionalDiscountAmount)),
+    } : {}),
     interState: Boolean(interState),
     cgst,
     sgst,
@@ -214,7 +293,7 @@ export function quotationTotals({
 }
 
 /** Indian-style amount in words: "Seventy-one thousand one hundred fifty-two rupees only". */
-export function amountInWords(amount) {
+function amountInWords(amount) {
   const ones = [
     '',
     'one',
@@ -279,5 +358,17 @@ export function amountInWords(amount) {
 }
 
 /** ₹1,23,456.00 */
-export const inr = (v, { symbol = true, decimals = 2 } = {}) =>
+const inr = (v, { symbol = true, decimals = 2 } = {}) =>
   `${symbol ? '₹' : ''}${num(v).toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+
+export {
+  normalizeCharges,
+  resolvePricingMode,
+  pricingFromRecord,
+  quotationTotals,
+  lineAmounts,
+  amountInWords,
+  inr,
+  isOptional,
+  r2,
+};

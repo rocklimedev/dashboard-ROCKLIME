@@ -168,6 +168,9 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
     }
 
     // Enrich Items for Payload
+    if (quotationData.discountMode === 'advanced' && !quotationData.gstBasis) {
+      return { error: 'Choose GST inclusive or exclusive for advanced discounting' };
+    }
     const enrichedItems = payloadCartItems.map((item, index) => {
       const productId = item.productId || item.id;
       const isOption =
@@ -216,8 +219,9 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
       extraDiscountType: quotationData.discountType || 'fixed',
 
       shippingAmount: Number(shipping) || 0,
-      gstInclusive: quotationData.gstInclusive === true,
-      gst: quotationData.gstInclusive ? 0 : Number(gst) || 0,
+      discountMode: quotationData.discountMode || 'generic',
+      gstBasis: quotationData.gstBasis ?? null,
+      gst: gst === '' || gst == null ? null : Number(gst),
       miscellaneousChargeItems: quotationData.miscellaneousChargeItems || [],
       additionalDiscount: Number(quotationData.additionalDiscount) || 0,
       flatPrice: quotationData.flatPrice ?? null,

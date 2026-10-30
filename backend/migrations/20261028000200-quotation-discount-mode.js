@@ -6,7 +6,7 @@
  *   gstBasis     'inclusive' | 'exclusive' | NULL (not chosen yet)
  *
  * Existing quotations stay generic. Quotations saved with gstInclusive = true
- * move to advanced + inclusive, as the rule says. The old code stored those
+ * remain generic until explicitly edited. The old code stored those
  * with gst = 0, so their GST rate is unknown. They are listed for review and
  * their stored totals are NOT recalculated here.
  */
@@ -21,13 +21,14 @@ module.exports = {
       });
     }
     if (!columns.gstBasis) {
-      await q.addColumn('quotations', 'gstBasis', { type: S.STRING(16), allowNull: true, defaultValue: null });
+      await q.addColumn('quotations', 'gstBasis', {
+        type: S.STRING(16),
+        allowNull: true,
+        defaultValue: null,
+      });
     }
-    await q.sequelize.query(
-      "UPDATE quotations SET \"discountMode\" = 'advanced', \"gstBasis\" = 'inclusive' WHERE \"gstInclusive\" = true",
-    );
     const [review] = await q.sequelize.query(
-      'SELECT "reference_number" FROM quotations WHERE "gstInclusive" = true AND ("gst" IS NULL OR "gst" = 0)',
+      'SELECT quotationId, reference_number, gst, finalAmount FROM quotations WHERE gstInclusive = true AND (gst IS NULL OR gst = 0)',
     );
     if (review.length) {
       console.warn(

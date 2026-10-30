@@ -1,3 +1,5 @@
+const { getSetting } = require('../settings/settings.service');
+const { resolveGstRate } = require('../../lib/quotationPricing');
 const { configuredDocumentExportFilename: documentExportFilename } = require('../../lib/documentExportFilename');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
@@ -365,7 +367,7 @@ exports.createQuotation = async (req, res) => {
       additionalDiscount = 0,
       flatPrice = null,
       shippingAmount = 0,
-      gst = 0,
+      gst: incomingGst,
       gstInclusive,
       discountMode,
       gstBasis,
@@ -378,6 +380,7 @@ exports.createQuotation = async (req, res) => {
       signature_image = '',
       ...rest
     } = req.body;
+    const gst = resolveGstRate(incomingGst, await getSetting('quotation'));
 
     // Parse products if sent as string (common with FormData)
     if (typeof incomingProducts === 'string') {
@@ -624,12 +627,13 @@ exports.updateQuotation = async (req, res) => {
       additionalDiscount = 0,
       flatPrice = null,
       shippingAmount = 0,
-      gst = 0,
+      gst: incomingGst,
       gstInclusive,
       discountMode,
       gstBasis,
       ...quotationData
     } = req.body;
+    const gst = resolveGstRate(incomingGst, await getSetting('quotation'));
 
     if (!id) {
       await t.rollback();
@@ -646,6 +650,11 @@ exports.updateQuotation = async (req, res) => {
       return res.status(404).json({ message: 'Quotation not found' });
     }
 
+    const resolvedPricing = pricingFromRecord({
+      discountMode: discountMode === undefined ? currentQuotation.discountMode : discountMode,
+      gstBasis: gstBasis === undefined && gstInclusive === undefined ? currentQuotation.gstBasis : gstBasis,
+      gstInclusive,
+    });
     // ─── Versioning (outside transaction) ───
     let newVersionNumber = 1;
     try {
@@ -810,9 +819,7 @@ exports.updateQuotation = async (req, res) => {
         miscellaneousCharges,
         additionalDiscount,
         flatPrice,
-        discountMode,
-        gstBasis,
-        gstInclusive,
+        ...resolvedPricing,
       },
     );
 
@@ -834,7 +841,7 @@ exports.updateQuotation = async (req, res) => {
         additionalDiscount: Number(additionalDiscount) || 0,
         flatPrice: flatPrice == null || flatPrice === '' ? null : Number(flatPrice),
         shippingAmount: Number(shippingAmount) || 0,
-        ...pricingFromRecord({ discountMode, gstBasis, gstInclusive }),
+        ...resolvedPricing,
         gst: Number(gst) || 0,
         gstAmount: totals.gstAmount,
         roundOff: totals.roundOff,
@@ -916,6 +923,7 @@ exports.updateQuotation = async (req, res) => {
     });
   } catch (error) {
     await t.rollback().catch(() => {});
+    if (error.status === 400) return res.status(400).json({ message: error.message });
     return res.status(500).json({
       error: 'Failed to update quotation',
       details: error.message,
@@ -1279,7 +1287,7 @@ exports.cloneQuotation = async (req, res) => {
       Number(original.extraDiscount || 0),
       original.extraDiscountType || 'percent',
       Number(original.shippingAmount || 0),
-      Number(original.gst || 0),
+      resolveGstRate(original.gst, await getSetting('quotation')),
       original,
     );
 
@@ -1313,7 +1321,7 @@ exports.cloneQuotation = async (req, res) => {
         flatPrice: original.flatPrice,
         shippingAmount: Number(original.shippingAmount) || 0,
         ...pricingFromRecord(original),
-        gst: Number(original.gst) || 0,
+        gst: resolveGstRate(original.gst, await getSetting('quotation')),
         gstAmount: totals.gstAmount,
         roundOff: totals.roundOff,
         finalAmount: totals.finalAmount,
