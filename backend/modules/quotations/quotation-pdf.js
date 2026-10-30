@@ -394,12 +394,12 @@ function groupByArea(lines) {
     if (locs.length > 1) {
       for (const loc of locs) {
         const q = Number(loc.assignedQuantity) || 0;
-        if (q) rows.push({ ...shareAmounts(l, q), area: name(loc) });
+        if (q) rows.push({ ...shareAmounts(l, q), priority: loc.priority ?? l.priority, area: name(loc) });
       }
       const assigned = locs.reduce((s, loc) => s + (Number(loc.assignedQuantity) || 0), 0);
       if (l.qty - assigned > 0) rows.push({ ...shareAmounts(l, l.qty - assigned), area: null });
     } else {
-      rows.push({ ...l, area: name(locs[0] || l) });
+      rows.push({ ...l, priority: locs[0]?.priority ?? l.priority, area: name(locs[0] || l) });
     }
   }
   const order = [];
@@ -416,6 +416,9 @@ function groupByArea(lines) {
   const named = order.filter(Boolean);
   const groups = [...named, ...(by[''] ? [''] : [])].map((k) => {
     const rs = by[k];
+    // Reordering in the editor updates room-share priorities, not array order.
+    // Stable sorting also preserves the incoming order for legacy/tied rows.
+    rs.sort((a, b) => Number(a.priority ?? 0) - Number(b.priority ?? 0));
     const mrp = rs.reduce((s, r) => s + r.gross, 0);
     const net = rs.reduce((s, r) => s + r.net, 0);
     return {

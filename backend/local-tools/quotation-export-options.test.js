@@ -11,6 +11,38 @@ require.cache[service] = {
 const { renderQuotationPdf, groupByArea } = require('../modules/quotations/quotation-pdf');
 const { quotationTotals } = require('../lib/quotationMath');
 
+test('PDF rooms follow saved share priorities independently of product array order', () => {
+  const items = [
+    { productId: 'a', priority: 0, quantity: 2, price: 100, locations: [
+      { roomName: 'Master', assignedQuantity: 1, priority: 1 },
+      { roomName: 'Parents', assignedQuantity: 1, priority: 0 },
+    ] },
+    { productId: 'b', priority: 1, quantity: 2, price: 100, locations: [
+      { roomName: 'Master', assignedQuantity: 1, priority: 0 },
+      { roomName: 'Parents', assignedQuantity: 1, priority: 1 },
+    ] },
+    { productId: 'c', priority: 0, quantity: 1, price: 100, locations: [
+      { roomName: 'Single', assignedQuantity: 1, priority: 1 },
+    ] },
+    { productId: 'd', priority: 1, quantity: 1, price: 100, locations: [
+      { roomName: 'Single', assignedQuantity: 1, priority: 0 },
+    ] },
+    { productId: 'e', priority: 1, quantity: 1, price: 100 },
+    { productId: 'f', priority: 0, quantity: 1, price: 100 },
+    { productId: 'legacy-a', quantity: 1, price: 100, roomName: 'Legacy' },
+    { productId: 'legacy-b', quantity: 1, price: 100, roomName: 'Legacy' },
+  ];
+  const original = JSON.stringify(items);
+  const { groups } = groupByArea(quotationTotals({ items }).lines);
+  const order = (name) => groups.find(group => group.name === name).rows.map(row => row.productId);
+  assert.deepEqual(order('Master'), ['b', 'a']);
+  assert.deepEqual(order('Parents'), ['a', 'b']);
+  assert.deepEqual(order('Single'), ['d', 'c']);
+  assert.deepEqual(order('Other items'), ['f', 'e']);
+  assert.deepEqual(order('Legacy'), ['legacy-a', 'legacy-b']);
+  assert.equal(JSON.stringify(items), original);
+});
+
 test('room shares allocate calculated discounts once for percentage, fixed and flat prices', () => {
   for (const adjustments of [
     { discount: 50, discountType: 'percent' },
