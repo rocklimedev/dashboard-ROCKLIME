@@ -11,6 +11,20 @@ require.cache[service] = {
 const { renderQuotationPdf, groupByArea } = require('../modules/quotations/quotation-pdf');
 const { quotationTotals } = require('../lib/quotationMath');
 
+test('overlapping saved shares cannot double single products in quotation details', () => {
+  const items = [5998, 16998, 4798].map((price, index) => ({
+    productId: String(index), quantity: 1, price,
+    locations: [{ assignedQuantity: 1 }, { assignedQuantity: 1 }],
+  }));
+  const original = JSON.stringify(items);
+  const totals = quotationTotals({ items });
+  const { groups } = groupByArea(totals.lines);
+  assert.equal(groups[0].items, 3);
+  assert.equal(groups[0].net, 27794);
+  assert.equal(groups[0].net, totals.goodsValue);
+  assert.equal(JSON.stringify(items), original);
+});
+
 test('PDF rooms follow saved share priorities independently of product array order', () => {
   const items = [
     { productId: 'a', priority: 0, quantity: 2, price: 100, locations: [

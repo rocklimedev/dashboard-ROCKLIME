@@ -392,12 +392,15 @@ function groupByArea(lines) {
   for (const l of lines) {
     const locs = Array.isArray(l.locations) && l.locations.length ? l.locations : [null];
     if (locs.length > 1) {
+      // Older saved shares can overlap. Never display more units (or money)
+      // than the product quantity used by the quotation summary.
+      let remaining = l.qty;
       for (const loc of locs) {
-        const q = Number(loc.assignedQuantity) || 0;
+        const q = Math.min(remaining, Math.max(0, Number(loc.assignedQuantity) || 0));
         if (q) rows.push({ ...shareAmounts(l, q), priority: loc.priority ?? l.priority, area: name(loc) });
+        remaining -= q;
       }
-      const assigned = locs.reduce((s, loc) => s + (Number(loc.assignedQuantity) || 0), 0);
-      if (l.qty - assigned > 0) rows.push({ ...shareAmounts(l, l.qty - assigned), area: null });
+      if (remaining > 0) rows.push({ ...shareAmounts(l, remaining), area: null });
     } else {
       rows.push({ ...l, priority: locs[0]?.priority ?? l.priority, area: name(locs[0] || l) });
     }
