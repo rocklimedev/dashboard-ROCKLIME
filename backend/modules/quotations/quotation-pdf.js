@@ -421,7 +421,6 @@ function groupByArea(lines) {
       if (remaining > 0) rows.push({ ...shareAmounts(l, remaining), area: null });
     } else {
       rows.push({ ...l, priority: locs[0]?.priority ?? l.priority, area: name(locs[0] || l) });
-      rows.push({ ...l, priority: locs[0]?.priority ?? l.priority, area: name(locs[0] || l) });
     }
   }
   const order = [];

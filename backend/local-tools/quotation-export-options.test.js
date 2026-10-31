@@ -11,6 +11,23 @@ require.cache[service] = {
 const { renderQuotationPdf, groupByArea } = require('../modules/quotations/quotation-pdf');
 const { quotationTotals } = require('../lib/quotationMath');
 
+test('single products appear once with no location, one room, or legacy room fields', () => {
+  for (const location of [
+    {},
+    { locations: [{ roomName: 'Master', assignedQuantity: 1 }] },
+    { roomName: 'Master' },
+  ]) {
+    const items = [5998, 16998, 4798].map((price, index) => ({
+      productId: String(index), quantity: 1, price, ...location,
+    }));
+    const totals = quotationTotals({ items });
+    const { groups } = groupByArea(totals.lines);
+    assert.deepEqual(groups.flatMap(group => group.rows.map(row => row.productId)), ['0', '1', '2']);
+    assert.equal(groups.reduce((sum, group) => sum + group.net, 0), totals.goodsValue);
+    assert.equal(groups.reduce((sum, group) => sum + group.mrp, 0), 27794);
+  }
+});
+
 test('overlapping saved shares cannot double single products in quotation details', () => {
   const items = [5998, 16998, 4798].map((price, index) => ({
     productId: String(index),
@@ -154,7 +171,7 @@ test('product pages stop at twelve rows and keep room totals with the final prod
         const productsOnPage = content.match(/PAGINATIONITEM\d+END/g) || [];
         assert.ok(productsOnPage.length <= 12, `too many products on page ${page}`);
         rows += productsOnPage.length;
-        if (content.includes('Subtotal (excl. GST)')) {
+        if (content.includes('Subtotal')) {
           foundTotals = true;
           assert.ok(
             content.includes(`PAGINATIONITEM${count}END`),
