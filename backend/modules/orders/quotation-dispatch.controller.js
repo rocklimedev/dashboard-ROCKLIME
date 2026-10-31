@@ -237,9 +237,11 @@ async function snapshotForOrder(order, dispatchItems, number) {
     customerId: order.createdFor,
     shipTo: order.shipTo,
     gst: order.gst || 0,
+    ...pricingFromRecord(order),
     createdBy: order.createdBy,
     floors: order.floors || [],
   };
+  Object.assign(source, pricingFromRecord(order), { gst: order.gst || 0 });
   const all = asList(order.products);
   const quoted = asList(quote?.products);
   const items = dispatchItems.map((item) => {
@@ -278,8 +280,10 @@ async function dispatchData(id) {
     shipTo: order?.shipTo,
     document_title: order?.document_title || '',
     gst: order?.gst || 0,
+    ...pricingFromRecord(order || {}),
     createdBy: dispatch.dispatchedBy,
   };
+  if (order) Object.assign(source, pricingFromRecord(order), { gst: order.gst || 0 });
   const all = asList(quote?.products || order?.products);
   const items = asList(dispatch.items).map((item) => {
     const original = all.find((p) => p.productId === item.productId) || {};

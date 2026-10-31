@@ -323,6 +323,7 @@ const QuotationForm = ({
       <Col xs={24} md={8}>
         <CompactCard className="fv2-quotationform-6cf7b44543" title="Order Summary">
           <OrderTotal
+            showGstCalculation
             items={localCartItems.map((item) => ({
               ...item,
               discount: Number(itemDiscounts[item.productId]) || 0,
@@ -339,11 +340,9 @@ const QuotationForm = ({
             extraDiscountType={quotationData.discountType || 'fixed'}
             itemCount={mainCartItems.length || null}
             optionalTotal={optionalTotal}
-            gstInclusive={quotationData.gstInclusive === true}
-            onGstInclusiveChange={(value) => {
-              handleQuotationChange('gstInclusive', value);
-              if (value) setGst(0);
-            }}
+            discountMode={quotationData.discountMode}
+            gstBasis={quotationData.gstBasis}
+            onPricingChange={(field, value) => handleQuotationChange(field, value)}
             onGstChange={setGst}
             onShippingChange={setShipping}
           />

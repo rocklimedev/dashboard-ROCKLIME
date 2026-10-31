@@ -1,0 +1,36 @@
+{
+  "inclusiveReference": "QUO251026102, supplied GST INCLUSIVE PDF, item page 2 and summary page 3",
+  "exclusiveReference": "QUO291026101, supplied GST EXCLUSIVE PDF, item page 2 and summary page 3",
+  "gstRate": 18,
+  "notes": [
+    "The inclusive PDF says GST Not included despite the filename. Treat its amounts as observed; tax metadata cannot be inferred from the filename.",
+    "Net rows are represented as equivalent fixed per-unit discounts. A PDF cannot prove whether the source used a fixed discount or a flat price.",
+    "Exclusive percentage inputs are inferred from MRP and line amounts, not from the one-decimal printed discount label.",
+    "Exclusive trimset amount is 9061.47. Its exact unit rate is 1510.245, displayed as 1510.25; do not multiply the displayed rounded rate.",
+    "The exclusive angle-valve unit rate 508.50 is an observed manual net rate; exact 600/1.18 is 508.474576, not 508.50."
+  ],
+  "items": [
+    {
+      "productId": "2201600M", "name": "Angle Valve", "price": 1450, "quantity": 11,
+      "inclusive": { "discount": 850, "discountType": "fixed", "rate": 600, "net": 6600, "label": "Net" },
+      "exclusive": { "discount": 941.5, "discountType": "fixed", "rate": 508.5, "net": 5593.5, "label": "Net" }
+    },
+    {
+      "productId": "24254001", "name": "Alira Basin Mixer", "price": 11800, "quantity": 1,
+      "inclusive": { "discount": 55, "discountType": "percent", "rate": 5310, "net": 5310, "label": "55%" },
+      "exclusive": { "discount": 61.86, "discountType": "percent", "rate": 4500.52, "net": 4500.52, "label": "61.9%" }
+    },
+    {
+      "productId": "19917000", "name": "BauCosmopolitan Trimset", "price": 2970, "quantity": 6,
+      "inclusive": { "discount": 40, "discountType": "percent", "rate": 1782, "net": 10692, "label": "40%" },
+      "exclusive": { "discount": 49.15, "discountType": "percent", "rate": 1510.25, "net": 9061.47, "label": "49.1%" }
+    },
+    {
+      "productId": "13262000", "name": "Eurosmart Bath Spout", "price": 10000, "quantity": 1,
+      "inclusive": { "discount": 55, "discountType": "percent", "rate": 4500, "net": 4500, "label": "55%" },
+      "exclusive": { "discount": 61.86, "discountType": "percent", "rate": 3814, "net": 3814, "label": "61.9%" }
+    }
+  ],
+  "inclusiveTotals": { "mrpValue": 55570, "lineDiscount": 28468, "goodsValue": 27102, "grandTotal": 27102 },
+  "exclusiveTotals": { "mrpValue": 55570, "lineDiscount": 32600.51, "goodsValue": 22969.49, "taxableValue": 22969.49, "gstAmount": 4134.51, "grandTotal": 27104 }
+}

@@ -1,4 +1,4 @@
-import { normalizeCharges } from '../../utils/quotationMath.js';
+import { normalizeCharges, pricingFromRecord } from '../../utils/quotationMath.js';
 
 function asList(value) {
   for (let i = 0; i < 3 && typeof value === 'string'; i++) {
@@ -32,6 +32,7 @@ export function quotationCartSnapshot(quotation, now = new Date()) {
       useBillingAddress: false,
       billingAddressId: null,
       quotationData: {
+        ...pricingFromRecord(quotation),
         documentTitle: quotation.document_title || '',
         quotationDate: today,
         dueDate: '',
@@ -52,7 +53,7 @@ export function quotationCartSnapshot(quotation, now = new Date()) {
     layout: {
       localCartItems: items,
       shipping: Number(quotation.shippingAmount) || 0,
-      gst: Number(quotation.gst) || 0,
+      gst: quotation.gst == null || quotation.gst === '' ? null : Number(quotation.gst),
       itemDiscounts: Object.fromEntries(
         items.map((item) => [item.productId, Number(item.discount) || 0]),
       ),

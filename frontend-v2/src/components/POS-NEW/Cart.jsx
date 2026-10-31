@@ -559,16 +559,42 @@ const CartTab = ({
     if (duplicatingLocation) return;
     setDuplicatingLocation(true);
     try {
-      const result = duplicateQuotationLocation(quotationData.floors || [], safeCartItems, floorId, roomId, uuidv4);
+      const result = duplicateQuotationLocation(
+        quotationData.floors || [],
+        safeCartItems,
+        floorId,
+        roomId,
+        uuidv4,
+      );
       await handleDuplicateLocationItems(result.products);
       handleQuotationChange('floors', result.floors);
       setActiveFloorId(result.floorId);
       setActiveRoomId(result.roomId || null);
-      toast.success(roomId ? 'Room duplicated with its products' : 'Floor duplicated with its rooms and products');
-    } catch (error) { toast.error(error?.data?.message || error.message || 'Could not duplicate location'); }
-    finally { setDuplicatingLocation(false); }
+      toast.success(
+        roomId
+          ? 'Room duplicated with its products'
+          : 'Floor duplicated with its rooms and products',
+      );
+    } catch (error) {
+      toast.error(error?.data?.message || error.message || 'Could not duplicate location');
+    } finally {
+      setDuplicatingLocation(false);
+    }
   };
-  const duplicateButton = (floorId, roomId) => <Button size="small" type="text" icon={<CopyOutlined />} aria-label={roomId ? 'Duplicate room' : 'Duplicate floor'} title={roomId ? 'Duplicate room with products' : 'Duplicate floor with rooms and products'} disabled={duplicatingLocation} onClick={event => { event.stopPropagation(); duplicateLocation(floorId, roomId); }} />;
+  const duplicateButton = (floorId, roomId) => (
+    <Button
+      size="small"
+      type="text"
+      icon={<CopyOutlined />}
+      aria-label={roomId ? 'Duplicate room' : 'Duplicate floor'}
+      title={roomId ? 'Duplicate room with products' : 'Duplicate floor with rooms and products'}
+      disabled={duplicatingLocation}
+      onClick={(event) => {
+        event.stopPropagation();
+        duplicateLocation(floorId, roomId);
+      }}
+    />
+  );
 
   const addFloor = (values) => {
     const current = quotationData.floors || [];
@@ -1372,13 +1398,11 @@ const CartTab = ({
                   }
                   itemCount={mainCartItems.length}
                   optionalTotal={optionalTotal}
-                  gstInclusive={isQuotationMode && quotationData.gstInclusive === true}
-                  onGstInclusiveChange={
+                  discountMode={isQuotationMode ? quotationData.discountMode : undefined}
+                  gstBasis={quotationData.gstBasis}
+                  onPricingChange={
                     isQuotationMode
-                      ? (value) => {
-                          handleQuotationChange('gstInclusive', value);
-                          if (value) setGst(0);
-                        }
+                      ? (field, value) => handleQuotationChange(field, value)
                       : undefined
                   }
                   onGstChange={setGst}

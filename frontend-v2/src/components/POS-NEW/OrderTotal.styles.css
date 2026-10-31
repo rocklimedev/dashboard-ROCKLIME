@@ -1,4 +1,17 @@
 /* Extracted component styles. The unused ID anchors preserve inline-style precedence. */
+.quotation-gst-calculation {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--fv2-color-f3f3f3);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
 :is(#fv2-style-priority, .fv2-ordertotal-80d7a86e54) {
   display: flex;
   justify-content: space-between;

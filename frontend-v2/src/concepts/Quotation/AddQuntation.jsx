@@ -1,3 +1,4 @@
+import { useGetSettingsQuery } from '../../api/settingsApi';
 import Loader from '../../components/Common/Loader';
 import ModalShell from '../../components/Common/ModalShell';
 import './AddQuntation.styles.css';
@@ -201,7 +202,7 @@ const AddQuotation = () => {
     document_title: '',
     quotation_date: null,
     due_date: null,
-    gst: 0,
+    gst: null,
     discountMode: 'generic', // 'generic' | 'advanced'
     gstBasis: null, // advanced only: 'inclusive' | 'exclusive' | null (not chosen)
     shippingAmount: 0,
@@ -221,6 +222,14 @@ const AddQuotation = () => {
   };
 
   const [formData, setFormData] = useState(initialFormData);
+  const { data: settingsResponse } = useGetSettingsQuery();
+  const quotationDefaults = settingsResponse?.data?.quotation;
+  useEffect(() => {
+    if (!isEditMode && quotationDefaults)
+      setFormData((prev) =>
+        prev.gst == null ? { ...prev, gst: quotationDefaults.defaultGstRate } : prev,
+      );
+  }, [isEditMode, quotationDefaults]);
 
   // Saved quotations come from the API, never a browser draft.
   const initializedQuotation = useRef(null);
@@ -776,6 +785,10 @@ const AddQuotation = () => {
       roundOff: t.roundOff,
       gstAmount: t.gstAmount,
       finalAmount: t.grandTotal,
+      beforeRound: t.beforeRound,
+      gstInclusive: t.gstInclusive,
+      gstExcluded: t.gstExcluded,
+      pricingLines: t.lines,
       needsGstBasis: false,
     };
   }, [
@@ -1248,7 +1261,9 @@ const AddQuotation = () => {
             <Row gutter={[16, 16]}>
               {[
                 ['additionalDiscount', 'Additional discount (₹)'],
-                ['flatPrice', 'Flat goods price before GST (₹, optional)'],
+                ['flatPrice', formData.discountMode === 'advanced'
+                  ? 'Flat goods price including GST (₹, optional)'
+                  : 'Flat goods price before GST (₹, optional)'],
               ].map(([field, label]) => (
                 <Col xs={24} sm={8} key={field}>
                   <Form.Item label={label}>
@@ -1332,6 +1347,26 @@ const AddQuotation = () => {
 
               <Col xs={24} sm={12}>
                 <Card className="fv2-addquntation-904354e8f8" size="small">
+                  <Form.Item label="Import discount preset">
+                    <Select
+                      placeholder="Choose a preset"
+                      value={undefined}
+                      options={(quotationDefaults?.discountPresets || []).map((p) => ({
+                        value: p.id,
+                        label: p.name,
+                      }))}
+                      onChange={(id) => {
+                        const p = quotationDefaults.discountPresets.find((p) => p.id === id);
+                        if (p)
+                          setFormData((prev) => ({
+                            ...prev,
+                            discountMode: p.discountMode,
+                            gstBasis: p.gstBasis,
+                            gst: p.gstRate,
+                          }));
+                      }}
+                    />
+                  </Form.Item>
                   <Form.Item label="Discount mode">
                     <Select
                       value={formData.discountMode}

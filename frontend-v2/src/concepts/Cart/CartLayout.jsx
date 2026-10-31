@@ -9,6 +9,7 @@ import { ShoppingCartOutlined, CheckCircleOutlined, FileTextOutlined } from '@an
 import NewOrderModal from '../../components/Orders/QuotationPicker';
 import { useDispatch } from 'react-redux';
 
+import { useGetSettingsQuery } from '../../api/settingsApi';
 import { quotationTotals } from '../../utils/quotationMath';
 import CartTab from '../../components/POS-NEW/Cart';
 import {
@@ -81,7 +82,12 @@ const CartLayout = ({
   const [updatingItems, setUpdatingItems] = useState({});
 
   const [shipping, setShipping] = useState(initialLayout.shipping || 0);
-  const [gst, setGst] = useState(initialLayout.gst || 0);
+  const [gst, setGst] = useState(initialLayout.gst ?? null);
+  const { data: settingsResponse } = useGetSettingsQuery();
+  useEffect(() => {
+    const rate = settingsResponse?.data?.quotation?.defaultGstRate;
+    if (rate != null) setGst((prev) => (prev == null ? rate : prev));
+  }, [settingsResponse]);
 
   // API
   const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
@@ -220,24 +226,30 @@ const CartLayout = ({
   // Same maths as the server and the PDF: GST on the taxable value, round at the end
   const totalsCalc = useMemo(
     () =>
-      quotationTotals({
-        items: mainCartItems.map((item) => ({
-          ...item,
-          discount: Number(itemDiscounts[item.productId]) || 0,
-          discountType: itemDiscountTypes[item.productId] || 'percent',
-        })),
-        shipping,
-        gstRate: documentType === 'quotation' && quotationData.gstInclusive ? 0 : gst,
-        ...(documentType === 'quotation'
-          ? {
-              extraDiscount: Number(quotationData.discountAmount) || 0,
-              extraDiscountType: quotationData.discountType || 'fixed',
-              miscellaneousChargeItems: quotationData.miscellaneousChargeItems,
-              additionalDiscount: quotationData.additionalDiscount,
-              flatPrice: quotationData.flatPrice,
-            }
-          : {}),
-      }),
+      documentType === 'quotation' &&
+      quotationData.discountMode === 'advanced' &&
+      !quotationData.gstBasis
+        ? { roundOff: 0, grandTotal: 0 }
+        : quotationTotals({
+            items: mainCartItems.map((item) => ({
+              ...item,
+              discount: Number(itemDiscounts[item.productId]) || 0,
+              discountType: itemDiscountTypes[item.productId] || 'percent',
+            })),
+            shipping,
+            gstRate: gst,
+            discountMode: documentType === 'quotation' ? quotationData.discountMode : 'generic',
+            gstBasis: quotationData.gstBasis,
+            ...(documentType === 'quotation'
+              ? {
+                  extraDiscount: Number(quotationData.discountAmount) || 0,
+                  extraDiscountType: quotationData.discountType || 'fixed',
+                  miscellaneousChargeItems: quotationData.miscellaneousChargeItems,
+                  additionalDiscount: quotationData.additionalDiscount,
+                  flatPrice: quotationData.flatPrice,
+                }
+              : {}),
+          }),
     [mainCartItems, itemDiscounts, itemDiscountTypes, shipping, gst, documentType, quotationData],
   );
   const roundOff = totalsCalc.roundOff;
@@ -302,18 +314,28 @@ const CartLayout = ({
   );
 
   const handleDuplicateLocationItems = async (nextItems) => {
-    const changed = nextItems.filter(item => localCartItems.some(old => old.productId === item.productId && Number(old.quantity) !== Number(item.quantity)));
+    const changed = nextItems.filter((item) =>
+      localCartItems.some(
+        (old) => old.productId === item.productId && Number(old.quantity) !== Number(item.quantity),
+      ),
+    );
     const applied = [];
     try {
       for (const item of changed) {
-        await updateCart({ userId, productId: item.productId, quantity: Number(item.quantity) }).unwrap();
+        await updateCart({
+          userId,
+          productId: item.productId,
+          quantity: Number(item.quantity),
+        }).unwrap();
         applied.push(item);
       }
       setLocalCartItems(nextItems);
     } catch (error) {
       for (const item of applied) {
-        const old = localCartItems.find(p => p.productId === item.productId);
-        await updateCart({ userId, productId: item.productId, quantity: Number(old.quantity) }).unwrap().catch(() => {});
+        const old = localCartItems.find((p) => p.productId === item.productId);
+        await updateCart({ userId, productId: item.productId, quantity: Number(old.quantity) })
+          .unwrap()
+          .catch(() => {});
       }
       throw error;
     }
@@ -701,7 +723,7 @@ const CartLayout = ({
       setItemDiscountTypes({});
       setItemTaxes({});
       setShipping(0);
-      setGst(0);
+      setGst(settingsResponse?.data?.quotation?.defaultGstRate ?? null);
       if (documentType !== 'quotation') clearDraft();
       setShowClearCartModal(false);
       toast.success('Cart cleared successfully');

@@ -181,6 +181,8 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 0.0,
       },
 
+      discountMode: { type: DataTypes.STRING(16), allowNull: false, defaultValue: 'generic' },
+      gstBasis: { type: DataTypes.STRING(16), allowNull: true, defaultValue: null },
       gst: {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: true,

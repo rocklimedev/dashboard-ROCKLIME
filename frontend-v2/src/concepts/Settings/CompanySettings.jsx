@@ -1,7 +1,21 @@
 import ModalShell from '../../components/Common/ModalShell';
 import './CompanySettings.styles.css';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Card, Col, Form, Input, InputNumber, Row, Select, Skeleton, Space, Switch, Typography } from 'antd';
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Form,
+  Input,
+  InputNumber,
+  Row,
+  Select,
+  Skeleton,
+  Space,
+  Switch,
+  Typography,
+} from 'antd';
 import { toast } from 'sonner';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { useGetSettingsQuery, useSaveSettingMutation } from '../../api/settingsApi';
@@ -334,6 +348,86 @@ export default function CompanySettings() {
                     </Form.Item>
                   </Col>
                 </Row>
+                <Form.List name="discountPresets">
+                  {(fields, { add, remove }) => (
+                    <div>
+                      <Title level={5}>Discount presets</Title>
+                      {fields.map(({ key, name, ...rest }) => (
+                        <Space key={key} wrap align="start">
+                          <Form.Item {...rest} name={[name, 'id']} hidden>
+                            <Input />
+                          </Form.Item>
+                          <Form.Item
+                            {...rest}
+                            name={[name, 'name']}
+                            label="Name"
+                            rules={[{ required: true }]}
+                          >
+                            <Input />
+                          </Form.Item>
+                          <Form.Item {...rest} name={[name, 'discountMode']} label="Mode">
+                            <Select
+                              style={{ width: 130 }}
+                              options={[
+                                { value: 'generic', label: 'Generic' },
+                                { value: 'advanced', label: 'Advanced' },
+                              ]}
+                            />
+                          </Form.Item>
+                          <Form.Item {...rest} name={[name, 'gstBasis']} label="GST basis">
+                            <Select
+                              allowClear
+                              style={{ width: 140 }}
+                              onClear={() =>
+                                quoteForm.setFieldValue(['discountPresets', name, 'gstBasis'], null)
+                              }
+                              options={[
+                                { value: 'inclusive', label: 'Inclusive' },
+                                { value: 'exclusive', label: 'Exclusive' },
+                              ]}
+                            />
+                          </Form.Item>
+                          <Form.Item {...rest} name={[name, 'gstRate']} label="GST %">
+                            <InputNumber min={0} />
+                          </Form.Item>
+                          <Form.Item
+                            {...rest}
+                            name={[name, 'isDefault']}
+                            label="Default"
+                            valuePropName="checked"
+                          >
+                            <Switch
+                              onChange={(checked) => {
+                                if (checked) {
+                                  const rows = quoteForm.getFieldValue('discountPresets');
+                                  quoteForm.setFieldValue(
+                                    'discountPresets',
+                                    rows.map((p, i) => ({ ...p, isDefault: i === name })),
+                                  );
+                                }
+                              }}
+                            />
+                          </Form.Item>
+                          <Button onClick={() => remove(name)}>Delete</Button>
+                        </Space>
+                      ))}
+                      <Button
+                        onClick={() =>
+                          add({
+                            id: crypto.randomUUID(),
+                            name: '',
+                            discountMode: 'generic',
+                            gstBasis: null,
+                            gstRate: quoteForm.getFieldValue('defaultGstRate'),
+                            isDefault: false,
+                          })
+                        }
+                      >
+                        Add preset
+                      </Button>
+                    </div>
+                  )}
+                </Form.List>
                 <Text className="fv2-companysettings-a2f226d581" type="secondary">
                   In any line you can write {'{validityDays}'}, {'{validTill}'} or {'{gst}'}; the
                   quotation fills in the real value.

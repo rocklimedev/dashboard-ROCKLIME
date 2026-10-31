@@ -74,6 +74,7 @@ async function createQuotationOrder(quotation, history, input, userId, transacti
       shipTo,
       products,
       shipping: r2(totals.freight + totals.miscellaneousCharges),
+      ...pricingFromRecord(source),
       gst: source.gst ?? null,
       gstValue: totals.gstAmount,
       extraDiscount: r2(totals.extraDiscountAmount + (Number(source.additionalDiscount) || 0)),

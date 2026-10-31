@@ -6,6 +6,35 @@ const router = express.Router();
 router.use(auth);
 
 const ADMIN_ROLES = ['SUPER_ADMIN', 'ADMIN', 'DEVELOPER'];
+const { mutatePreset } = require('./quotation-presets');
+
+router.get('/quotation-discount-presets', async (req, res, next) => {
+  try {
+    res.json({ data: (await getSetting('quotation')).discountPresets });
+  } catch (err) {
+    next(err);
+  }
+});
+for (const method of ['post', 'put', 'delete']) {
+  router[method](
+    ['/quotation-discount-presets', '/quotation-discount-presets/:id'],
+    async (req, res) => {
+      if (!(req.user.roles || []).some((r) => ADMIN_ROLES.includes(r)))
+        return res.status(403).json({ message: 'Only administrators can change settings.' });
+      try {
+        const data = await mutatePreset(
+          method.toUpperCase(),
+          req.params.id || req.body?.id,
+          req.body || {},
+          req.user.userId,
+        );
+        res.status(method === 'post' ? 201 : 200).json({ data });
+      } catch (err) {
+        res.status(err.status || 500).json({ message: err.message });
+      }
+    },
+  );
+}
 
 // GET /api/settings → all settings; GET /api/settings/:key → one
 router.get('/', async (req, res, next) => {

@@ -1,4 +1,5 @@
 import { duplicateQuotationLocation } from './duplicateQuotationLocation';
+import QuotationCalculationMap from './QuotationCalculationMap';
 import Loader from '../Common/Loader';
 import './QuotationProductSheet.styles.css';
 import { lineAmounts } from '../../utils/quotationMath';
@@ -533,6 +534,7 @@ export default function QuotationProductSheet({
   onDeleteRoom,
 }) {
   const [activeTab, setActiveTab] = useState(UNASSIGNED);
+  const [calculationMapOpen, setCalculationMapOpen] = useState(false);
   const [activeRoomTab, setActiveRoomTab] = useState({});
 
   // If the active floor tab was deleted (or was never valid), fall back to
@@ -1114,6 +1116,8 @@ export default function QuotationProductSheet({
 
   return (
     <div className="qs-workbook">
+      <Button onClick={() => setCalculationMapOpen(true)}>Calculation Map</Button>
+      <QuotationCalculationMap open={calculationMapOpen} onClose={() => setCalculationMapOpen(false)} formData={formData} />
       <div className="qs-catalog-bar">
         <Input
           prefix={<SearchOutlined />}

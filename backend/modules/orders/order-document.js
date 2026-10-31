@@ -14,6 +14,8 @@ function orderDocument(order) {
       due_date: order.dueDate,
       shippingAmount: order.shipping,
       gst: order.gst,
+      discountMode: order.discountMode,
+      gstBasis: order.gstBasis,
       extraDiscount: order.extraDiscount,
       extraDiscountType: order.extraDiscountType || 'fixed',
       floors: order.floors || [],

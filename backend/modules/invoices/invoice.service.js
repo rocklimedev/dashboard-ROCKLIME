@@ -13,7 +13,7 @@
 //   • Numbers run per financial year (April–March): CM/26-27/0001.
 //   • Invoices are frozen snapshots and can only be cancelled, never edited.
 const { QueryTypes } = require('sequelize');
-const { quotationTotals, lineAmounts, r2 } = require('../../lib/quotationMath');
+const { quotationTotals, lineAmounts, r2, pricingFromRecord } = require('../../lib/quotationMath');
 const { getSetting } = require('../settings/settings.service');
 
 const m = () => require('../../models');
@@ -239,6 +239,7 @@ async function draft(order, { items = null, t } = {}) {
     transaction: t,
   });
   const orderTotals = quotationTotals({
+    ...pricingFromRecord(order),
     items: orderLines,
     extraDiscount: order.extraDiscount || 0,
     extraDiscountType: order.extraDiscountType || 'fixed',
@@ -265,6 +266,7 @@ async function draft(order, { items = null, t } = {}) {
   const p = await parties(order, t);
   const gstRate = Number(order.gst) || 0;
   const totals = quotationTotals({
+    ...pricingFromRecord(order),
     items: lines.map((l) => ({ quantity: 1, price: l.net })), // each line's amount after its own discount
     extraDiscount,
     extraDiscountType: 'fixed',
