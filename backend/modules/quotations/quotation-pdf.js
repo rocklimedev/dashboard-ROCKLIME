@@ -418,6 +418,7 @@ function groupByArea(lines) {
       if (l.qty - assigned > 0) rows.push({ ...shareAmounts(l, l.qty - assigned), area: null });
     } else {
       rows.push({ ...l, priority: locs[0]?.priority ?? l.priority, area: name(locs[0] || l) });
+      rows.push({ ...l, priority: locs[0]?.priority ?? l.priority, area: name(locs[0] || l) });
     }
   }
   const order = [];
@@ -644,7 +645,8 @@ async function renderQuotationPdf(
     }
     // Share the logo bounds so the indicator stays centered on both text lines.
     doc.save();
-    doc.circle(A4.w - coverLogo.x - 5, coverLogo.y + coverLogo.height / 2, 5)
+    doc
+      .circle(A4.w - coverLogo.x - 5, coverLogo.y + coverLogo.height / 2, 5)
       .fill(totals.gstInclusive ? '#16a34a' : RED);
     doc.restore();
     const nameSize = client.length > 26 ? 22 : 28;

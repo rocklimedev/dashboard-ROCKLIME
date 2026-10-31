@@ -1449,45 +1449,6 @@ const AddQuotation = () => {
                 </Card>
               </Col>
 
-              {!calculations.needsGstBasis && (
-                <Col xs={24}>
-                  <Card size="small" title={`GST calculation · ${calculations.gstInclusive ? 'Inclusive' : 'Exclusive'}`}>
-                    <p>
-                      <Text type="secondary">
-                        {calculations.gstExcluded
-                          ? 'D2 retains full precision internally and displays two decimals. Both modes keep the same final payable amount.'
-                          : calculations.gstInclusive
-                          ? 'GST is included in the price. The payable amount is rounded before GST is extracted.'
-                          : 'GST is added to the taxable value after discounts and charges.'}
-                        {formData.discountMode === 'generic' && ' Generic discount mode uses exclusive GST.'}
-                      </Text>
-                    </p>
-                    {calculations.gstExcluded ? (
-                      <>
-                        <p>D2 = 100 − (100 − D1) ÷ (1 + {safeNum(formData.gst)} ÷ 100)</p>
-                        {calculations.pricingLines.map((line, index) => (
-                          <p key={index}>{line.name || `Item ${index + 1}`}: D1 {line.d1DiscountPercent.toFixed(2)}% → D2 {line.d2DiscountPercent.toFixed(2)}% · ₹{line.net.toFixed(2)}</p>
-                        ))}
-                        <p>Exclusive subtotal: ₹{calculations.taxableValue.toFixed(2)}</p>
-                        <p>GST {safeNum(formData.gst)}%: ₹{calculations.gstAmount.toFixed(2)}</p>
-                        <p>Final payable including GST: ₹{calculations.finalAmount.toFixed(2)}</p>
-                      </>
-                    ) : calculations.gstInclusive ? (
-                      <>
-                        <p>Amount including GST: ₹{calculations.beforeRound.toFixed(2)} → rounded payable: ₹{calculations.finalAmount.toFixed(2)}</p>
-                        <p>Included GST = ₹{calculations.finalAmount.toFixed(2)} × {safeNum(formData.gst)} ÷ (100 + {safeNum(formData.gst)}) = ₹{calculations.gstAmount.toFixed(2)}</p>
-                        <p>Taxable value = ₹{calculations.finalAmount.toFixed(2)} − ₹{calculations.gstAmount.toFixed(2)} = ₹{calculations.taxableValue.toFixed(2)}</p>
-                      </>
-                    ) : (
-                      <>
-                        <p>GST = ₹{calculations.taxableValue.toFixed(2)} × {safeNum(formData.gst)} ÷ 100 = ₹{calculations.gstAmount.toFixed(2)}</p>
-                        <p>Total before rounding = ₹{calculations.taxableValue.toFixed(2)} + ₹{calculations.gstAmount.toFixed(2)} = ₹{calculations.beforeRound.toFixed(2)}</p>
-                        <p>Rounded payable: ₹{calculations.finalAmount.toFixed(2)}</p>
-                      </>
-                    )}
-                  </Card>
-                </Col>
-              )}
               {calculations.optionalPotential > 0 && (
                 <Col xs={24}>
                   <Card className="fv2-addquntation-d3339c9e51" size="small">
