@@ -220,6 +220,8 @@ function computeTotals({
   products = [],
   shipping = 0,
   gst = 0,
+  discountMode = 'generic',
+  gstBasis = null,
   extraDiscount = 0,
   extraDiscountType = 'fixed',
 }) {
@@ -233,6 +235,8 @@ function computeTotals({
     })),
     shipping,
     gstRate: gst,
+    discountMode,
+    gstBasis,
     extraDiscount,
     extraDiscountType,
   });

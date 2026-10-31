@@ -7,20 +7,13 @@ const screen = fs.readFileSync(
   path.join(__dirname, '../../frontend-v2/src/utils/quotationMath.js'),
   'utf8',
 );
-const body = (s) =>
-  s
-    .replace(/^\/\/.*$/gm, '')
-    .replace(/export /g, '')
-    .replace(/module\.exports = .*$/m, '')
-    .replace(/\s+/g, ' ')
-    .trim();
 let failed = 0;
 const check = (ok, label) => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}`);
   if (!ok) failed++;
 };
 check(
-  body(server) === body(screen),
+  screen === server.replace('module.exports = {', 'export {'),
   'screen and server copies of the quotation maths are identical',
 );
 const { quotationTotals } = require('../lib/quotationMath');

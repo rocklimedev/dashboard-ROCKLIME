@@ -1,0 +1,262 @@
+[
+  {
+    "input": {},
+    "expected": {
+      "lines": [],
+      "optionalLines": [],
+      "mrpValue": 0,
+      "lineDiscount": 0,
+      "goodsValue": 0,
+      "freight": 0,
+      "miscellaneousChargeItems": [],
+      "miscellaneousCharges": 0,
+      "extraDiscountAmount": 0,
+      "taxableValue": 0,
+      "gstRate": 0,
+      "gstAmount": 0,
+      "gstInclusive": false,
+      "discountMode": "generic",
+      "gstBasis": null,
+      "pricingMode": "generic",
+      "interState": false,
+      "cgst": 0,
+      "sgst": 0,
+      "igst": 0,
+      "beforeRound": 0,
+      "roundOff": 0,
+      "grandTotal": 0,
+      "optionalTotal": 0
+    }
+  },
+  {
+    "input": {
+      "items": [
+        {
+          "price": 4850,
+          "quantity": 3,
+          "discount": 5
+        },
+        {
+          "price": 18900,
+          "quantity": 2,
+          "discount": 8
+        },
+        {
+          "price": 5600,
+          "quantity": 2
+        },
+        {
+          "price": 9999,
+          "quantity": 1,
+          "isOption": true
+        }
+      ],
+      "shipping": 500,
+      "gstRate": 18
+    },
+    "expected": {
+      "lines": [
+        {
+          "price": 4850,
+          "quantity": 3,
+          "discount": 727.5,
+          "qty": 3,
+          "gross": 14550,
+          "net": 13822.5,
+          "rate": 4607.5,
+          "discountPercent": 5
+        },
+        {
+          "price": 18900,
+          "quantity": 2,
+          "discount": 3024,
+          "qty": 2,
+          "gross": 37800,
+          "net": 34776,
+          "rate": 17388,
+          "discountPercent": 8
+        },
+        {
+          "price": 5600,
+          "quantity": 2,
+          "qty": 2,
+          "gross": 11200,
+          "discount": 0,
+          "net": 11200,
+          "rate": 5600,
+          "discountPercent": 0
+        }
+      ],
+      "optionalLines": [
+        {
+          "price": 9999,
+          "quantity": 1,
+          "isOption": true,
+          "qty": 1,
+          "gross": 9999,
+          "discount": 0,
+          "net": 9999,
+          "rate": 9999,
+          "discountPercent": 0
+        }
+      ],
+      "mrpValue": 63550,
+      "lineDiscount": 3751.5,
+      "goodsValue": 59798.5,
+      "freight": 500,
+      "miscellaneousChargeItems": [],
+      "miscellaneousCharges": 0,
+      "extraDiscountAmount": 0,
+      "taxableValue": 60298.5,
+      "gstRate": 18,
+      "gstAmount": 10853.73,
+      "gstInclusive": false,
+      "discountMode": "generic",
+      "gstBasis": null,
+      "pricingMode": "generic",
+      "interState": false,
+      "cgst": 5426.87,
+      "sgst": 5426.86,
+      "igst": 0,
+      "beforeRound": 71152.23,
+      "roundOff": -0.23,
+      "grandTotal": 71152,
+      "optionalTotal": 9999
+    }
+  },
+  {
+    "input": {
+      "items": [
+        {
+          "price": 1234.56,
+          "quantity": 3,
+          "discount": 75,
+          "discountType": "fixed",
+          "additionalDiscount": 3
+        },
+        {
+          "price": 400,
+          "quantity": 2,
+          "flatPrice": 321.25
+        }
+      ],
+      "miscellaneousChargeItems": [
+        {
+          "name": "Handling",
+          "amount": 80
+        }
+      ],
+      "shipping": 125,
+      "extraDiscount": 3,
+      "additionalDiscount": 4,
+      "gstRate": 12,
+      "interState": true
+    },
+    "expected": {
+      "lines": [
+        {
+          "price": 1234.56,
+          "quantity": 3,
+          "discount": 225,
+          "discountType": "fixed",
+          "additionalDiscount": 3,
+          "qty": 3,
+          "gross": 3703.68,
+          "net": 3469.68,
+          "rate": 1156.56,
+          "discountPercent": 6.08
+        },
+        {
+          "price": 400,
+          "quantity": 2,
+          "flatPrice": 321.25,
+          "qty": 2,
+          "gross": 800,
+          "discount": 0,
+          "net": 642.5,
+          "rate": 321.25,
+          "discountPercent": 0
+        }
+      ],
+      "optionalLines": [],
+      "mrpValue": 4503.68,
+      "lineDiscount": 225,
+      "goodsValue": 4112.18,
+      "freight": 125,
+      "miscellaneousChargeItems": [
+        {
+          "name": "Handling",
+          "amount": 80
+        }
+      ],
+      "miscellaneousCharges": 80,
+      "extraDiscountAmount": 129.52,
+      "taxableValue": 4183.66,
+      "gstRate": 12,
+      "gstAmount": 502.04,
+      "gstInclusive": false,
+      "discountMode": "generic",
+      "gstBasis": null,
+      "pricingMode": "generic",
+      "interState": true,
+      "cgst": 0,
+      "sgst": 0,
+      "igst": 502.04,
+      "beforeRound": 4685.7,
+      "roundOff": 0.3,
+      "grandTotal": 4686,
+      "optionalTotal": 0
+    }
+  },
+  {
+    "input": {
+      "items": [
+        {
+          "price": 1000,
+          "quantity": 2
+        }
+      ],
+      "flatPrice": 0,
+      "extraDiscountType": "fixed",
+      "gstRate": 0,
+      "gstBasis": "inclusive"
+    },
+    "expected": {
+      "lines": [
+        {
+          "price": 1000,
+          "quantity": 2,
+          "qty": 2,
+          "gross": 2000,
+          "discount": 0,
+          "net": 2000,
+          "rate": 1000,
+          "discountPercent": 0
+        }
+      ],
+      "optionalLines": [],
+      "mrpValue": 2000,
+      "lineDiscount": 0,
+      "goodsValue": 0,
+      "freight": 0,
+      "miscellaneousChargeItems": [],
+      "miscellaneousCharges": 0,
+      "extraDiscountAmount": 0,
+      "taxableValue": 0,
+      "gstRate": 0,
+      "gstAmount": 0,
+      "gstInclusive": false,
+      "discountMode": "generic",
+      "gstBasis": null,
+      "pricingMode": "generic",
+      "interState": false,
+      "cgst": 0,
+      "sgst": 0,
+      "igst": 0,
+      "beforeRound": 0,
+      "roundOff": 0,
+      "grandTotal": 0,
+      "optionalTotal": 0
+    }
+  }
+]
