@@ -1441,7 +1441,13 @@ exports.restoreQuotationVersion = async (req, res) => {
 // Get a single quotation by ID with items
 exports.getQuotationById = async (req, res) => {
   try {
-    const quotation = await Quotation.findByPk(req.params.id);
+    const quotation = await Quotation.findByPk(req.params.id, {
+      include: [{
+        model: Customer,
+        as: 'customer',
+        attributes: ['customerId', 'name', 'companyName', 'mobileNumber'],
+      }],
+    });
     if (!quotation) {
       return res.status(404).json({ message: 'Quotation not found' });
     }

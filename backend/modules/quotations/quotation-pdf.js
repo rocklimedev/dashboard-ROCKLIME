@@ -749,38 +749,6 @@ async function renderQuotationPdf(
   }
   y = Math.max(ly, ry) + 20;
 
-  // at a glance: what the customer looks for first
-  {
-    const glance = [
-      ['Products', String(totals.lines.length)],
-      ...(hasAreas ? [['Areas', String(groups.length)]] : []),
-      ['Valid until', fmtDate(validTill)],
-      ...(!hidden.has('total') ? [['Grand total', whole(totals.grandTotal)]] : []),
-    ];
-    const gw = CONTENT_W / glance.length;
-    doc.roundedRect(M, y, CONTENT_W, 46, 6).fill('#f7f7f7');
-    glance.forEach(([k, v], i) => {
-      const x = M + i * gw;
-      if (i)
-        doc
-          .moveTo(x, y + 9)
-          .lineTo(x, y + 37)
-          .lineWidth(0.5)
-          .strokeColor(RULE)
-          .stroke();
-      label(doc, k, x + 12, y + 10, { width: gw - 18 });
-      text(doc, v, x + 12, y + 23, {
-        size: i === glance.length - 1 ? 11 : 10,
-        bold: true,
-        color: i === glance.length - 1 ? RED : INK,
-        width: gw - 18,
-        lineBreak: false,
-        ellipsis: true,
-      });
-    });
-    y += 66;
-  }
-
   const cols = itemColumns(withImages, hidden);
   const rowsTable = (group, { no, startY }) => {
     if (!cols.length) return startY;
@@ -944,6 +912,8 @@ async function renderQuotationPdf(
   }
 
   pageLabel = `${documentLabel} summary`;
+  // Reserve space for the overview bar at the bottom of the final summary page.
+  const summaryBottom = bottom - 62;
   // ---------------- summary ----------------
   y = pageTitle(doc, newPage(), {
     title: `${documentLabel} summary`,
@@ -977,7 +947,7 @@ async function renderQuotationPdf(
     y += 24;
     rule(doc, y);
     for (const g of groups) {
-      if (y + 24 > bottom) y = newPage();
+      if (y + 24 > summaryBottom) y = newPage();
       const vals = [g.name, String(g.items), whole(g.mrp), `−${whole(g.discount)}`, whole(g.net)];
       sc.forEach((c, i) =>
         text(doc, vals[c.index], c.x + (c.align === 'left' ? 4 : 0), y + 8, {
@@ -1079,7 +1049,7 @@ async function renderQuotationPdf(
           ];
     const calculationHeight =
       46 + calculationRows.reduce((sum, row) => sum + 18 + (row[2] ? 8 : 0), 0);
-    if (y + Math.max(lines.length * 18 + 80, calculationHeight) > bottom) y = newPage();
+    if (y + Math.max(lines.length * 18 + 80, calculationHeight) > summaryBottom) y = newPage();
     // Both columns use the same totals typography, colours and row spacing.
     const totalsRow = (x, rowY, k, v, o = {}) => {
       text(doc, k, x + 6, rowY, {
@@ -1171,7 +1141,7 @@ async function renderQuotationPdf(
   }
 
   if (totals.optionalLines.length) {
-    if (y + 40 > bottom) y = newPage();
+    if (y + 40 > summaryBottom) y = newPage();
     label(doc, 'Optional items — not included in the total', M, y, { color: RED, size: 7 });
     y += 16;
     for (const o of totals.optionalLines) {
@@ -1183,13 +1153,45 @@ async function renderQuotationPdf(
         .filter(Boolean)
         .join(' ');
       const lh = heightOf(doc, lbl, CONTENT_W - 100, { size: 8.5 });
-      if (y + lh + 10 > bottom) y = newPage();
+      if (y + lh + 10 > summaryBottom) y = newPage();
       text(doc, lbl, M, y, { size: 8.5, width: CONTENT_W - 100 });
       if (!hidden.has('total'))
         text(doc, paise(o.net), A4.w - M - 100, y, { size: 8.5, width: 100, align: 'right' });
       y += lh + 6;
       rule(doc, y - 3, { color: '#ececec' });
     }
+  }
+
+  // Overview bar stays at the bottom of the summary, above the page footer.
+  {
+    const glance = [
+      ['Products', String(totals.lines.length)],
+      ...(hasAreas ? [['Areas', String(groups.length)]] : []),
+      ['Valid until', fmtDate(validTill)],
+      ...(!hidden.has('total') ? [['Grand total', whole(totals.grandTotal)]] : []),
+    ];
+    const gw = CONTENT_W / glance.length;
+    doc.roundedRect(M, y, CONTENT_W, 46, 6).fill('#f7f7f7');
+    glance.forEach(([k, v], i) => {
+      const x = M + i * gw;
+      if (i)
+        doc
+          .moveTo(x, y + 9)
+          .lineTo(x, y + 37)
+          .lineWidth(0.5)
+          .strokeColor(RULE)
+          .stroke();
+      label(doc, k, x + 12, y + 10, { width: gw - 18 });
+      text(doc, v, x + 12, y + 23, {
+        size: i === glance.length - 1 ? 11 : 10,
+        bold: true,
+        color: i === glance.length - 1 ? RED : INK,
+        width: gw - 18,
+        lineBreak: false,
+        ellipsis: true,
+      });
+    });
+    y += 66;
   }
 
   pageLabel = 'Terms';

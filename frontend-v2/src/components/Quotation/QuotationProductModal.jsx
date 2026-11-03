@@ -9,6 +9,17 @@ import { useGetQuotationByIdQuery } from '../../api/quotationApi';
 const { Text, Title } = Typography;
 const { Panel } = Collapse;
 
+const FloorSection = ({ assigned, sectionKey, header, children }) =>
+  assigned ? (
+    <Collapse defaultActiveKey={[sectionKey]} bordered={false}>
+      <Panel key={sectionKey} header={header}>
+        {children}
+      </Panel>
+    </Collapse>
+  ) : (
+    <>{children}</>
+  );
+
 const safeParse = (data, fallback = []) => {
   if (Array.isArray(data)) return data;
   if (!data) return fallback;
@@ -24,7 +35,7 @@ const safeNum = (val, fallback = 0) => {
   return Number.isFinite(num) ? num : fallback;
 };
 
-const QuotationProductModal = ({ show, onHide, quotationId }) => {
+const QuotationProductModal = ({ show, onHide, quotationId, customerName }) => {
   const {
     data: q = {},
     isLoading,
@@ -309,8 +320,11 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
             #{q.reference_number} {q.document_title}
           </Title>
           <Text type="secondary">
-            {q.customer?.name || 'Customer'} •{' '}
-            {q.quotation_date ? new Date(q.quotation_date).toLocaleDateString('en-IN') : '—'}
+            {q.customer?.name ||
+              q.customer?.companyName ||
+              q.customerName ||
+              customerName ||
+              'Customer'}
           </Text>
         </div>
       }
@@ -322,10 +336,15 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
           </Card>
         ) : (
           <>
-            <Collapse defaultActiveKey={['main']} bordered={false}>
+            <>
               {groupedItems.map((floorGroup) => (
-                <Panel
-                  key={floorGroup.floorId}
+                <FloorSection
+                  key={`${floorGroup.floorId}|${floorGroup.floorName}`}
+                  sectionKey={`${floorGroup.floorId}|${floorGroup.floorName}`}
+                  assigned={
+                    floorGroup.floorId !== 'unassigned' ||
+                    floorGroup.floorName !== 'Unassigned Floor'
+                  }
                   header={
                     <span>
                       <HomeOutlined className="fv2-quotationproductmodal-c02157898c" />
@@ -343,13 +362,16 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                 >
                   {Object.values(floorGroup.itemsByRoom).map((roomGroup) => (
                     <div className="fv2-quotationproductmodal-c85df88c8f" key={roomGroup.roomId}>
-                      <div className="fv2-quotationproductmodal-49ca37eff2">
-                        <ApartmentOutlined className="fv2-quotationproductmodal-c02157898c" />
-                        <Text strong>{roomGroup.roomName}</Text>
-                        <Text className="fv2-quotationproductmodal-4c9c944e67" type="secondary">
-                          ({roomGroup.items.length} items)
-                        </Text>
-                      </div>
+                      {(roomGroup.roomId !== 'unassigned' ||
+                        roomGroup.roomName !== 'Unassigned Room') && (
+                        <div className="fv2-quotationproductmodal-49ca37eff2">
+                          <ApartmentOutlined className="fv2-quotationproductmodal-c02157898c" />
+                          <Text strong>{roomGroup.roomName}</Text>
+                          <Text className="fv2-quotationproductmodal-4c9c944e67" type="secondary">
+                            ({roomGroup.items.length} items)
+                          </Text>
+                        </div>
+                      )}
 
                       <Table
                         columns={commonColumns}
@@ -372,9 +394,9 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                       )}
                     </div>
                   ))}
-                </Panel>
+                </FloorSection>
               ))}
-            </Collapse>
+            </>
 
             {/* Global Financial Summary (shown if no unassigned items or as fallback) */}
             {groupedItems.every((g) => g.floorId !== 'unassigned') && (

@@ -69,13 +69,16 @@ const QuotationList = () => {
   // ==================== STATE ====================
   const currentPage = positiveInteger(params.get('page'), 1);
   const pageSize = positiveInteger(params.get('pageSize'), 20);
-  const setCurrentPage = useCallback((page) => {
-    setParams((previous) => {
-      const next = new URLSearchParams(previous);
-      next.set('page', String(page));
-      return next;
-    });
-  }, [setParams]);
+  const setCurrentPage = useCallback(
+    (page) => {
+      setParams((previous) => {
+        const next = new URLSearchParams(previous);
+        next.set('page', String(page));
+        return next;
+      });
+    },
+    [setParams],
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [customerFilter, setCustomerFilter] = useState('');
@@ -91,14 +94,20 @@ const QuotationList = () => {
   const [pdfBusy, setPdfBusy] = useState(null);
 
   useEffect(() => {
-    if (params.get('page') === String(currentPage) &&
-        (!params.has('pageSize') || params.get('pageSize') === String(pageSize))) return;
-    setParams((previous) => {
-      const next = new URLSearchParams(previous);
-      next.set('page', String(currentPage));
-      if (next.has('pageSize')) next.set('pageSize', String(pageSize));
-      return next;
-    }, { replace: true });
+    if (
+      params.get('page') === String(currentPage) &&
+      (!params.has('pageSize') || params.get('pageSize') === String(pageSize))
+    )
+      return;
+    setParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        next.set('page', String(currentPage));
+        if (next.has('pageSize')) next.set('pageSize', String(pageSize));
+        return next;
+      },
+      { replace: true },
+    );
   }, [params, currentPage, pageSize, setParams]);
 
   useEffect(() => {
@@ -245,21 +254,11 @@ const QuotationList = () => {
   // ==================== COLUMNS ====================
   const columns = [
     {
-      title: 'Quotation',
-      key: 'ref',
-      render: (_, rec) => (
-        <div>
-          <Link to={`/quotation/${rec.quotationId}`} className="fw-medium">
-            {rec.reference_number || '—'}
-          </Link>
-          <div>
-            <Text className="fv2-quotationlist-574d2ce3a9" type="secondary">
-              {rec.document_title || 'Untitled'} ·{' '}
-              {rec.quotation_date ? dayjs(rec.quotation_date).format('D MMM YYYY') : '—'}
-            </Text>
-          </div>
-        </div>
-      ),
+      title: 'S.No.',
+      key: 'serialNumber',
+      width: 70,
+      align: 'center',
+      render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
     },
     {
       title: 'Customer',
@@ -271,6 +270,18 @@ const QuotationList = () => {
           rec.customerName || '—'
         ),
     },
+    {
+      title: 'Quotation',
+      key: 'ref',
+      render: (_, rec) => (
+        <div>
+          <Link to={`/quotation/${rec.quotationId}`} className="fw-medium">
+            {rec.reference_number || '—'}
+          </Link>
+        </div>
+      ),
+    },
+
     {
       title: 'Status',
       key: 'status',
@@ -565,6 +576,10 @@ const QuotationList = () => {
             setSelectedQuotationId(null);
           }}
           quotationId={selectedQuotationId}
+          customerName={
+            quotations.find((quotation) => quotation.quotationId === selectedQuotationId)
+              ?.customerName
+          }
         />
         <LostModal quotation={lostFor} open={!!lostFor} onClose={() => setLostFor(null)} />
         <FollowUpModal
