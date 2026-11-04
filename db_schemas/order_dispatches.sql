@@ -1,10 +1,3 @@
--- --------------------------------------------------------
--- Host:                         119.18.54.11
--- Server version:               5.7.23-23 - Percona Server (GPL), Release 23, Revision 500fcf5
--- Server OS:                    Linux
--- HeidiSQL Version:             12.17.0.7270
--- --------------------------------------------------------
-
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET NAMES utf8 */;
 /*!50503 SET NAMES utf8mb4 */;
@@ -14,10 +7,9 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Dumping structure for table spsyn8lm_rocklime_dashboard.order_dispatches
 CREATE TABLE IF NOT EXISTS `order_dispatches` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `orderId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `orderId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `orderNo` varchar(30) NOT NULL,
   `dispatchNumber` int(11) NOT NULL,
   `items` json NOT NULL,
@@ -26,23 +18,36 @@ CREATE TABLE IF NOT EXISTS `order_dispatches` (
   `dispatchDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `carrier` varchar(150) DEFAULT NULL,
   `trackingNumber` varchar(150) DEFAULT NULL,
+  `invoiceLink` varchar(500) DEFAULT NULL,
   `gatePassLink` varchar(500) DEFAULT NULL,
   `remarks` text,
   `dispatchedBy` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `status` enum('DISPATCHED','DELIVERED','RETURNED') NOT NULL DEFAULT 'DISPATCHED',
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
+  `vehicleNo` varchar(20) DEFAULT NULL,
+  `driverName` varchar(80) DEFAULT NULL,
+  `driverPhone` varchar(20) DEFAULT NULL,
+  `transporter` varchar(120) DEFAULT NULL,
+  `lrNumber` varchar(60) DEFAULT NULL,
+  `ewayBillNo` varchar(20) DEFAULT NULL,
+  `deliveredAt` datetime DEFAULT NULL,
+  `receivedBy` varchar(120) DEFAULT NULL,
+  `deliveryProofLink` varchar(500) DEFAULT NULL,
+  `deliveryNote` text,
+  `quotationId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `quotationRef` varchar(50) DEFAULT NULL,
+  `documentSnapshot` json DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uniq_order_dispatch_number` (`orderId`,`dispatchNumber`) USING BTREE,
   KEY `idx_order_dispatches_order_id` (`orderId`) USING BTREE,
   KEY `idx_order_dispatches_order_no` (`orderNo`) USING BTREE,
   KEY `idx_order_dispatches_dispatch_date` (`dispatchDate`) USING BTREE,
   KEY `fk_order_dispatches_dispatched_by` (`dispatchedBy`),
+  KEY `quotation_dispatch_lookup` (`quotationId`,`dispatchNumber`),
   CONSTRAINT `fk_order_dispatches_dispatched_by` FOREIGN KEY (`dispatchedBy`) REFERENCES `users` (`userId`) ON UPDATE CASCADE,
   CONSTRAINT `fk_order_dispatches_order` FOREIGN KEY (`orderId`) REFERENCES `orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

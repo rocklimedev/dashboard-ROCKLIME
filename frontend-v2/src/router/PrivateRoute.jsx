@@ -14,8 +14,17 @@ const PrivateRoute = ({ requiredPermission, requiredAppPermission, children }) =
   const can = useCan();
   const roles = useRoles();
   const location = useLocation();
-  const { data: settings, isLoading: loadingAppSettings, isError: appSettingsError } = useGetSettingsQuery(undefined, { skip: !auth?.token });
-  const app = appForPath(location.pathname, configuredApps(settings?.data?.apps, roles), location.search);
+  const {
+    data: settings,
+    isLoading: loadingAppSettings,
+    isError: appSettingsError,
+    refetch: refetchSettings,
+  } = useGetSettingsQuery(undefined, { skip: !auth?.token });
+  const app = appForPath(
+    location.pathname,
+    configuredApps(settings?.data?.apps, roles),
+    location.search,
+  );
 
   if (!authChecked) return <Loader size="large" />;
   if (!auth?.token) return <Navigate to="/login" replace />;
@@ -30,7 +39,21 @@ const PrivateRoute = ({ requiredPermission, requiredAppPermission, children }) =
     );
 
   if (loadingAppSettings) return <Loader size="large" />;
-  if (app?.locked || appSettingsError) return <AccessDenied />;
+  // A background refresh failure does not revoke the last confirmed access.
+  // Without any settings yet, offer recovery without claiming access was denied.
+  if (appSettingsError && !settings) {
+    return (
+      <div className="page-wrapper">
+        <div className="content" role="alert">
+          <p>Unable to load app settings. Please try again.</p>
+          <button type="button" onClick={refetchSettings}>
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (app?.locked) return <AccessDenied />;
 
   // Every inside route needs app view access, even if its page action is granted.
   if (requiredAppPermission && !can(requiredAppPermission.module, 'view')) {

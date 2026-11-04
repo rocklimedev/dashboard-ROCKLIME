@@ -1,10 +1,3 @@
--- --------------------------------------------------------
--- Host:                         119.18.54.11
--- Server version:               5.7.23-23 - Percona Server (GPL), Release 23, Revision 500fcf5
--- Server OS:                    Linux
--- HeidiSQL Version:             12.17.0.7270
--- --------------------------------------------------------
-
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET NAMES utf8 */;
 /*!50503 SET NAMES utf8mb4 */;
@@ -14,7 +7,6 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Dumping structure for table spsyn8lm_rocklime_dashboard.quotations
 CREATE TABLE IF NOT EXISTS `quotations` (
   `quotationId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `document_title` varchar(255) NOT NULL,
@@ -39,16 +31,29 @@ CREATE TABLE IF NOT EXISTS `quotations` (
   `extraDiscountType` enum('percent','fixed') DEFAULT NULL,
   `shippingAmount` decimal(10,2) DEFAULT NULL,
   `gst` decimal(5,2) DEFAULT NULL COMMENT 'GST percentage applied on total amount',
+  `status` varchar(16) NOT NULL DEFAULT 'DRAFT',
+  `statusChangedAt` datetime DEFAULT NULL,
+  `sentAt` datetime DEFAULT NULL,
+  `lostReason` varchar(120) DEFAULT NULL,
+  `lostNote` text,
+  `nextFollowUp` date DEFAULT NULL,
+  `miscellaneousCharges` decimal(10,2) DEFAULT '0.00',
+  `additionalDiscount` decimal(10,2) DEFAULT '0.00',
+  `flatPrice` decimal(10,2) DEFAULT NULL,
+  `miscellaneousChargeItems` json DEFAULT NULL,
+  `gstInclusive` tinyint(1) NOT NULL DEFAULT '0',
+  `discountMode` varchar(16) NOT NULL DEFAULT 'generic',
+  `gstBasis` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`quotationId`),
   KEY `customerId` (`customerId`),
   KEY `createdBy` (`createdBy`),
   KEY `shipTo` (`shipTo`),
+  KEY `quotations_status` (`status`),
+  KEY `quotations_next_follow_up` (`nextFollowUp`),
   CONSTRAINT `quotations_ibfk_3049` FOREIGN KEY (`customerId`) REFERENCES `customers` (`customerId`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `quotations_ibfk_3050` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `quotations_ibfk_3051` FOREIGN KEY (`shipTo`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

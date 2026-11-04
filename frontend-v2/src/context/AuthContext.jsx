@@ -46,7 +46,11 @@ export const AuthProvider = ({ children }) => {
     if (isValidating) return;
 
     if (isTokenValid) {
-      setAuth({ token: storedToken, user: null, permissions: null });
+      setAuth((prev) =>
+        prev?.token === storedToken
+          ? prev
+          : { token: storedToken, user: null, permissions: null },
+      );
     } else if (isTokenInvalid) {
       clearAuthStorage();
       setAuth(null);
