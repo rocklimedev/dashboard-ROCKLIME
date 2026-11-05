@@ -116,7 +116,7 @@ const NewPurchaseOrder = () => {
       quantity: Number(item.quantity) || 1,
       unitPrice: Number(item.price || item.mrp) || 0.01,
       mrp: Number(item.mrp || item.price) || 0.01,
-      tax: Number(item.tax) || 0,
+      tax: 0,
       discount: Number(item.discount) || 0,
       discountType: item.discountType || "percent",
     }));

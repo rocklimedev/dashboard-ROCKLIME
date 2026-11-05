@@ -1,10 +1,25 @@
 import ModalShell from '../Common/ModalShell';
 import './PurchaseOrderForm.styles.css';
-// Purchase order checkout: vendor (with its GST and address), deliver-to
-// godown, dates, terms, freight, notes and the lines (qty, rate, discount,
-// GST %). Totals use the same maths as the server and the PO PDF (utils/poMath).
+// Purchase order checkout uses the same totals as the server and exports.
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Card, Col, DatePicker, Divider, Empty, Form, Image, Input, InputNumber, Row, Select, Space, Table, Tag, Typography } from 'antd';
+import {
+  Button,
+  Card,
+  Col,
+  DatePicker,
+  Divider,
+  Empty,
+  Form,
+  Image,
+  Input,
+  InputNumber,
+  Row,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Typography,
+} from 'antd';
 import { toast } from 'sonner';
 import {
   ArrowLeftOutlined,
@@ -21,7 +36,6 @@ import { useGetWarehousesQuery } from '../../api/stockApi';
 import { useGetSettingsQuery } from '../../api/settingsApi';
 
 const { Text, Title } = Typography;
-const GST = [0, 5, 12, 18, 28];
 
 function VendorDetailsModal({ vendor, open, onClose }) {
   const [form] = Form.useForm();
@@ -83,11 +97,7 @@ function VendorDetailsModal({ vendor, open, onClose }) {
             </Form.Item>
           </Col>
           <Col span={9}>
-            <Form.Item
-              name="state"
-              label="State"
-              tooltip="Decides CGST + SGST (same state) or IGST"
-            >
+            <Form.Item name="state" label="State">
               <Input placeholder="Delhi" />
             </Form.Item>
           </Col>
@@ -132,7 +142,6 @@ const PurchaseOrderForm = ({
   const { data: whData } = useGetWarehousesQuery();
   const warehouses = whData?.data || [];
   const { data: settingsData } = useGetSettingsQuery();
-  const company = settingsData?.data?.company || {};
   const purchase = settingsData?.data?.purchase || {};
   const vendor = (Array.isArray(vendors) ? vendors : []).find(
     (v) => (v.id || v._id) === selectedVendor,
@@ -152,7 +161,6 @@ const PurchaseOrderForm = ({
         mrp: Number(item.mrp || item.price || 0),
         discount: 0,
         discountType: 'percent',
-        tax: 18,
         imageUrl: item.imageUrl || item.images?.[0],
         productCode: item.product_code || item.code || '',
       })),
@@ -167,16 +175,9 @@ const PurchaseOrderForm = ({
   }, [vendor?.id, purchase.paymentTerms]);
 
   const items = purchaseOrderData?.items || [];
-  const norm = (x) =>
-    String(x || '')
-      .trim()
-      .toLowerCase();
-  const interState = Boolean(
-    vendor?.state && company.state && norm(vendor.state) !== norm(company.state),
-  );
   const t = useMemo(
-    () => poTotals({ items, freight: Number(purchaseOrderData.freight) || 0, interState }),
-    [items, purchaseOrderData.freight, interState],
+    () => poTotals({ items, freight: Number(purchaseOrderData.freight) || 0 }),
+    [items, purchaseOrderData.freight],
   );
 
   const updateItem = (index, patch) =>
@@ -189,11 +190,6 @@ const PurchaseOrderForm = ({
     setPurchaseOrderData((prev) => ({
       ...prev,
       items: (prev.items || []).filter((_, i) => i !== index),
-    }));
-  const setAllGst = (rate) =>
-    setPurchaseOrderData((prev) => ({
-      ...prev,
-      items: (prev.items || []).map((i) => ({ ...i, tax: rate })),
     }));
 
   if (!items.length) {
@@ -290,20 +286,6 @@ const PurchaseOrderForm = ({
       ),
     },
     {
-      title: 'GST',
-      width: 82,
-      render: (_, r, i) => (
-        <Select
-          className="fv2-purchaseorderform-3aa58f28a5"
-          size="small"
-          value={Number(r.tax) || 0}
-          onChange={(v) => updateItem(i, { tax: v })}
-
-          options={GST.map((g) => ({ value: g, label: `${g}%` }))}
-        />
-      ),
-    },
-    {
       title: 'Amount',
       width: 110,
       align: 'right',
@@ -322,8 +304,6 @@ const PurchaseOrderForm = ({
       ),
     },
   ];
-
-  const missingVendorInfo = vendor && (!vendor.gstin || !vendor.state);
 
   return (
     <Row gutter={16}>
@@ -359,13 +339,7 @@ const PurchaseOrderForm = ({
                       )}
                     </div>
                     <Text className="fv2-purchaseorderform-292c9c8547" type="secondary">
-                      {[
-                        vendor.gstin ? `GSTIN ${vendor.gstin}` : 'No GSTIN',
-                        vendor.contactPerson,
-                        vendor.phone,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
+                      {[vendor.contactPerson, vendor.phone].filter(Boolean).join(' · ')}
                     </Text>
                   </div>
                   <Button
@@ -391,20 +365,6 @@ const PurchaseOrderForm = ({
               />
             </Col>
           </Row>
-          {missingVendorInfo && (
-            <Alert
-              className="fv2-purchaseorderform-045eb70690"
-
-              type="info"
-              showIcon
-              message="Add the vendor's GSTIN and state so the PO shows the right tax (CGST + SGST or IGST)."
-              action={
-                <Button size="small" onClick={() => setEditVendor(true)}>
-                  Add details
-                </Button>
-              }
-            />
-          )}
 
           <Row className="fv2-purchaseorderform-1686e3ee75" gutter={12}>
             <Col xs={24} md={8}>
@@ -525,13 +485,6 @@ const PurchaseOrderForm = ({
             ['Value before discount', t.subTotal],
             ['Discount', -t.discount],
             ['Freight', t.freight],
-            ['Taxable value', t.taxableValue, true],
-            ...(interState
-              ? [['IGST', t.igst]]
-              : [
-                  ['CGST', t.cgst],
-                  ['SGST', t.sgst],
-                ]),
             ['Round off', t.roundOff],
           ].map(([k, v, bold]) => (
             <div className="fv2-purchaseorderform-72940fe5c2" key={k}>
@@ -548,9 +501,6 @@ const PurchaseOrderForm = ({
             <span className="fv2-purchaseorderform-b07967cb30">PO total</span>
             <span className="fv2-purchaseorderform-3747da228f">{inr(t.grandTotal)}</span>
           </div>
-          <Text className="fv2-purchaseorderform-c76482624a" type="secondary">
-            {interState ? 'Vendor in another state: IGST' : 'Same state: CGST + SGST'}
-          </Text>
           <Button
             className="fv2-purchaseorderform-20d32eac44"
             type="primary"

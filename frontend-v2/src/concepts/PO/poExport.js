@@ -10,7 +10,6 @@ export const PO_EXPORT_FIELDS = [
   ['qty', 'Quantity'],
   ['price', 'Unit price'],
   ['discount', 'Discount'],
-  ['gst', 'GST'],
   ['total', 'Amount'],
 ];
 
@@ -41,7 +40,6 @@ export async function buildPoExcel(po, hiddenFields = []) {
   const totals = poTotals({
     items: po.items || [],
     freight: Number(po.freight) || 0,
-    interState: Boolean(po.interState),
   });
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Purchase order');
@@ -60,7 +58,6 @@ export async function buildPoExcel(po, hiddenFields = []) {
       qty: line.qty,
       price: line.rate,
       discount: line.discountType === 'fixed' ? `₹${line.discountInput}` : `${line.discountInput}%`,
-      gst: `${line.gstRate}%`,
       total: line.net,
     };
     sheet.addRow(fields.map(([key]) => values[key]));
@@ -74,8 +71,6 @@ export async function buildPoExcel(po, hiddenFields = []) {
     summary.addRow(['Value before discount', totals.subTotal]);
     if (!hidden.has('discount')) summary.addRow(['Discount', totals.discount]);
     summary.addRow(['Freight', totals.freight]);
-    summary.addRow(['Taxable value', totals.taxableValue]);
-    if (!hidden.has('gst')) summary.addRow(['GST', totals.gstAmount]);
     summary.addRow(['Round off', totals.roundOff]);
     summary.addRow(['PO total', totals.grandTotal]);
     summary.columns = [{ width: 30 }, { width: 20 }];

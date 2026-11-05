@@ -56,7 +56,7 @@ const NewPurchaseOrder = ({ workspace, active, onAction, busy }) => {
       return toast.error('Cart is empty. Please add items.');
     }
 
-    // the lines as edited on the checkout (qty, rate, discount, GST); the cart only if untouched
+    // the lines as edited on the checkout (qty, rate, discount); the cart only if untouched
     const source = purchaseOrderData.items?.length
       ? purchaseOrderData.items
       : layoutProps.calculationCartItems;
@@ -65,7 +65,7 @@ const NewPurchaseOrder = ({ workspace, active, onAction, busy }) => {
       quantity: Number(item.quantity) || 1,
       unitPrice: Number(item.unitPrice ?? item.price ?? item.mrp) || 0.01,
       mrp: Number(item.mrp || item.price || item.unitPrice) || 0.01,
-      tax: Number(item.tax) || 0,
+      tax: 0,
       discount: Number(item.discount) || 0,
       discountType: item.discountType || 'percent',
     }));

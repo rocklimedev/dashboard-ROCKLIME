@@ -123,29 +123,18 @@ function poHeader(body = {}) {
   if ('freight' in body) out.freight = Math.max(Number(body.freight) || 0, 0);
   return out;
 }
-async function isInterState(vendor) {
-  const company = await require('../settings/settings.service').getSetting('company');
-  const norm = (x) =>
-    String(x || '')
-      .trim()
-      .toLowerCase();
-  return Boolean(vendor?.state && company.state && norm(vendor.state) !== norm(company.state));
-}
+
 const totalsFields = (t) => ({
   totalAmount: t.grandTotal,
   subTotal: t.subTotal,
   discountTotal: t.discount,
-  taxableValue: t.taxableValue,
-  gstAmount: t.gstAmount,
-  interState: t.interState,
+  taxableValue: t.beforeRound,
+  gstAmount: 0,
+  interState: false,
   roundOff: t.roundOff,
 });
 
-async function validateAndCalculateItems(
-  items,
-  transaction,
-  { freight = 0, interState = false } = {},
-) {
+async function validateAndCalculateItems(items, transaction, { freight = 0 } = {}) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error('Items must be a non-empty array');
   }
@@ -191,13 +180,13 @@ async function validateAndCalculateItems(
       mrp: Number(item.mrp ?? product.mrp ?? price),
       discount: Number(item.discount ?? 0),
       discountType: item.discountType || 'percent',
-      tax: Number(item.tax ?? 0),
+      tax: 0,
       total: lineTotal,
     });
   }
 
-  // discount and GST per line, freight, CGST/SGST or IGST, round off
-  const totals = poTotals({ items: prepared, freight, interState });
+  // Discounted items plus freight and round off
+  const totals = poTotals({ items: prepared, freight });
   totals.lines.forEach((l, i) => {
     prepared[i].total = l.total;
   });
@@ -232,10 +221,8 @@ exports.createPurchaseOrder = async (req, res) => {
     if (!vendor) throw new Error('Vendor not found');
 
     const header = poHeader(req.body);
-    const interState = await isInterState(vendor);
     const { totalAmount, preparedItems, totals } = await validateAndCalculateItems(items, t, {
       freight: header.freight || 0,
-      interState,
     });
 
     const poNumber = await generateDailyPONumber(t);
@@ -356,18 +343,11 @@ exports.updatePurchaseOrder = async (req, res) => {
       : null;
 
     // freight or vendor changes also change the totals: recalculate from the saved lines
-    const vendorNow = await Vendor.findByPk(updateData.vendorId || po.vendorId, { transaction: t });
     const freightNow = updateData.freight ?? Number(po.freight) ?? 0;
-    const linesNow =
-      Array.isArray(items) && items.length > 0
-        ? items
-        : 'freight' in updateData || updateData.vendorId
-          ? await fetchPoItems(po.id)
-          : null;
+    const linesNow = Array.isArray(items) && items.length > 0 ? items : await fetchPoItems(po.id);
     if (linesNow && linesNow.length) {
       const { totalAmount, preparedItems, totals } = await validateAndCalculateItems(linesNow, t, {
         freight: freightNow,
-        interState: await isInterState(vendorNow),
       });
       Object.assign(updateData, totalsFields(totals));
       updateData.totalAmount = totalAmount;
@@ -494,7 +474,12 @@ exports.getPurchaseOrderById = async (req, res) => {
 
     return res.json({
       ...po.toJSON(),
-      items,
+      ...totalsFields(poTotals({ items, freight: po.freight })),
+      items: items.map((item) => ({
+        ...item,
+        tax: 0,
+        total: poTotals({ items: [item] }).lines[0].total,
+      })),
       createdBy: po.createdBy
         ? {
             userId: po.createdBy.userId,
@@ -573,7 +558,12 @@ exports.getAllPurchaseOrders = async (req, res) => {
 
     const result = rows.map((po) => ({
       ...po.toJSON(),
-      items: itemsMap.get(po.id) || [],
+      ...totalsFields(poTotals({ items: itemsMap.get(po.id) || [], freight: po.freight })),
+      items: (itemsMap.get(po.id) || []).map((item) => ({
+        ...item,
+        tax: 0,
+        total: poTotals({ items: [item] }).lines[0].total,
+      })),
       createdBy: po.createdBy
         ? {
             userId: po.createdBy.userId,

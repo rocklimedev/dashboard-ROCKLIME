@@ -1,13 +1,12 @@
-const { configuredDocumentExportFilename: documentExportFilename } = require('../../lib/documentExportFilename');
+const {
+  configuredDocumentExportFilename: documentExportFilename,
+} = require('../../lib/documentExportFilename');
 // Purchase order PDF in the Chhabra Marble format (same look as the quotation).
 //
 //   buildPoPdf(poId)        → { buffer, filename }
 //   renderPoPdf(data)       → { buffer, filename }   (no database; used by the sample script)
 //
-// Page: logo + PO no./date/expected delivery · vendor (address, GSTIN,
-// contact) and deliver-to (godown, our GSTIN) · references · items (code, HSN,
-// qty, rate, discount, GST %, amount) · GST by rate and totals with the grand
-// total in words · payment and delivery terms, PO terms, notes · signatures.
+// Purchase order with discounted items, freight and totals.
 const path = require('path');
 const PDFDocument = require('pdfkit');
 const { poTotals } = require('../../lib/poMath');
@@ -106,14 +105,7 @@ async function renderPoPdf({
 }) {
   const hidden = new Set(Array.isArray(exportOptions?.hidden) ? exportOptions.hidden : []);
   const brand = company.brandName || company.name || '';
-  const norm = (x) =>
-    String(x || '')
-      .trim()
-      .toLowerCase();
-  const interState =
-    po.interState ??
-    Boolean(vendor.state && company.state && norm(vendor.state) !== norm(company.state));
-  const t = poTotals({ items, freight: Number(po.freight) || 0, interState });
+  const t = poTotals({ items, freight: Number(po.freight) || 0 });
   const ref = po.poNumber || 'PO';
 
   const doc = new PDFDocument({
@@ -199,7 +191,6 @@ async function renderPoPdf({
   const vLines = [
     vendor.address,
     [vendor.city, vendor.state, vendor.pincode].filter(Boolean).join(', '),
-    vendor.gstin ? `GSTIN ${vendor.gstin}` : null,
     [vendor.contactPerson, vendor.phone].filter(Boolean).join(' · '),
     vendor.email,
   ].filter(Boolean);
@@ -212,7 +203,6 @@ async function renderPoPdf({
     brand,
     warehouse?.name && warehouse.name !== brand ? warehouse.name : null,
     warehouse?.address || company.address,
-    company.gstin ? `GSTIN ${company.gstin}` : null,
     [company.phone, String(company.website || '').replace(/^https?:\/\/(www\.)?/i, '')]
       .filter(Boolean)
       .join(' · '),
@@ -228,7 +218,6 @@ async function renderPoPdf({
     ['Your reference', po.vendorRef],
     ['Payment', po.paymentTerms || vendor.paymentTerms || purchase.paymentTerms],
     ['Delivery', po.deliveryTerms || purchase.deliveryTerms],
-    ...(!hidden.has('gst') ? [['Tax', interState ? 'IGST (other state)' : 'CGST + SGST']] : []),
   ];
   const bw = W / refs.length;
   const stripH = Math.max(46, ...refs.map(([, v]) => hOf(v || '—', bw - 18, 8, true) + 28));
@@ -259,7 +248,6 @@ async function renderPoPdf({
     { k: 'qty', l: 'Qty', x: M + 245, w: 40, a: 'right' },
     { k: 'rate', l: 'Rate', x: M + 285, w: 64, a: 'right' },
     { k: 'disc', l: 'Disc.', x: M + 349, w: 42, a: 'right' },
-    { k: 'gst', l: 'GST', x: M + 391, w: 36, a: 'right' },
     { k: 'amt', l: 'Amount', x: M + 427, w: W - 427, a: 'right' },
   ];
   const keys = { no: 'sno', rate: 'price', disc: 'discount', amt: 'total' };
@@ -322,7 +310,6 @@ async function renderPoPdf({
         qty: Number(l.qty).toLocaleString('en-IN'),
         rate: money(l.rate),
         disc,
-        gst: `${l.gstRate}%`,
         amt: money(l.net),
       };
       for (const c of visible.filter((c) => c.k !== 'no' && c.k !== 'name')) {
@@ -332,7 +319,7 @@ async function renderPoPdf({
           align: 'right',
           lineBreak: false,
           bold: c.k === 'amt',
-          color: c.k === 'disc' || c.k === 'gst' ? MUTED : INK,
+          color: c.k === 'disc' ? MUTED : INK,
         });
       }
       y += h;
@@ -340,7 +327,7 @@ async function renderPoPdf({
     });
   y += 14;
 
-  // GST by rate (left) · totals (right)
+  // Notes (left) and totals (right)
   if (y + 170 > BOTTOM) {
     doc.addPage();
     y = 44;
@@ -348,52 +335,7 @@ async function renderPoPdf({
   const top = y;
   const gx = M;
   const gw = W / 2 - 24;
-  if (!hidden.has('gst') && !hidden.has('total')) {
-    label('GST summary', gx, y, { color: RED, size: 7 });
-    y += 14;
-    const gc = interState
-      ? [
-          ['Rate', 0.22],
-          ['Taxable', 0.4],
-          ['IGST', 0.38],
-        ]
-      : [
-          ['Rate', 0.16],
-          ['Taxable', 0.32],
-          ['CGST', 0.26],
-          ['SGST', 0.26],
-        ];
-    let gxx = gx;
-    for (const [k, f] of gc) {
-      label(k, gxx, y + 2, { width: gw * f - 4, align: k === 'Rate' ? 'left' : 'right' });
-      gxx += gw * f;
-    }
-    y += 14;
-    rule(y, { x2: gx + gw });
-    for (const g of t.gstSummary) {
-      const vals = interState
-        ? [`${g.rate}%`, money(g.taxable), money(g.tax)]
-        : [
-            `${g.rate}%`,
-            money(g.taxable),
-            money(g.tax / 2),
-            money(g.tax - Math.round((g.tax / 2) * 100) / 100),
-          ];
-      gxx = gx;
-      gc.forEach(([k, f], i) => {
-        text(vals[i], gxx, y + 5, {
-          size: 8,
-          width: gw * f - 4,
-          align: k === 'Rate' ? 'left' : 'right',
-          lineBreak: false,
-        });
-        gxx += gw * f;
-      });
-      y += 18;
-      rule(y, { x2: gx + gw, color: '#ececec' });
-    }
-  }
-  // notes sit under the GST summary, where the page has room
+  // Notes sit beside the totals.
   if (po.notes) {
     y += 16;
     label('Notes', gx, y, { color: RED, size: 7 });
@@ -412,15 +354,6 @@ async function renderPoPdf({
         ? [['Discount', t.discount ? `−${money(t.discount)}` : money(0), t.discount ? RED : null]]
         : []),
       ['Freight', money(t.freight)],
-      ['Taxable value', money(t.taxableValue), null, true],
-      ...(!hidden.has('gst')
-        ? interState
-          ? [['IGST', money(t.igst)]]
-          : [
-              ['CGST', money(t.cgst)],
-              ['SGST', money(t.sgst)],
-            ]
-        : []),
       ['Round off', `${t.roundOff < 0 ? '−' : '+'}${money(Math.abs(t.roundOff))}`, MUTED],
     ];
     for (const [k, v, color, bold] of lines) {
@@ -517,7 +450,16 @@ async function renderPoPdf({
     });
   }
   doc.end();
-  return { buffer: await done, filename: await documentExportFilename({ documentType: 'purchase', customerName: vendor.vendorName || vendor.name, documentNumber: ref, date: po.orderDate || po.createdAt }), totals: t };
+  return {
+    buffer: await done,
+    filename: await documentExportFilename({
+      documentType: 'purchase',
+      customerName: vendor.vendorName || vendor.name,
+      documentNumber: ref,
+      date: po.orderDate || po.createdAt,
+    }),
+    totals: t,
+  };
 }
 
 module.exports = { buildPoPdf, renderPoPdf };

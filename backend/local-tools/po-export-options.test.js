@@ -69,7 +69,7 @@ test('PO Excel serializes only selected fields and preserves the original PO', a
     .readFileSync(require.resolve('../../frontend-v2/src/concepts/PO/poExport.js'), 'utf8')
     .replace(/^import .*;\r?\n/gm, '')
     .replace(/export (const|async function|function)/g, '$1')
-    .replace('await import("exceljs")', '{ default: ExcelModule }');
+    .replace(/await import\(['"]exceljs['"]\)/, '{ default: ExcelModule }');
   const build = new Function('ExcelModule', 'poTotals', source + '; return buildPoExcel;')(
     ExcelJS,
     poTotals,
@@ -84,6 +84,7 @@ test('PO Excel serializes only selected fields and preserves the original PO', a
       sheet.eachRow((row) => row.eachCell((cell) => values.push(String(cell.value)))),
     );
     assert.ok(values.includes('Quantity'));
+    assert.ok(!values.some((value) => /GST|Taxable/i.test(value)));
     if (hidden.length) {
       assert.ok(!values.some((value) => /SECRET|Discount|GST|Unit price|Amount/.test(value)));
       assert.equal(workbook.worksheets.length, 1);
@@ -95,19 +96,7 @@ test('PO Excel serializes only selected fields and preserves the original PO', a
   assert.equal(JSON.stringify(po), before);
 });
 
-test('default PO layout matches the original renderer', async () => {
-  const path = require('node:path');
-  const Module = require('node:module');
-  const { execFileSync } = require('node:child_process');
-  const filename = require.resolve('../modules/purchase-order/po-pdf');
-  const original = execFileSync('git', ['show', 'HEAD:backend/modules/purchase-order/po-pdf.js'], {
-    encoding: 'utf8',
-    cwd: path.resolve(__dirname, '../..'),
-  });
-  const baseline = new Module(filename, module);
-  baseline.filename = filename;
-  baseline.paths = Module._nodeModulePaths(path.dirname(filename));
-  baseline._compile(original, filename);
+test('default PO PDF excludes all GST details and uses tax-free totals', async () => {
   const { getDocument } =
     await import('../../frontend-v2/node_modules/pdfjs-dist/legacy/build/pdf.mjs');
   const data = {
@@ -132,7 +121,35 @@ test('default PO layout matches the original renderer', async () => {
       await pdf.destroy();
     }
   };
-  const before = await baseline.exports.renderPoPdf(data);
   const after = await renderPoPdf({ ...data, exportOptions: { hidden: [] } });
-  assert.deepEqual(await extract(after.buffer), await extract(before.buffer));
+  const content = (await extract(after.buffer))
+    .flat()
+    .map((item) => item.text)
+    .join(' ');
+  assert.doesNotMatch(content, /GST|Taxable|GSTIN/i);
+  assert.equal(after.totals.grandTotal, 2321);
+});
+
+test('PO math ignores legacy item and freight tax rates in every state', async () => {
+  const frontend = await import('../../frontend-v2/src/utils/poMath.js');
+  for (const interState of [false, true]) {
+    const input = {
+      items: [
+        { quantity: 3, unitPrice: 100, discount: 10, tax: 28 },
+        { quantity: 2, unitPrice: 50, discount: 5, discountType: 'fixed', gstRate: 18 },
+      ],
+      freight: 50.25,
+      freightGst: 28,
+      interState,
+    };
+    const totals = poTotals(input);
+    assert.equal(totals.beforeRound, 410.25);
+    assert.equal(totals.grandTotal, 410);
+    assert.equal(totals.roundOff, -0.25);
+    assert.deepEqual(
+      totals.lines.map((l) => l.total),
+      [270, 90],
+    );
+    assert.deepEqual(frontend.poTotals(input), totals);
+  }
 });

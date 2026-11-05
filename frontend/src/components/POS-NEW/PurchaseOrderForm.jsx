@@ -138,11 +138,10 @@ const PurchaseOrderForm = ({
       items[index] = { ...items[index], [field]: value };
 
       // Recalculate line total
-      if (["quantity", "unitPrice", "tax"].includes(field)) {
+      if (["quantity", "unitPrice"].includes(field)) {
         const q = Number(items[index].quantity) || 1;
         const p = Number(items[index].unitPrice) || 0.01;
-        const t = Number(items[index].tax) || 0;
-        items[index].total = q * p * (1 + t / 100);
+        items[index].total = q * p;
       }
 
       const totalAmount = items
@@ -222,30 +221,10 @@ const PurchaseOrderForm = ({
       ),
     },
     {
-      title: "Tax %",
-      key: "tax",
-      width: 100,
-      render: (_, record, index) => (
-        <MiniNumber
-          min={0}
-          max={100}
-          step={0.1}
-          precision={1}
-          value={record.tax ?? 0}
-          onChange={(v) => updateItem(index, "tax", v)}
-        />
-      ),
-    },
-    {
       title: "Line Total (₹)",
       key: "total",
       width: 120,
-      render: (_, record) =>
-        (
-          record.quantity *
-          record.unitPrice *
-          (1 + (record.tax || 0) / 100)
-        ).toFixed(2),
+      render: (_, record) => (record.quantity * record.unitPrice).toFixed(2),
     },
     {
       title: "",
