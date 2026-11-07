@@ -11,6 +11,28 @@ require.cache[service] = {
 const { renderQuotationPdf, groupByArea } = require('../modules/quotations/quotation-pdf');
 const { quotationTotals } = require('../lib/quotationMath');
 
+test('selected terms use a bold PDF font and other terms remain regular', async () => {
+  const { getDocument } = await import('../../frontend-v2/node_modules/pdfjs-dist/legacy/build/pdf.mjs');
+  const { buffer } = await renderQuotationPdf({
+    quotation: { reference_number: 'BOLD-TEST', createdAt: '2026-10-19' },
+    items: [], customer: {}, productInfo: {}, versionNo: 1,
+  }, {
+    company: DEFAULTS.company,
+    settings: { ...DEFAULTS.quotation, keyTerms: ['Payment due immediately', 'Delivery by arrangement'] },
+    cover: false, exportOptions: { boldTerms: ['Payment due immediately'] },
+  });
+  const pdf = await getDocument({ data: new Uint8Array(buffer), useSystemFonts: true }).promise;
+  try {
+    const content = await (await pdf.getPage(pdf.numPages)).getTextContent();
+    const bold = content.items.find(item => item.str === 'Payment due immediately');
+    const regular = content.items.find(item => item.str === 'Delivery by arrangement');
+    assert.ok(bold);
+    assert.ok(regular);
+    assert.notEqual(bold.fontName, regular.fontName);
+    assert.match(content.styles[bold.fontName].fontFamily, /./);
+  } finally { await pdf.destroy(); }
+});
+
 test('single products appear once with no location, one room, or legacy room fields', () => {
   for (const location of [
     {},

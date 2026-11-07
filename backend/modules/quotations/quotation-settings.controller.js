@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/database');
 const { Quotation } = require('../../models');
+const { getSetting } = require('../settings/settings.service');
 const Settings = sequelize.define('QuotationExportSettings', {
   quotationId: { type: DataTypes.UUID, allowNull: false },
   userId: { type: DataTypes.UUID, allowNull: false },
@@ -16,7 +17,8 @@ exports.handle = async (req, res, next) => {
     const where = { quotationId: req.params.id, userId: req.user.userId, version };
     if (req.method === 'GET') {
       const row = await Settings.findOne({ where });
-      return res.json({ settings: row?.settings || null });
+      const quotationSettings = await getSetting('quotation');
+      return res.json({ settings: row?.settings || null, terms: quotationSettings?.keyTerms || [] });
     }
     const s = req.body;
     if (!s || !['detailed', 'compact'].includes(s.style) || typeof s.cover !== 'boolean' ||
@@ -24,7 +26,11 @@ exports.handle = async (req, res, next) => {
       !(s.pageLabels === null || (Array.isArray(s.pageLabels) && s.pageLabels.length > 0 && s.pageLabels.length <= 5000 && s.pageLabels.every(k => typeof k === 'string' && k.length <= 1000)))) {
       return res.status(400).json({ message: 'Invalid export settings' });
     }
-    await Settings.upsert({ ...where, settings: { style: s.style, cover: s.cover, hidden: [...new Set(s.hidden)], pageLabels: s.pageLabels } });
+    if (s.boldTerms !== undefined && (!Array.isArray(s.boldTerms) || s.boldTerms.length > 1000 ||
+      s.boldTerms.some(term => typeof term !== 'string' || term.length > 10000))) {
+      return res.status(400).json({ message: 'Invalid bold terms' });
+    }
+    await Settings.upsert({ ...where, settings: { style: s.style, cover: s.cover, hidden: [...new Set(s.hidden)], pageLabels: s.pageLabels, boldTerms: [...new Set(s.boldTerms || [])] } });
     return res.json({ message: 'Export settings saved' });
   } catch (error) { next(error); }
 };

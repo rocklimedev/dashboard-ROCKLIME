@@ -39,8 +39,6 @@ import { QuotationPipelineBar } from '../../components/Quotation/QuotationPipeli
 import { orderStateFromQuotation } from '../../components/Quotation/convertToOrder';
 import useCan from '../../utils/useCan';
 
-
-
 dayjs.extend(relativeTime);
 const { Title, Text } = Typography;
 
@@ -71,7 +69,9 @@ export default function NewQuotationsDetails() {
   const [pdfCover, setPdfCover] = useState(true);
   const [exportOptions, setExportOptions] = useState({ hidden: [] });
   const [organizerOpen, setOrganizerOpen] = useState(false);
-  const [saveExportSettings, { isLoading: savingSettings }] = useSaveQuotationExportSettingsMutation();
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [saveExportSettings, { isLoading: savingSettings }] =
+    useSaveQuotationExportSettingsMutation();
   const { currentData: exportSettingsData, error: exportSettingsError } =
     useGetQuotationExportSettingsQuery({ id, version }, { refetchOnMountOrArgChange: true });
   const hydratedSettings = useRef(null);
@@ -92,25 +92,28 @@ export default function NewQuotationsDetails() {
     const { settings } = exportSettingsData;
     setPdfStyle(settings?.style || 'detailed');
     setPdfCover(settings?.cover ?? true);
-    setExportOptions({ hidden: settings?.hidden || [] });
+    setExportOptions({ hidden: settings?.hidden || [], boldTerms: settings?.boldTerms || [] });
     pendingLabels.current = settings?.pageLabels || null;
   }, [id, version, exportSettingsData]);
   useEffect(() => {
     if (exportSettingsError)
       toast.error(exportSettingsError.data?.message || 'Could not load saved export settings');
   }, [exportSettingsError]);
-  const onPagesChange = useCallback(
-    (next) => {
-      setPages((previous) => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next));
-      if (pendingLabels.current && next.length) {
-        const roomLabels = [...new Set(pendingLabels.current.map(label => label.replace(/ \(continued \d+\)$/, '')))];
-        const restored = roomLabels.flatMap(label => next.filter(page => page.label.replace(/ \(continued \d+\)$/, '') === label).map(page => page.id));
-        setPageOrder(restored.length ? restored : null);
-        pendingLabels.current = null;
-      }
-    },
-    [],
-  );
+  const onPagesChange = useCallback((next) => {
+    setPages((previous) => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next));
+    if (pendingLabels.current && next.length) {
+      const roomLabels = [
+        ...new Set(pendingLabels.current.map((label) => label.replace(/ \(continued \d+\)$/, ''))),
+      ];
+      const restored = roomLabels.flatMap((label) =>
+        next
+          .filter((page) => page.label.replace(/ \(continued \d+\)$/, '') === label)
+          .map((page) => page.id),
+      );
+      setPageOrder(restored.length ? restored : null);
+      pendingLabels.current = null;
+    }
+  }, []);
   const resetPages = () => {
     setPageOrder(null);
     setPages([]);
@@ -188,7 +191,12 @@ export default function NewQuotationsDetails() {
       );
       const link = document.createElement('a');
       link.href = url;
-      link.download = documentExportFilename({ customerName, documentNumber: shown.reference_number || id, date: shown.quotation_date || shown.createdAt, extension: 'xlsx' });
+      link.download = documentExportFilename({
+        customerName,
+        documentNumber: shown.reference_number || id,
+        date: shown.quotation_date || shown.createdAt,
+        extension: 'xlsx',
+      });
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setExcelOpen(false);
@@ -214,23 +222,62 @@ export default function NewQuotationsDetails() {
   const pdfVersion = version !== 'current' ? version : null;
   return (
     <>
-      <QuotationExportOrganizer open={organizerOpen} onClose={() => setOrganizerOpen(false)} pages={pages} floors={asList(shown.floors)}
-        pageOrder={pageOrder} setPageOrder={setPageOrder} saving={savingSettings} downloading={downloading}
+      <QuotationExportOrganizer
+        open={organizerOpen}
+        onClose={() => setOrganizerOpen(false)}
+        pages={pages}
+        floors={asList(shown.floors)}
+        pageOrder={pageOrder}
+        setPageOrder={setPageOrder}
+        saving={savingSettings}
+        downloading={downloading}
         onSave={async () => {
           try {
-            await saveExportSettings({ id, version, settings: {
-              style: pdfStyle, cover: pdfCover, hidden: exportOptions.hidden,
-              pageLabels: pageOrder ? [...new Set(pageOrder.map(pageId => pages.find(p => p.id === pageId)?.label.replace(/ \(continued \d+\)$/, '')).filter(Boolean))] : null,
-            } }).unwrap();
+            await saveExportSettings({
+              id,
+              version,
+              settings: {
+                style: pdfStyle,
+                cover: pdfCover,
+                hidden: exportOptions.hidden,
+                boldTerms: exportOptions.boldTerms || [],
+                pageLabels: pageOrder
+                  ? [
+                      ...new Set(
+                        pageOrder
+                          .map((pageId) =>
+                            pages
+                              .find((p) => p.id === pageId)
+                              ?.label.replace(/ \(continued \d+\)$/, ''),
+                          )
+                          .filter(Boolean),
+                      ),
+                    ]
+                  : null,
+              },
+            }).unwrap();
             toast.success('Export settings saved');
-          } catch (error) { toast.error(error?.data?.message || error.message || 'Could not save settings'); }
+          } catch (error) {
+            toast.error(error?.data?.message || error.message || 'Could not save settings');
+          }
         }}
         onDownload={async () => {
           setDownloading(true);
-          try { await downloadQuotationPdf(id, { version: pdfVersion, style: pdfStyle, cover: pdfCover, exportOptions, pageOrder }); }
-          catch (error) { toast.error(error.message); }
-          finally { setDownloading(false); }
-        }} />
+          try {
+            await downloadQuotationPdf(id, {
+              version: pdfVersion,
+              style: pdfStyle,
+              cover: pdfCover,
+              exportOptions,
+              pageOrder,
+            });
+          } catch (error) {
+            toast.error(error.message);
+          } finally {
+            setDownloading(false);
+          }
+        }}
+      />
       <QuotationDispatchModal
         open={dispatchOpen}
         quotation={quotation}
@@ -353,23 +400,10 @@ export default function NewQuotationsDetails() {
                 </div>
               </div>
               <Space size={10} wrap align="center">
-                {fullyDispatched && linkedOrder ? (
+                {fullyDispatched && linkedOrder && (
                   <Button type="primary" onClick={() => navigate(`/order/${linkedOrder.id}`)}>
                     View order #{linkedOrder.orderNo}
                   </Button>
-                ) : (
-                  !fullyDispatched &&
-                  can('quotations', 'write') &&
-                  can('orders', 'view') &&
-                  can('orders', 'write') && (
-                    <Button
-                      type="primary"
-                      disabled={version !== 'current' || dispatchLoading}
-                      onClick={() => setDispatchOpen(true)}
-                    >
-                      Dispatch products
-                    </Button>
-                  )
                 )}
                 {dispatchData?.dispatches?.length > 0 && can('orders', 'view') && (
                   <Button onClick={() => setHistoryOpen(true)}>Dispatch history</Button>
@@ -392,7 +426,9 @@ export default function NewQuotationsDetails() {
                     ]}
                   />
                 )}
-                <DocumentExportOptions onExpand={() => setOrganizerOpen(true)}
+                <DocumentExportOptions
+                  onFormatTerms={() => setTermsOpen(true)}
+                  onExpand={() => setOrganizerOpen(true)}
                   pdfOnly
                   hasRooms={hasRoomAssignments(items)}
                   exportOptions={exportOptions}
@@ -439,6 +475,15 @@ export default function NewQuotationsDetails() {
           <div className="fv2-newquotationdetails-b3997f85e7">
             <QuotationPipelineBar
               quotation={quotation}
+              onDispatch={
+                !fullyDispatched &&
+                can('quotations', 'write') &&
+                can('orders', 'view') &&
+                can('orders', 'write')
+                  ? () => setDispatchOpen(true)
+                  : undefined
+              }
+              dispatchDisabled={version !== 'current' || dispatchLoading}
               canEdit={can('quotations', 'edit')}
               canConvert={
                 !fullyDispatched &&
@@ -473,6 +518,84 @@ export default function NewQuotationsDetails() {
             />
           </div>
 
+          <ModalShell
+            title="Format quotation terms"
+            open={termsOpen}
+            onCancel={() => setTermsOpen(false)}
+            footer={
+              <Button
+                type="primary"
+                loading={savingSettings}
+                disabled={!exportSettingsData || !!exportSettingsError}
+                onClick={async () => {
+                  try {
+                    await saveExportSettings({
+                      id,
+                      version,
+                      settings: {
+                        style: pdfStyle,
+                        cover: pdfCover,
+                        hidden: exportOptions.hidden,
+                        boldTerms: exportOptions.boldTerms || [],
+                        pageLabels: pageOrder
+                          ? [
+                              ...new Set(
+                                pageOrder
+                                  .map((pageId) =>
+                                    pages
+                                      .find((p) => p.id === pageId)
+                                      ?.label.replace(/ \(continued \d+\)$/, ''),
+                                  )
+                                  .filter(Boolean),
+                              ),
+                            ]
+                          : null,
+                      },
+                    }).unwrap();
+                    toast.success('Term formatting saved');
+                    setTermsOpen(false);
+                  } catch (error) {
+                    toast.error(error?.data?.message || 'Could not save term formatting');
+                  }
+                }}
+              >
+                Save formatting
+              </Button>
+            }
+          >
+            <p>Select Bold for any term to emphasize it in the quotation preview and PDF.</p>
+            {exportSettingsError ? (
+              <Alert type="error" message="Could not load quotation terms" />
+            ) : !exportSettingsData ? (
+              <Text>Loading terms…</Text>
+            ) : (exportSettingsData.terms || []).length === 0 ? (
+              <Text>No terms configured in company settings.</Text>
+            ) : (
+              <Space direction="vertical" size="middle">
+                {(exportSettingsData.terms || []).map((term, index) => (
+                  <div key={`${index}:${term}`}>
+                    <Checkbox
+                      checked={(exportOptions.boldTerms || []).includes(term)}
+                      onChange={(event) => {
+                        const checked = event.target.checked;
+                        setExportOptions((current) => ({
+                          ...current,
+                          boldTerms: checked
+                            ? [...new Set([...(current.boldTerms || []), term])]
+                            : (current.boldTerms || []).filter((value) => value !== term),
+                        }));
+                      }}
+                    >
+                      Bold term {index + 1}
+                    </Checkbox>
+                    <div>
+                      <Text strong={(exportOptions.boldTerms || []).includes(term)}>{term}</Text>
+                    </div>
+                  </div>
+                ))}
+              </Space>
+            )}
+          </ModalShell>
           {/* The quotation exactly as the customer receives it */}
           <div className="fv2-newquotationdetails-b9e8e31578">
             <div className="fv2-newquotationdetails-8948c5d53f">

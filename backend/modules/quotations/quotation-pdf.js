@@ -1225,16 +1225,16 @@ async function renderQuotationPdf(
     y += 18;
   }
   const terms = (Array.isArray(settings.keyTerms) ? settings.keyTerms : [])
-    .map((s) => fillTemplate(s, vars))
-    .filter(Boolean);
+    .map((s) => ({ text: fillTemplate(s, vars), bold: Array.isArray(exportOptions?.boldTerms) && exportOptions.boldTerms.includes(s) }))
+    .filter((term) => term.text);
   if (terms.length) {
     label(doc, 'Terms', M, y, { color: RED, size: 7 });
     y += 16;
     terms.forEach((t, i) => {
-      const h = heightOf(doc, t, CONTENT_W - 16, { size: 8.5 });
+      const h = heightOf(doc, t.text, CONTENT_W - 16, { size: 8.5, bold: t.bold });
       if (y + h > bottom) y = newPage();
-      text(doc, `${i + 1}.`, M, y, { size: 8.5, width: 14, lineBreak: false });
-      text(doc, t, M + 16, y, { size: 8.5, width: CONTENT_W - 16 });
+      text(doc, `${i + 1}.`, M, y, { size: 8.5, bold: t.bold, width: 14, lineBreak: false });
+      text(doc, t.text, M + 16, y, { size: 8.5, bold: t.bold, width: CONTENT_W - 16 });
       y += h + 5;
     });
     y += 10;

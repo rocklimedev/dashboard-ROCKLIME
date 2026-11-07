@@ -13,6 +13,7 @@ export default function DocumentExportOptions({
   pdfOnly = false,
   hasRooms = true,
   onExpand,
+  onFormatTerms,
 }) {
   const resetPages = () => setPageOrder(null);
   const selectedPages = pageOrder ?? pages.map((page) => page.id);
@@ -49,6 +50,7 @@ export default function DocumentExportOptions({
                       const checked = e.target.checked;
                       resetPages();
                       setExportOptions((current) => ({
+                        ...current,
                         hidden: checked
                           ? current.hidden.filter((k) => k !== key)
                           : [...current.hidden, key],
@@ -62,7 +64,17 @@ export default function DocumentExportOptions({
             )}
           </div>
           <Divider className="fv2-documentexportoptions-f558ec376e" />
-          {onExpand && <Button block onClick={onExpand}>Expand view</Button>}<Text strong>PDF pages — include & order</Text>
+          {onFormatTerms && (
+            <Button block onClick={onFormatTerms}>
+              Format terms
+            </Button>
+          )}
+          {onExpand && (
+            <Button block onClick={onExpand}>
+              Expand view
+            </Button>
+          )}
+          <Text strong>PDF pages — include & order</Text>
           <div>
             <Text type="secondary">
               {hasRooms ? 'Room pages' : 'Pages'} appear after the preview loads. Excluding pages
@@ -116,7 +128,7 @@ export default function DocumentExportOptions({
             type="link"
             block
             onClick={() => {
-              setExportOptions({ hidden: [] });
+              setExportOptions((current) => ({ ...current, hidden: [] }));
               resetPages();
               setPdfCover(true);
             }}

@@ -4,7 +4,21 @@ import './QuotationPipeline.styles.css';
 // follow-up log. The rules live on the server (modules/quotations/pipeline.js);
 // Won and Expired are automatic, so they are never offered as buttons.
 import { useState } from 'react';
-import { Button, DatePicker, Empty, Form, Input, List, Select, Space, Tag, Timeline, Tooltip, Typography } from 'antd';
+import {
+  Button,
+  DatePicker,
+  Dropdown,
+  Empty,
+  Form,
+  Input,
+  List,
+  Select,
+  Space,
+  Tag,
+  Timeline,
+  Tooltip,
+  Typography,
+} from 'antd';
 import { toast } from 'sonner';
 import {
   CheckCircleOutlined,
@@ -13,6 +27,7 @@ import {
   PhoneOutlined,
   SendOutlined,
   SwapOutlined,
+  MoreOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
@@ -222,6 +237,8 @@ export function QuotationStatusActions({
   canEdit = true,
   onConvert,
   canConvert = true,
+  dropdown = false,
+  extraActions = [],
 }) {
   const [lostOpen, setLostOpen] = useState(false);
   const [fuOpen, setFuOpen] = useState(false);
@@ -240,50 +257,114 @@ export function QuotationStatusActions({
 
   return (
     <>
-      <Space wrap size={8}>
-        {canConvert && open && onConvert && (
-          <Button type="primary" icon={<CheckCircleOutlined />} onClick={onConvert}>
-            Convert to order
-          </Button>
-        )}
-        {canEdit && open && (
-          <Button icon={<PhoneOutlined />} onClick={() => setFuOpen(true)}>
-            Log follow-up
-          </Button>
-        )}
-        {canEdit && status === 'DRAFT' && (
+      {dropdown ? (
+        <Dropdown
+          trigger={['click']}
+          menu={{
+            items: [
+              canConvert &&
+                open &&
+                onConvert && {
+                  key: 'convert',
+                  label: 'Convert to order',
+                  icon: <CheckCircleOutlined />,
+                  onClick: onConvert,
+                },
+              canEdit &&
+                open && {
+                  key: 'log-follow-up',
+                  label: 'Log follow-up',
+                  icon: <PhoneOutlined />,
+                  onClick: () => setFuOpen(true),
+                },
+              canEdit &&
+                status === 'DRAFT' && {
+                  key: 'sent',
+                  label: 'Mark sent',
+                  icon: <SendOutlined />,
+                  disabled: isLoading,
+                  onClick: () => move('SENT', 'Marked sent'),
+                },
+              canEdit &&
+                status === 'SENT' && {
+                  key: 'negotiation',
+                  label: 'In negotiation',
+                  icon: <SwapOutlined />,
+                  disabled: isLoading,
+                  onClick: () => move('NEGOTIATION', 'Moved to negotiation'),
+                },
+              canEdit &&
+                (open || status === 'EXPIRED') && {
+                  key: 'lost',
+                  label: 'Mark lost',
+                  icon: <CloseCircleOutlined />,
+                  danger: true,
+                  onClick: () => setLostOpen(true),
+                },
+              canEdit &&
+                status === 'LOST' && {
+                  key: 'reopen',
+                  label: 'Reopen',
+                  icon: <MessageOutlined />,
+                  disabled: isLoading,
+                  onClick: () => move('NEGOTIATION', 'Reopened'),
+                },
+              ...extraActions,
+            ].filter(Boolean),
+          }}
+        >
           <Button
-            icon={<SendOutlined />}
-            loading={isLoading}
-            onClick={() => move('SENT', 'Marked sent')}
-          >
-            Mark sent
-          </Button>
-        )}
-        {canEdit && status === 'SENT' && (
-          <Button
-            icon={<SwapOutlined />}
-            loading={isLoading}
-            onClick={() => move('NEGOTIATION', 'Moved to negotiation')}
-          >
-            In negotiation
-          </Button>
-        )}
-        {canEdit && (open || status === 'EXPIRED') && (
-          <Button danger icon={<CloseCircleOutlined />} onClick={() => setLostOpen(true)}>
-            Mark lost
-          </Button>
-        )}
-        {canEdit && status === 'LOST' && (
-          <Button
-            icon={<MessageOutlined />}
-            loading={isLoading}
-            onClick={() => move('NEGOTIATION', 'Reopened')}
-          >
-            Reopen
-          </Button>
-        )}
-      </Space>
+            icon={<MoreOutlined />}
+            aria-label="Quotation actions"
+            title="Quotation actions"
+          />
+        </Dropdown>
+      ) : (
+        <Space wrap size={8}>
+          {canConvert && open && onConvert && (
+            <Button type="primary" icon={<CheckCircleOutlined />} onClick={onConvert}>
+              Convert to order
+            </Button>
+          )}
+          {canEdit && open && (
+            <Button icon={<PhoneOutlined />} onClick={() => setFuOpen(true)}>
+              Log follow-up
+            </Button>
+          )}
+          {canEdit && status === 'DRAFT' && (
+            <Button
+              icon={<SendOutlined />}
+              loading={isLoading}
+              onClick={() => move('SENT', 'Marked sent')}
+            >
+              Mark sent
+            </Button>
+          )}
+          {canEdit && status === 'SENT' && (
+            <Button
+              icon={<SwapOutlined />}
+              loading={isLoading}
+              onClick={() => move('NEGOTIATION', 'Moved to negotiation')}
+            >
+              In negotiation
+            </Button>
+          )}
+          {canEdit && (open || status === 'EXPIRED') && (
+            <Button danger icon={<CloseCircleOutlined />} onClick={() => setLostOpen(true)}>
+              Mark lost
+            </Button>
+          )}
+          {canEdit && status === 'LOST' && (
+            <Button
+              icon={<MessageOutlined />}
+              loading={isLoading}
+              onClick={() => move('NEGOTIATION', 'Reopened')}
+            >
+              Reopen
+            </Button>
+          )}
+        </Space>
+      )}
       <LostModal quotation={quotation} open={lostOpen} onClose={() => setLostOpen(false)} />
       <FollowUpModal quotation={quotation} open={fuOpen} onClose={() => setFuOpen(false)} />
     </>
@@ -318,6 +399,8 @@ export function QuotationPipelineBar({
   onEdit,
   onDuplicate,
   onRecreate,
+  onDispatch,
+  dispatchDisabled = false,
 }) {
   const [showLog, setShowLog] = useState(false);
   if (!quotation) return null;
@@ -364,18 +447,29 @@ export function QuotationPipelineBar({
           )}
         </Space>
         <Space wrap size={8}>
+          {canEdit && onEdit && <Button onClick={onEdit}>Edit</Button>}
           <QuotationStatusActions
             quotation={quotation}
             canEdit={canEdit}
             canConvert={canConvert}
             onConvert={onConvert}
+            dropdown
+            extraActions={[
+              onDispatch && {
+                key: 'dispatch',
+                label: 'Dispatch products',
+                disabled: dispatchDisabled,
+                onClick: onDispatch,
+              },
+              onDuplicate && { key: 'duplicate', label: 'Duplicate', onClick: onDuplicate },
+              onRecreate && { key: 'recreate', label: 'Recreate quotation', onClick: onRecreate },
+              {
+                key: 'follow-ups',
+                label: showLog ? 'Hide follow-ups' : 'Follow-ups',
+                onClick: () => setShowLog((v) => !v),
+              },
+            ]}
           />
-          {canEdit && onEdit && <Button onClick={onEdit}>Edit</Button>}
-          {onDuplicate && <Button onClick={onDuplicate}>Duplicate</Button>}
-          {onRecreate && <Button onClick={onRecreate}>Recreate quotation</Button>}
-          <Button type="link" onClick={() => setShowLog((v) => !v)}>
-            {showLog ? 'Hide follow-ups' : 'Follow-ups'}
-          </Button>
         </Space>
       </div>
       {showLog && (
