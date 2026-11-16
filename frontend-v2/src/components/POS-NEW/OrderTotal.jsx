@@ -7,7 +7,6 @@ import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Alert, InputNumber, Select, Typography } from 'antd';
 import { quotationTotals, inr } from '../../utils/quotationMath';
-import { useGetSettingsQuery } from '../../api/settingsApi';
 
 const { Text } = Typography;
 const GST_RATES = [0, 5, 12, 18, 28];
@@ -63,8 +62,6 @@ const OrderTotal = React.memo(
     onShippingChange,
     showGstCalculation = false,
   }) => {
-    const { data: settingsResponse } = useGetSettingsQuery(undefined, { skip: !onPricingChange });
-    const presets = settingsResponse?.data?.quotation?.discountPresets || [];
     const n = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
     const t = useMemo(() => {
       if (discountMode === 'advanced' && !gstBasis)
@@ -158,30 +155,10 @@ const OrderTotal = React.memo(
         />
         {onPricingChange && (
           <div>
-            <Select
-              placeholder="Import discount preset"
-              value={undefined}
-              options={presets.map((p) => ({ value: p.id, label: p.name }))}
-              onChange={(id) => {
-                const p = presets.find((p) => p.id === id);
-                if (!p) return;
-                onPricingChange('discountMode', p.discountMode);
-                onPricingChange('gstBasis', p.gstBasis);
-                onGstChange?.(p.gstRate);
-              }}
-            />
-            <Text>Discount mode</Text>{' '}
-            <Select
-              value={discountMode}
-              onChange={(v) => onPricingChange('discountMode', v)}
-              options={[
-                { value: 'generic', label: 'Generic' },
-                { value: 'advanced', label: 'Advanced' },
-              ]}
-            />
+            <Text>Discount basis</Text>{' '}
             {discountMode === 'advanced' && (
               <Select
-                placeholder="Choose GST basis"
+                placeholder="Choose discount basis"
                 value={gstBasis}
                 onChange={(v) => onPricingChange('gstBasis', v)}
                 options={[

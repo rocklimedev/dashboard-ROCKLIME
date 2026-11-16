@@ -203,7 +203,7 @@ const AddQuotation = () => {
     quotation_date: null,
     due_date: null,
     gst: null,
-    discountMode: 'generic', // 'generic' | 'advanced'
+    discountMode: 'advanced',
     gstBasis: null, // advanced only: 'inclusive' | 'exclusive' | null (not chosen)
     shippingAmount: 0,
     miscellaneousChargeItems: [],
@@ -330,7 +330,7 @@ const AddQuotation = () => {
       flatPrice: existingQuotation.flatPrice == null ? null : safeNum(existingQuotation.flatPrice),
       shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
       gst: safeNum(existingQuotation.gst, 0),
-      discountMode: pricingFromRecord(existingQuotation).discountMode,
+      discountMode: 'advanced',
       gstBasis: pricingFromRecord(existingQuotation).gstBasis,
       extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
       extraDiscountType: existingQuotation.extraDiscountType || 'fixed',
@@ -1347,41 +1347,9 @@ const AddQuotation = () => {
 
               <Col xs={24} sm={12}>
                 <Card className="fv2-addquntation-904354e8f8" size="small">
-                  <Form.Item label="Import discount preset">
-                    <Select
-                      placeholder="Choose a preset"
-                      value={undefined}
-                      options={(quotationDefaults?.discountPresets || []).map((p) => ({
-                        value: p.id,
-                        label: p.name,
-                      }))}
-                      onChange={(id) => {
-                        const p = quotationDefaults.discountPresets.find((p) => p.id === id);
-                        if (p)
-                          setFormData((prev) => ({
-                            ...prev,
-                            discountMode: p.discountMode,
-                            gstBasis: p.gstBasis,
-                            gst: p.gstRate,
-                          }));
-                      }}
-                    />
-                  </Form.Item>
-                  <Form.Item label="Discount mode">
-                    <Select
-                      value={formData.discountMode}
-                      onChange={(value) =>
-                        setFormData((prev) => ({ ...prev, discountMode: value }))
-                      }
-                      options={[
-                        { value: 'generic', label: 'Generic (GST added on top)' },
-                        { value: 'advanced', label: 'Advanced' },
-                      ]}
-                    />
-                  </Form.Item>
                   {formData.discountMode === 'advanced' && (
                     <Form.Item
-                      label="GST basis of product prices"
+                      label="Discount basis"
                       help={
                         formData.gstBasis ? undefined : 'Choose one to calculate this quotation'
                       }

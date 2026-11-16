@@ -103,6 +103,7 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
     discountAmount: '',
     followupDates: [],
     ...initial.quotationData,
+    discountMode: 'advanced',
   });
 
   const [selectedCustomer, setSelectedCustomer] = useState(initial.selectedCustomer || '');
@@ -219,7 +220,7 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
       extraDiscountType: quotationData.discountType || 'fixed',
 
       shippingAmount: Number(shipping) || 0,
-      discountMode: quotationData.discountMode || 'generic',
+      discountMode: 'advanced',
       gstBasis: quotationData.gstBasis ?? null,
       gst: gst === '' || gst == null ? null : Number(gst),
       miscellaneousChargeItems: quotationData.miscellaneousChargeItems || [],
