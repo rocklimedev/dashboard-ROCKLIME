@@ -1,0 +1,36 @@
+.quotation-overview {
+  padding: 24px;
+}
+
+.quotation-overview__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.quotation-overview__header h2 {
+  margin: 4px 0 8px;
+}
+
+.quotation-overview__controls {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.quotation-overview__controls .ant-input-affix-wrapper {
+  max-width: 540px;
+}
+
+@media (max-width: 640px) {
+  .quotation-overview {
+    padding: 16px;
+  }
+  .quotation-overview__header,
+  .quotation-overview__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

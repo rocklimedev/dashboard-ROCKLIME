@@ -1,6 +1,8 @@
 const { getSetting } = require('../settings/settings.service');
 const { resolveGstRate } = require('../../lib/quotationPricing');
-const { configuredDocumentExportFilename: documentExportFilename } = require('../../lib/documentExportFilename');
+const {
+  configuredDocumentExportFilename: documentExportFilename,
+} = require('../../lib/documentExportFilename');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 const { Op } = require('sequelize');
@@ -652,7 +654,8 @@ exports.updateQuotation = async (req, res) => {
 
     const resolvedPricing = pricingFromRecord({
       discountMode: discountMode === undefined ? currentQuotation.discountMode : discountMode,
-      gstBasis: gstBasis === undefined && gstInclusive === undefined ? currentQuotation.gstBasis : gstBasis,
+      gstBasis:
+        gstBasis === undefined && gstInclusive === undefined ? currentQuotation.gstBasis : gstBasis,
       gstInclusive,
     });
     // ─── Versioning (outside transaction) ───
@@ -1151,7 +1154,8 @@ exports.exportQuotation = async (req, res) => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Quotation');
 
     const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
-    const exportCustomer = quotation.customer ||
+    const exportCustomer =
+      quotation.customer ||
       (quotation.customerId ? await Customer.findByPk(quotation.customerId) : null);
 
     res.setHeader(
@@ -1442,11 +1446,13 @@ exports.restoreQuotationVersion = async (req, res) => {
 exports.getQuotationById = async (req, res) => {
   try {
     const quotation = await Quotation.findByPk(req.params.id, {
-      include: [{
-        model: Customer,
-        as: 'customer',
-        attributes: ['customerId', 'name', 'companyName', 'mobileNumber'],
-      }],
+      include: [
+        {
+          model: Customer,
+          as: 'customer',
+          attributes: ['customerId', 'name', 'companyName', 'mobileNumber'],
+        },
+      ],
     });
     if (!quotation) {
       return res.status(404).json({ message: 'Quotation not found' });

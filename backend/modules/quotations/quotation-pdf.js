@@ -1225,7 +1225,10 @@ async function renderQuotationPdf(
     y += 18;
   }
   const terms = (Array.isArray(settings.keyTerms) ? settings.keyTerms : [])
-    .map((s) => ({ text: fillTemplate(s, vars), bold: Array.isArray(exportOptions?.boldTerms) && exportOptions.boldTerms.includes(s) }))
+    .map((s) => ({
+      text: fillTemplate(s, vars),
+      bold: Array.isArray(exportOptions?.boldTerms) && exportOptions.boldTerms.includes(s),
+    }))
     .filter((term) => term.text);
   if (terms.length) {
     label(doc, 'Terms', M, y, { color: RED, size: 7 });

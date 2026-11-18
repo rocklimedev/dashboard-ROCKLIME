@@ -155,13 +155,11 @@ exports.create = async (req, res) => {
       description: `Tax invoice ${inv.invoiceNo} for order ${inv.orderNo}: ₹${Number(inv.total).toLocaleString('en-IN')}`,
       req,
     }).catch(() => {});
-    res
-      .status(201)
-      .json({
-        message: `Invoice ${inv.invoiceNo} created`,
-        invoice: toJSON(inv),
-        link: svc.publicLink(inv),
-      });
+    res.status(201).json({
+      message: `Invoice ${inv.invoiceNo} created`,
+      invoice: toJSON(inv),
+      link: svc.publicLink(inv),
+    });
   } catch (err) {
     fail(res, err);
   }

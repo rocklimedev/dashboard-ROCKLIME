@@ -465,6 +465,9 @@ export default function NewQuotationsDetails() {
                 >
                   Excel
                 </Button>
+                <Button onClick={() => navigate(`/quotation/${id}/overview`)}>
+                  Overview
+                </Button>
                 <Button onClick={() => navigate('/quotations/list')} icon={<ArrowLeftOutlined />}>
                   Back
                 </Button>

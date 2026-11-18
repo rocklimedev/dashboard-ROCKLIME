@@ -41,8 +41,13 @@ function salesVoucher(inv, L) {
   const freightTaxable = r2(Number(inv.taxableValue) - goodsTaxable);
   // D1 extracts tax after rounding, so its accounting components already sum
   // to the payable total. Its displayed round-off must not be posted twice.
-  const round = r2(Number(inv.total) - Number(inv.taxableValue) -
-    Number(inv.cgst || 0) - Number(inv.sgst || 0) - Number(inv.igst || 0));
+  const round = r2(
+    Number(inv.total) -
+      Number(inv.taxableValue) -
+      Number(inv.cgst || 0) -
+      Number(inv.sgst || 0) -
+      Number(inv.igst || 0),
+  );
   return [
     `<TALLYMESSAGE xmlns:UDF="TallyUDF"><VOUCHER VCHTYPE="Sales" ACTION="Create" OBJVIEW="Accounting Voucher View">`,
     `<DATE>${tdate(inv.invoiceDate)}</DATE><VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>`,

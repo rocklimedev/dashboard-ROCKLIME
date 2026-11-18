@@ -333,6 +333,7 @@ const QuotationList = () => {
       render: (_, rec) => {
         const menu = [
           { key: 'view', icon: <EyeOutlined />, label: 'Open' },
+          { key: 'overview', icon: <HomeOutlined />, label: 'Room / floor overview' },
           can('quotations', 'edit') && { key: 'edit', icon: <EditOutlined />, label: 'Edit' },
           can('quotations', 'write') && {
             key: 'clone',
@@ -362,6 +363,7 @@ const QuotationList = () => {
         ].filter(Boolean);
         const onMenu = ({ key }) => {
           if (key === 'view') navigate(`/quotation/${rec.quotationId}`);
+          if (key === 'overview') navigate(`/quotation/${rec.quotationId}/overview`);
           if (key === 'edit')
             navigate(`/quotation/${rec.quotationId}/edit`, { state: { quotation: rec } });
           if (key === 'clone') handleClone(rec);

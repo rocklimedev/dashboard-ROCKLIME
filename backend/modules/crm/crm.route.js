@@ -43,12 +43,10 @@ const wrap = (fn) => async (req, res) => {
     const out = await fn(req, res);
     if (!res.headersSent) res.json(out);
   } catch (err) {
-    res
-      .status(err.status || 500)
-      .json({
-        message: err.message || 'CRM request failed',
-        ...(err.zohoCode ? { zohoCode: err.zohoCode } : {}),
-      });
+    res.status(err.status || 500).json({
+      message: err.message || 'CRM request failed',
+      ...(err.zohoCode ? { zohoCode: err.zohoCode } : {}),
+    });
   }
 };
 const adminOnly = (req, res, next) =>
@@ -178,11 +176,9 @@ router.get(
   }),
 );
 router.post('/bigin/token', adminOnly, (req, res) =>
-  res
-    .status(410)
-    .json({
-      message: 'Use Connect Zoho on the Connectors page to authorize all Zoho services together.',
-    }),
+  res.status(410).json({
+    message: 'Use Connect Zoho on the Connectors page to authorize all Zoho services together.',
+  }),
 );
 router.get(
   '/bigin/pipelines',
